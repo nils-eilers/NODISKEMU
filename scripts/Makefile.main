@@ -398,7 +398,7 @@ clean:
 	$(Q)$(REMOVE) .dep/*
 	$(Q)$(REMOVE) -rf codedoc
 	$(Q)$(REMOVE) -rf doxyinput
-	-$(Q)rmdir --ignore-fail-on-non-empty -p $(OBJDIRS)
+	$(Q)$(REMOVE) -rf $(OBJDIRS)
 
 # Include the dependency files.
 -include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
