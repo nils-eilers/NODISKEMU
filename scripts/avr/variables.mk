@@ -97,13 +97,13 @@ AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 
 # Allow fuse overrides from the config file
 ifdef CONFIG_EFUSE
-  EFUSE := CONFIG_EFUSE
+  EFUSE := $(CONFIG_EFUSE)
 endif
 ifdef CONFIG_HFUSE
-  HFUSE := CONFIG_HFUSE
+  HFUSE := $(CONFIG_HFUSE)
 endif
 ifdef CONFIG_LFUSE
-  LFUSE := CONFIG_LFUSE
+  LFUSE := $(CONFIG_LFUSE)
 endif
 
 # Calculate command line arguments for fuses
