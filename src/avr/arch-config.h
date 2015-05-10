@@ -883,7 +883,6 @@ static inline void toggle_dirty_led(void) {
 
 #  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
-#  define IEEE_ATN_INT_VECT     INT0_vect
 
 static inline void ieee_interrupts_init(void) {
   DDRD &= ~_BV(PD2);
@@ -1350,7 +1349,6 @@ static inline void bus_interface_init(void) {
 /* so the _HANDLER macros are created here.     */
 #define IEC_ATN_HANDLER   ISR(IEC_ATN_INT_VECT)
 #define IEC_CLOCK_HANDLER ISR(IEC_CLK_INT_VECT)
-#define IEEE_ATN_HANDLER  ISR(IEEE_ATN_INT_VECT)
 
 /* SD SS pin default implementation */
 #ifndef SDCARD_SS_SPECIAL

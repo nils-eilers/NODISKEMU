@@ -286,21 +286,6 @@ void ieee_init(void) {
 }
 void bus_init(void) __attribute__((weak, alias("ieee_init")));
 
-/* Interrupt routine that simulates the hardware-auto-acknowledge of ATN
-   at falling edge of ATN. If pin change interrupts are used, we have to
-   check for rising or falling edge in software first! */
-IEEE_ATN_HANDLER {
-#ifdef IEEE_PCMSK
-  if(!IEEE_ATN) {
-#else
-  {
-#endif
-    ddr_change_by_atn();        /* Switch NDAC+NRFD to outputs */
-    set_ndac_state(0);          /* Poll NDAC and NRFD low */
-    set_nrfd_state(0);
-  }
-}
-
 /* ------------------------------------------------------------------------- */
 /*  Byte transfer routines                                                   */
 /* ------------------------------------------------------------------------- */
