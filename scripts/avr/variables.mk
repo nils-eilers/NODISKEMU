@@ -92,7 +92,7 @@ AVRDUDE_PROGRAMMER = stk200
 # com1 = serial port. Use lpt1 to connect to parallel port.
 AVRDUDE_PORT = lpt1    # programmer connected to serial device
 
-AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
+AVRDUDE_WRITE_FLASH = -B 1 -U flash:w:$(TARGET).hex
 # AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
 # Allow fuse overrides from the config file
@@ -107,7 +107,8 @@ ifdef CONFIG_LFUSE
 endif
 
 # Calculate command line arguments for fuses
-AVRDUDE_WRITE_FUSES :=
+# Toggle bits slowly, AVR might run slowly
+AVRDUDE_WRITE_FUSES := -B 50
 ifdef EFUSE
   AVRDUDE_WRITE_FUSES += -U efuse:w:$(EFUSE):m
 endif
