@@ -52,7 +52,6 @@ void uart_putc(char c) {
 #endif
   txbuf[write_idx] = c;
   write_idx = t;
-  //if (read_idx == write_idx) PORTD |= _BV(PD7);
   UCSRB |= _BV(UDRIE);
 }
 
@@ -142,12 +141,12 @@ void uart_putcrlf(void) {
 static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
 void uart_init(void) {
-  /* Seriellen Port konfigurieren */
+  /* Configure serial port */
 
   UBRRH = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
   UBRRL = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
 
-  UCSRB = _BV(RXEN) | _BV(TXEN);
+  UCSRB = _BV(TXEN);
   // I really don't like random #ifdefs in the code =(
 #if defined __AVR_ATmega32__
   UCSRC = _BV(URSEL) | _BV(UCSZ1) | _BV(UCSZ0);
@@ -157,7 +156,6 @@ void uart_init(void) {
 
   stdout = &mystdout;
 
-  //UCSRB |= _BV(UDRIE);
   read_idx  = 0;
   write_idx = 0;
 }
