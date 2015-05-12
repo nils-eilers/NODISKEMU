@@ -954,6 +954,43 @@ static inline void ieee_interface_init(void) {
   IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
 }
 
+static inline void set_ieee_data(uint8_t data) {
+  IEEE_D_PORT = ~ data;
+}
+
+static inline uint8_t get_ieee_data(void) {
+   return(~IEEE_D_PIN);
+}
+
+static inline void ieee_ports_listen (void)
+{
+  IEEE_D_DDR = 0;                                 // data ports as inputs
+  IEEE_D_PORT = 0xff;                     // enable pull-ups for data lines
+  IEEE_DDR_DAV &= (uint8_t) ~_BV(IEEE_PIN_DAV);   // DAV as input
+  IEEE_DDR_EOI &= (uint8_t) ~_BV(IEEE_PIN_EOI);   // EOI as input
+  IEEE_PORT_TE &= (uint8_t) ~_BV(IEEE_PIN_TE);    // TE=0: 7516x listen
+  IEEE_DDR_NDAC |= _BV(IEEE_PIN_NDAC);            // NDAC as output
+  IEEE_DDR_NRFD |= _BV(IEEE_PIN_NRFD);            // NRFD as output
+  IEEE_PORT_DAV |= _BV(IEEE_PIN_DAV);             // Enable pull-up for DAV
+  IEEE_PORT_EOI |= _BV(IEEE_PIN_EOI);             // Enable pull-up for EOI
+}
+
+static inline void ieee_ports_talk (void)
+{
+  IEEE_DDR_NDAC &= (uint8_t)~_BV(IEEE_PIN_NDAC);  // NDAC as input
+  IEEE_DDR_NRFD &= (uint8_t)~_BV(IEEE_PIN_NRFD);  // NRFD as input
+  IEEE_PORT_NDAC |= _BV(IEEE_PIN_NDAC);           // Enable pull-up for NDAC
+  IEEE_PORT_NRFD |= _BV(IEEE_PIN_NRFD);           // Enable pull-up for NRFD
+  IEEE_PORT_TE |= _BV(IEEE_PIN_TE);               // TE=1: 7516x talk enable
+  IEEE_D_PORT = 0xff;                             // all data lines high
+  IEEE_D_DDR = 0xff;                              // data ports as outputs
+  IEEE_PORT_DAV |= _BV(IEEE_PIN_DAV);             // Set DAV high
+  IEEE_DDR_DAV |= _BV(IEEE_PIN_DAV);              // DAV as output
+  IEEE_PORT_EOI |= _BV(IEEE_PIN_EOI);             // Set EOI high
+  IEEE_DDR_EOI  |= _BV(IEEE_PIN_EOI);             // EOI as output
+}
+
+
 #  define BUTTON_NEXT           _BV(PB1)
 #  define BUTTON_PREV           _BV(PB3)
 
@@ -1109,6 +1146,15 @@ static inline void ieee_interface_init(void) {
   IEEE_C_ATN_PORT |= _BV(IEEE_PIN_ATN);           // enable ATN pullup
 }
 
+static inline void set_ieee_data (uint8_t data) {
+  IEEE_D_DDR = data;
+  IEEE_D_PORT = (uint8_t) ~ data;
+}
+
+static inline uint8_t get_ieee_data(void) {
+   return(~IEEE_D_PIN);
+}
+
 #endif // CONFIG_HAVE_IEEE
 
 #  define BUTTON_NEXT           _BV(PB1)
@@ -1121,6 +1167,226 @@ static inline rawbutton_t buttons_read(void) {
 static inline void buttons_init(void) {
   DDRB &= (uint8_t) ~ (BUTTON_NEXT | BUTTON_PREV);
   PORTB |= BUTTON_NEXT | BUTTON_PREV;
+}
+
+#elif CONFIG_HARDWARE_VARIANT == 10
+/* ---------- Hardware configuration: petSD+ --------- */
+#  define HAVE_SD
+#  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
+#  define SD_SUPPLY_VOLTAGE (1L<<21)
+
+/* 250 kHz slow, 2 MHz fast */
+#  define SPI_DIVISOR_SLOW 32
+#  define SPI_DIVISOR_FAST 4
+
+static inline void sdcard_interface_init(void) {
+  DDRD   &= ~_BV(PD5);            /* card detect */
+  PORTD  |=  _BV(PD5);
+  DDRD   &= ~_BV(PD6);            /* write protect  */
+  PORTD  |=  _BV(PD6);
+  PCMSK3 |=  _BV(PCINT29);        /* card change interrupt */
+  PCICR  |=  _BV(PCIE3);
+  PCIFR  |=  _BV(PCIF3);
+}
+
+static inline uint8_t sdcard_detect(void) {
+  return (!(PIND & _BV(PD5)));
+}
+
+static inline uint8_t sdcard_wp(void) {
+  return (PIND & _BV(PD6));
+}
+
+static inline uint8_t device_hw_address(void) {
+  /* FIXME: get configuration from EEPROM */
+  return 8;
+}
+static inline void device_hw_address_init(void) {
+   // TODO: read address from DIP switches
+  return;
+}
+
+static inline void leds_init(void) {
+  DDRD |= _BV(PD0);
+#ifndef CONFIG_UART_DEBUG
+  DDRD |= _BV(PD1);
+#endif
+}
+
+static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
+#ifndef CONFIG_UART_DEBUG
+  if (state)
+    PORTD |= _BV(PD1);
+  else
+    PORTD &= (uint8_t) ~_BV(PD1);
+#endif
+}
+
+static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
+  if (state)
+    PORTD |= _BV(PD0);
+  else
+    PORTD &= (uint8_t) ~_BV(PD0);
+}
+
+static inline void toggle_dirty_led(void) {
+  PIND |= _BV(PD0);
+}
+
+#  define HAVE_IEEE
+#  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
+#  define IEEE_ATN_INT0
+
+static inline void ieee_interrupts_init(void) {
+  DDRD &= ~_BV(PD2);
+  PORTD |= _BV(PD2);
+  EICRA |= _BV(ISC00);
+  EIMSK |= _BV(INT0);
+}
+
+
+#  define HAVE_7516X            /* Device uses 75160/75161 bus drivers */
+#  define IEEE_PORT_TE          PORTC   /* TE */
+#  define IEEE_DDR_TE           DDRC
+#  define IEEE_PIN_TE           PC3
+#  define IEEE_INPUT_ATN        PIND    /* ATN */
+#  define IEEE_PORT_ATN         PORTD
+#  define IEEE_DDR_ATN          DDRD
+#  define IEEE_PIN_ATN          PD2
+#  define IEEE_INPUT_NDAC       PINC    /* NDAC */
+#  define IEEE_PORT_NDAC        PORTC
+#  define IEEE_DDR_NDAC         DDRC
+#  define IEEE_PIN_NDAC         PC6
+#  define IEEE_INPUT_NRFD       PINC    /* NRFD */
+#  define IEEE_PORT_NRFD        PORTC
+#  define IEEE_DDR_NRFD         DDRC
+#  define IEEE_PIN_NRFD         PC7
+#  define IEEE_INPUT_DAV        PINC    /* DAV */
+#  define IEEE_PORT_DAV         PORTC
+#  define IEEE_DDR_DAV          DDRC
+#  define IEEE_PIN_DAV          PC5
+#  define IEEE_INPUT_EOI        PINC    /* EOI */
+#  define IEEE_PORT_EOI         PORTC
+#  define IEEE_DDR_EOI          DDRC
+#  define IEEE_PIN_EOI          PC4
+#  define IEEE_INPUT_IFC        PINC    /* IFC */
+#  define IEEE_PORT_IFC         PORTC
+#  define IEEE_DDR_IFC          DDRC
+#  define IEEE_PIN_IFC          PC2
+#  define IEEE_D_PIN            PINA    /* Data */
+#  define IEEE_D_PORT           PORTA
+#  define IEEE_D_DDR            DDRA
+#  define IEEE_BIT_DC           0   /* Define as 0 if DC tied to +5V */
+#  define IEEE_BIT_TE           _BV(IEEE_PIN_TE)
+#  define IEEE_BIT_SRQ          0   /* Define as 0 if SRQ not connected */
+#  define IEEE_BIT_REN          0   /* Define as 0 if REN not connected */
+#  define IEEE_BIT_IFC          _BV(IEEE_PIN_IFC)
+
+static inline void ieee_interface_init(void) {
+  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
+  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
+  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
+  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
+  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
+  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
+}
+
+
+static inline void set_ieee_data(uint8_t data) {
+  PORTA &= 0b10000000;
+  PORTA |= (~data) & 0b01111111;
+  if (data & 128) PORTD &= _BV(PD7);
+  else            PORTD |= _BV(PD7);
+}
+
+static inline uint8_t get_ieee_data(void) {
+   uint8_t data = PINA & 0b01111111;
+   if (PIND & _BV(PD7)) data |= 128;
+   return(~data);
+}
+
+static inline void ieee_ports_listen (void)
+{
+  IEEE_D_DDR = 0;                                 // data ports as inputs
+  IEEE_D_PORT |= 0b01111111;                      // enable pull-ups for data lines
+  DDRD &= ~_BV(PD7);
+  PORTD |= _BV(PD7);
+  IEEE_DDR_DAV &= (uint8_t) ~_BV(IEEE_PIN_DAV);   // DAV as input
+  IEEE_DDR_EOI &= (uint8_t) ~_BV(IEEE_PIN_EOI);   // EOI as input
+  IEEE_PORT_TE &= (uint8_t) ~_BV(IEEE_PIN_TE);    // TE=0: 7516x listen
+  IEEE_DDR_NDAC |= _BV(IEEE_PIN_NDAC);            // NDAC as output
+  IEEE_DDR_NRFD |= _BV(IEEE_PIN_NRFD);            // NRFD as output
+  IEEE_PORT_DAV |= _BV(IEEE_PIN_DAV);             // Enable pull-up for DAV
+  IEEE_PORT_EOI |= _BV(IEEE_PIN_EOI);             // Enable pull-up for EOI
+}
+
+static inline void ieee_ports_talk (void)
+{
+  IEEE_DDR_NDAC &= (uint8_t)~_BV(IEEE_PIN_NDAC);  // NDAC as input
+  IEEE_DDR_NRFD &= (uint8_t)~_BV(IEEE_PIN_NRFD);  // NRFD as input
+  IEEE_PORT_NDAC |= _BV(IEEE_PIN_NDAC);           // Enable pull-up for NDAC
+  IEEE_PORT_NRFD |= _BV(IEEE_PIN_NRFD);           // Enable pull-up for NRFD
+  IEEE_PORT_TE |= _BV(IEEE_PIN_TE);               // TE=1: 7516x talk enable
+  IEEE_D_PORT |= 0b01111111;                      // all data lines high
+  PORTD |= _BV(PD7);
+  IEEE_D_DDR   = 0b01111111;                      // data ports as outputs
+  DDRD |= _BV(PD7);
+  IEEE_PORT_DAV |= _BV(IEEE_PIN_DAV);             // Set DAV high
+  IEEE_DDR_DAV  |= _BV(IEEE_PIN_DAV);             // DAV as output
+  IEEE_PORT_EOI |= _BV(IEEE_PIN_EOI);             // Set EOI high
+  IEEE_DDR_EOI  |= _BV(IEEE_PIN_EOI);             // EOI as output
+}
+
+
+// TODO: Add ADC buttons
+#  define BUTTON_NEXT           1
+#  define BUTTON_PREV           2
+
+static inline rawbutton_t buttons_read(void) {
+  return 0xFF;
+}
+
+static inline void buttons_init(void) {
+}
+
+#  define SOFTI2C_PORT          PORTC
+#  define SOFTI2C_PIN           PINC
+#  define SOFTI2C_DDR           DDRC
+#  define SOFTI2C_BIT_SCL       PC0
+#  define SOFTI2C_BIT_SDA       PC1
+#  define SOFTI2C_DELAY         6
+
+
+#  define LCD_PORT_E            PORTD
+#  define LCD_DDR_E             DDRD
+#  define LCD_PIN_E             PD4
+
+#  define LCD_PORT_RS           PORTD
+#  define LCD_DDR_RS            DDRD
+#  define LCD_PIN_RS            PD3
+
+#  define LCD_PORT_DATA         PORTB
+#  define LCD_DDR_DATA          DDRB
+
+#  define LCD_LINES             4
+#  define LCD_COLS              20
+
+#  define LCD_ADDR_LINE1        0
+#  define LCD_ADDR_LINE2        64
+#  define LCD_ADDR_LINE3        20
+#  define LCD_ADDR_LINE4        84
+
+#  define HAVE_BOARD_INIT
+
+#  include <avr/pgmspace.h>
+#  include "lcd.h"
+
+static inline void board_init(void) {
+  lcd_init();   // ....:....1....:....2
+  lcd_puts_P(PSTR("Congrats! Your\n"
+                  "(so far) completely\n"
+                  "useless display\n"
+                  "works as desired :-)"));
 }
 
 

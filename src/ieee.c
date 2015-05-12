@@ -132,7 +132,7 @@ static inline void set_eoi_state(uint8_t x)
 #ifdef HAVE_7516X
 # define ddr_change_by_atn() \
     if(ieee_data.device_state == DEVICE_TALK) ieee_ports_listen()
-# define set_ieee_data(data) IEEE_D_PORT = (uint8_t) ~ data
+
 
   static inline void set_te_state(uint8_t x)
   {
@@ -160,34 +160,6 @@ static inline void set_eoi_state(uint8_t x)
 
   // Configure bus to passive/listen or talk
   // Toogle direction of I/O pins and safely avoid connecting two outputs
-
-  static inline void ieee_ports_listen (void)
-  {
-    IEEE_D_DDR = 0;                                 // data ports as inputs
-    IEEE_D_PORT = 0xff;                     // enable pull-ups for data lines
-    IEEE_DDR_DAV &= (uint8_t) ~_BV(IEEE_PIN_DAV);   // DAV as input
-    IEEE_DDR_EOI &= (uint8_t) ~_BV(IEEE_PIN_EOI);   // EOI as input
-    set_te_state(0);                                // 7516x listen
-    IEEE_DDR_NDAC |= _BV(IEEE_PIN_NDAC);            // NDAC as output
-    IEEE_DDR_NRFD |= _BV(IEEE_PIN_NRFD);            // NRFD as output
-    IEEE_PORT_DAV |= _BV(IEEE_PIN_DAV);             // Enable pull-up for DAV
-    IEEE_PORT_EOI |= _BV(IEEE_PIN_EOI);             // Enable pull-up for EOI
-  }
-
-  static inline void ieee_ports_talk (void)
-  {
-    IEEE_DDR_NDAC &= (uint8_t)~_BV(IEEE_PIN_NDAC);  // NDAC as input
-    IEEE_DDR_NRFD &= (uint8_t)~_BV(IEEE_PIN_NRFD);  // NRFD as input
-    IEEE_PORT_NDAC |= _BV(IEEE_PIN_NDAC);           // Enable pull-up for NDAC
-    IEEE_PORT_NRFD |= _BV(IEEE_PIN_NRFD);           // Enable pull-up for NRFD
-    set_te_state(1);                                // 7516x talk enable
-    IEEE_D_PORT = 0xff;                             // all data lines high
-    IEEE_D_DDR = 0xff;                              // data ports as outputs
-    set_dav_state(1);                               // Set DAV high
-    IEEE_DDR_DAV |= _BV(IEEE_PIN_DAV);              // DAV as output
-    set_eoi_state(1);                               // Set EOI high
-    IEEE_DDR_EOI |= _BV(IEEE_PIN_EOI);              // EOI as output
-  }
 
   static void inline ieee_bus_idle (void)
   {
@@ -235,12 +207,6 @@ static inline void set_eoi_state(uint8_t x)
   }
 
 # define set_te_state(dummy) do { } while (0)       // ignore TE
-
-  static inline void set_ieee_data (uint8_t data)
-  {
-    IEEE_D_DDR = data;
-    IEEE_D_PORT = (uint8_t) ~ data;
-  }
 
   static inline void ieee_bus_idle (void)
   {
@@ -314,7 +280,7 @@ int ieee_getc(void) {
 
   set_nrfd_state(0);    /* not ready for new data, data not yet read */
 
-  c = (uint8_t) ~ IEEE_D_PIN;   /* read data */
+  c = get_ieee_data();          /* read data */
   if(!IEEE_EOI) c |= FLAG_EOI;  /* end of transmission? */
   if(!IEEE_ATN) c |= FLAG_ATN;  /* data or command? */
 
