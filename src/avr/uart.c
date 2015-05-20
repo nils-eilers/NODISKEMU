@@ -61,13 +61,13 @@ void uart_puthex(uint8_t num) {
   if (tmp < 10)
     uart_putc('0'+tmp);
   else
-    uart_putc('a'+tmp-10);
+    uart_putc('A'+tmp-10);
 
   tmp = num & 0x0f;
   if (tmp < 10)
     uart_putc('0'+tmp);
   else
-    uart_putc('a'+tmp-10);
+    uart_putc('A'+tmp-10);
 }
 
 void uart_trace(void *ptr, uint16_t start, uint16_t len) {
