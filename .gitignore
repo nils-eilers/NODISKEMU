@@ -13,4 +13,4 @@ obj-*
 *.prg
 *.d64
 *.d81
-
+config
