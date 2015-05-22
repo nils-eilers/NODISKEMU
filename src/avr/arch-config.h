@@ -1376,11 +1376,12 @@ static inline void buttons_init(void) {
 #  define LCD_ADDR_LINE3        20
 #  define LCD_ADDR_LINE4        84
 
-#  define HAVE_BOARD_INIT
-
-#  include <avr/pgmspace.h>
-#  include "lcd.h"
-
+// Just a very simple demo as long as there is no
+// other LCD code integrated yet:
+#  ifdef CONFIG_ONBOARD_DISPLAY
+#    define HAVE_BOARD_INIT
+#    include <avr/pgmspace.h>
+#    include "lcd.h"
 static inline void board_init(void) {
   lcd_init();   // ....:....1....:....2
   lcd_puts_P(PSTR("Congrats! Your\n"
@@ -1389,7 +1390,7 @@ static inline void board_init(void) {
                   "works as desired :-)"));
 }
 
-
+#  endif
 #else
 #  error "CONFIG_HARDWARE_VARIANT is unset or set to an unknown value."
 #endif
