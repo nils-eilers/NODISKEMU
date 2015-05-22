@@ -32,20 +32,22 @@
 #define TMP             r16
 
 #define IO_SREG         0x3F
-#define IO_DDR_EOI      0x0A
-#define IO_PORT_NRFD    0x08
-#define IO_PORT_NDAC    0x08
-#define IO_DDR_NRFD     0x07
-#define IO_DDR_NDAC     0x07
-#define IO_PORT_TE      0x05
-#define IO_DDR_DAV      0x04
-#define IO_DDR_DATA     0x01
 
-#define NRFD            7
-#define NDAC            6
-#define EOI             7
-#define DAV             2
-#define TE              0
+#define IO_DDR_EOI      0x07    /* DDRC  */
+#define IO_DDR_NRFD     0x07    /* DDRC  */
+#define IO_DDR_NDAC     0x07    /* DDRC  */
+#define IO_DDR_DAV      0x07    /* DDRC  */
+#define IO_DDR_DATA     0x01    /* DDRA  */
+
+#define IO_PORT_TE      0x08    /* PORTC */
+#define IO_PORT_NRFD    0x08    /* PORTC */
+#define IO_PORT_NDAC    0x08    /* PORTC */
+
+#define NRFD            7       /* PC7   */
+#define NDAC            6       /* PC6   */
+#define DAV             5       /* PC5   */
+#define EOI             4       /* PC4   */
+#define TE              3       /* PC3   */
 
 INT0_vect:
 
