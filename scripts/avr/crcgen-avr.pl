@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Generate bootloader CRC for the LPC176x version of sd2iec
+# Generate bootloader CRC for the AVR version of sd2iec
 #
 #  Copyright (C) 2012-2014  Ingo Korb <ingo@akana.de>
 #  All rights reserved.
