@@ -2,7 +2,7 @@ Notes on buffer_t and its use
 -----------------------------
 
 buffer_t is the struct holding all information for the dynamically allocated
-buffers in sd2iec. Usually they are associated with a secondary address,
+buffers in NODISKEMU. Usually they are associated with a secondary address,
 but they can also be used for internal purposes, e.g. to read the file
 names in a swaplist or to store the BAM of a mounted disk image.
 

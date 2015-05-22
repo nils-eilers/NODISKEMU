@@ -90,7 +90,7 @@ int main(void) {
   filesystem_init(0);
   change_init();
 
-  uart_puts_P(PSTR("\r\nsd2iec " VERSION " #"));
+  uart_puts_P(PSTR("\r\nNODISKEMU " VERSION " #"));
   uart_puthex(device_address);
   uart_putcrlf();
 

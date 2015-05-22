@@ -22,11 +22,11 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-#  config-mbed: EXPERIMENTAL sd2iec configuration
+#  config-mbed: EXPERIMENTAL NODISKEMU configuration
 #               for mbed LPC1768 modules (needs external stuff!)
 #
 #
-# This file is included in the main sd2iec Makefile and also parsed
+# This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
 
 CONFIG_ARCH=lpc17xx
@@ -48,7 +48,7 @@ CONFIG_LOADER_NIPPON=y
 CONFIG_LOADER_AR6=y
 CONFIG_LOADER_ELOAD1=y
 CONFIG_HARDWARE_VARIANT=100
-CONFIG_HARDWARE_NAME=sd2iec-mbed
+CONFIG_HARDWARE_NAME=NODISKEMU-mbed
 CONFIG_SD_AUTO_RETRIES=10
 CONFIG_SD_DATACRC=y
 CONFIG_SD_BLOCKTRANSFER=y

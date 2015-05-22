@@ -1,6 +1,6 @@
 The code in this directory is meant to run on a second AVR chip,
-connected to the one running sd2iec over I2C plus one additional line
-called IntRequest. 
+connected to the one running NODISKEMU over I2C plus one additional line
+called IntRequest.
 
 It is only meant as an example, a display compatible to the 27x4 it is
 currently set up for is probably hard to find. To adapt the code for a
@@ -126,7 +126,7 @@ Parameters: byte partition, string name
 This command is issued when the current directory on a partition
 changes and transmits the affected partition number as well as the
 name of the new directory. The name is the same as the string in the
-header line of a directory listing. 
+header line of a directory listing.
 
 
 DISPLAY_CURRENT_PART: 7

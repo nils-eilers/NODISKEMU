@@ -293,7 +293,7 @@ static uint8_t iec_putc(uint8_t data, const uint8_t with_eoi) {
    *   Wait for 250us or until DATA is high or ATN is low.
    * This fixes a problem with Castle Wolfenstein.
    * Bus traces seem to indicate that a real 1541 needs
-   * about 350us between two bytes, sd2iec is usually WAY faster.
+   * about 350us between two bytes, NODISKEMU is usually WAY faster.
    */
   start_timeout(250);
   while (!IEC_DATA && IEC_ATN && !has_timed_out()) ;

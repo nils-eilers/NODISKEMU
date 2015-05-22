@@ -76,7 +76,7 @@
 #include "lpc17xx/bootinfo.S"
 
         /* ASCII string with additional information, zero-terminated */
-        .ascii "sd2iec " VERSION LONGVERSION
+        .ascii "NODISKEMU " VERSION LONGVERSION
         .byte   0
         
 

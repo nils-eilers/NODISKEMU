@@ -258,7 +258,7 @@ struct param_s {
 /**
  * struct partition_t - per-partition data
  * @fatfs      : FatFs per-drive/partition structure
- * @current_dir: current directory on FAT as seen by sd2iec
+ * @current_dir: current directory on FAT as seen by NODISKEMU
  * @fop        : pointer to the fileops structure for this partition
  * @imagehandle: file handle of a mounted image file on this partition
  * @imagetype  : disk image type mounted on this partition

@@ -46,7 +46,7 @@ include $(OBJDIR)/make.inc
 HEXFORMAT = ihex
 
 # Target file name (without extension).
-TARGET = $(OBJDIR)/sd2iec
+TARGET = $(OBJDIR)/NODISKEMU
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC  = buffers.c fatops.c fileops.c main.c errormsg.c

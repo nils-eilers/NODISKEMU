@@ -22,11 +22,11 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-#  config-sw1: sd2iec configuration for Shadowolf's MMC2IEC PCBs
+#  config-sw1: NODISKEMU configuration for Shadowolf's MMC2IEC PCBs
 #              version 1.0-1.9
 #
 #
-# This file is included in the main sd2iec Makefile and also parsed
+# This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
 
 CONFIG_ARCH=avr

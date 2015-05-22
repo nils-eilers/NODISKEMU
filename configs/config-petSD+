@@ -22,10 +22,10 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-#  config-petSD: sd2iec configuration for Nils Eilers' petSD+
+#  config-petSD: NODISKEMU configuration for Nils Eilers' petSD+
 #
 #
-# This file is included in the main sd2iec Makefile and also parsed
+# This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
 
 

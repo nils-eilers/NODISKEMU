@@ -80,7 +80,7 @@
 #define ENCODER_B      _BV(PC3)
 #define ENCODER_BUTTON _BV(PC4)
 
-/* Interrupt request line from the display to sd2iec */
+/* Interrupt request line from the display to NODISKEMU */
 #define INTRQ_PORT    PORTD
 #define INTRQ_BIT     _BV(PD6)
 #define INTRQ_SETUP() do { PORTD |= _BV(PD6); DDRD |= _BV(PD6); } while (0)

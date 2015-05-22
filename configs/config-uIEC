@@ -26,7 +26,7 @@
 #          reduce the code/ram requirements of the code.
 #
 #
-# This file is included in the main sd2iec Makefile and also parsed
+# This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
 
 CONFIG_ARCH=avr

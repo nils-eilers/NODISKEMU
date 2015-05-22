@@ -28,7 +28,7 @@ The following feature(s) will be removed in the next release:
 
 Introduction:
 =============
-sd2iec is firmware, used in hardware designs like MMC2IEC, SD2IEC, or uIEC,
+NODISKEMU is firmware, used in hardware designs like MMC2IEC, SD2IEC, or uIEC,
 that allows the Commodore serial bus to access removable storage devices
 (MMC, SD, CF) - think of it as a 1541 with a modern storage medium instead
 of disks. The project was inspired by (and uses a few bits of code from)
@@ -45,9 +45,9 @@ fastloader.
 Please note: Whenever this file talks about "D64 images" the text applies to
 all Dxx image types, i.e. D64/D71/D81/DNP unless specifically noted.
 
-If you are the author of a program that needs to detect sd2iec for
+If you are the author of a program that needs to detect NODISKEMU for
 some reason, DO NOT use M-R for this purpose. Use the UI command
-instead and check the message you get for "sd2iec" and "uiec" instead.
+instead and check the message you get for "nodiskemu" instead.
 
 
 Supported commands:
@@ -59,7 +59,7 @@ Supported commands:
   To show only directories, both =B (CMD-compatible) and =D can be used.
   On a real Commodore drive D matches everything.
   To include hidden files in the directory, use *=H - on a 1541 this doesn't
-  do anything. sd2iec marks hidden files with an H after the lock mark,
+  do anything. NODISKEMU marks hidden files with an H after the lock mark,
   i.e. "PRG<H" or "PRG H".
 
   CMD-style "short" and "long" directory listings with timestamps are supported
@@ -120,15 +120,15 @@ Supported commands:
   non-REL files in an append operation isn't supported.
 
 - D
-  Direct sector access, this is a command group introduced by sd2iec.
+  Direct sector access, this is a command group introduced by NODISKEMU.
   Some Commodore drives use D for disk duplication between two drives
-  in the same unit, an attempt to use that command with sd2iec should
+  in the same unit, an attempt to use that command with NODISKEMU should
   result in an error message.
 
   D has three subcommands: DI (Info), DR (Read) and DW (Write).
   Each of those commands requires a buffer to be opened (similiar
   to U1/U2), but due to the larger sector size of the storage devices
-  used by sd2iec it needs to be a large buffer of size 2 (512 bytes)
+  used by NODISKEMU it needs to be a large buffer of size 2 (512 bytes)
   or larger. The exception is the DI command with page set to 0,
   its result will always fir into a standard 256 byte buffer.
   If you try to use one of the commands with a buffer that is too
@@ -270,7 +270,7 @@ Supported commands:
      the seconds field is ignored and the day of week is calculated
      based on the specified date. The year must always be specified
      including the century if this format is used to set the time.
-     To save space, sd2iec only accepts this particular date/time
+     To save space, NODISKEMU only accepts this particular date/time
      representation when setting the time with T-WI and no other ISo
      8601-compliant representation.
 
@@ -395,7 +395,7 @@ Supported commands:
              The stored configuration include the extension mode,
              drive configuration and the current device address.
              If you have changed the device address by software,
-             sd2iec will power up with that address unless
+             NODISKEMU will power up with that address unless
              you have changed the device address jumpers (if available) to
              a different setting than the one active at the time the
              configuration was saved. You can think of this feature as
@@ -403,16 +403,16 @@ Supported commands:
              to a different address if this sounds logical enough to you.
 
              The "hardware overrides software overrides hardware" priority
-             was chosen to allow accessing sd2iec even when it is soft-
+             was chosen to allow accessing NODISKEMU even when it is soft-
              configured for a device number that is already taken by
              another device on the bus without having to remove that
-             device to reconfigure sd2iec (e.g. when using a C128D).
+             device to reconfigure NODISKEMU (e.g. when using a C128D).
 
   - X?       Extended version query
              This commands returns the extended version string which
              consists of the version, the processor type set at build time
              and the suffix of the configuration file (usually corresponds
-             to the short name of the hardware sd2iec was compiled for).
+             to the short name of the hardware NODISKEMU was compiled for).
 
 - M-R, M-W, M-E
   When no file is set up using XR, M-R will check a small internal
@@ -425,7 +425,7 @@ Supported commands:
   Unfortunately GEOS reads rather large parts of the drive rom using
   M-R to detect the drive, which cannot be reasonably added into the
   internal table. To enable the GEOS drive detection to work properly
-  with sd2iec and to allow switching between 1541/71/81 modes,
+  with NODISKEMU and to allow switching between 1541/71/81 modes,
   file-based M-R emulation has been implemented. If a file has been
   set up as M-R data source using the XR command, its contents will be
   returned for M-R commands that try to read an address in the range
@@ -442,11 +442,11 @@ Supported commands:
   it. Please be aware that the rom file is ONLY used for M-R
   commands. Except for some very specific situations where drive
   detection fails (e.g. GEOS) it will probably decrease compatibility
-  of sd2iec because most of the implemented fast loaders will only
+  of NODISKEMU because most of the implemented fast loaders will only
   recognize the 1541 variation of the loader.
 
   Memory writing knows about the address used for changing the device
-  address on a 1541 and will change the address of sd2iec to the
+  address on a 1541 and will change the address of NODISKEMU to the
   requested value. It will also check if the transmitted data
   corresponds to any of the known software fastloaders so the correct
   emulation code can be used when M-E is called.
@@ -480,7 +480,7 @@ FAT, but for compatibility reasons the 8.3 name is used if the long
 name exceeds 16 characters. If you use anything but ASCII characters
 on the PC or their PETSCII equivalents on the Commodore you may
 get strange characters on the other system because the LFN use
-unicode characters on disk, but sd2iec parses only the low byte
+unicode characters on disk, but NODISKEMU parses only the low byte
 of each character in the name.
 
 EEPROM file system
@@ -491,7 +491,7 @@ affort to lose. Always make sure that you have a backup. Also, the
 format may change in later releases, so please expect that the
 partition may need to be erased in the future.
 
-Devices running sd2iec always have an EEPROM to store the system
+Devices running NODISKEMU always have an EEPROM to store the system
 configuration, but on some devices this EEPROM is much larger than
 required. To utilize the empty space on these devices (currently any
 microcontroller with at least 128K of flash), a special EEPROM file
@@ -523,7 +523,7 @@ one directory entry.
 
 Partitions:
 ===========
-sd2iec features a multi-partition support similiar to that of the CMD
+NODISKEMU features a multi-partition support similiar to that of the CMD
 drives. The partitions (which may be on separate drives for some hardware
 configurations) are accessed using the drive number of the commands
 sent from the computer and are numbered starting with 1. Partition 0
@@ -538,7 +538,7 @@ third character of the command.
 To allow a "stable" access to the EEPROM file system no matter how
 many partitions are currently available, a special character has been
 introduced that will always access the EEPROM file system (if
-available). When sd2iec sees a "!" character where it expects a
+available). When NODISKEMU sees a "!" character where it expects a
 partition number and the "!" character is directly followed by a colon
 (i.e. "!:"), it will access the EEPROMFS if available. Direct access
 using the assigned partition number is of course still
@@ -548,7 +548,7 @@ for partitions 1 to 9.
 
 Software fastloaders:
 =====================
-Note: Using sd2iec without an external crystal or similiar precise
+Note: Using NODISKEMU without an external crystal or similiar precise
       clock source is not a supported configuration.
       If you try that anyway, be prepared to suffer from random
       data corruption. You have been warned.
@@ -578,9 +578,9 @@ Note: Using sd2iec without an external crystal or similiar precise
   Action Replay 6
   ---------------
   The AR6 reads a byte from the drive rom to check which fastloader it should
-  use. When file-based M-R emulation is disabled sd2iec returns a value that
+  use. When file-based M-R emulation is disabled NODISKEMU returns a value that
   should force the cartridge to use the standard kernal loader instead of its
-  many fastloaders/-savers. This means that accessind sd2iec with
+  many fastloaders/-savers. This means that accessind NODISKEMU with
   file-based rom emulation enabled will fail because the cartridge
   will enable fastloader that will probably not be recognized.
 
@@ -590,11 +590,11 @@ Note: Using sd2iec without an external crystal or similiar precise
   Dreamload
   ---------
   Dreamload uses direct track/sector access, so it is only supported
-  on D64 or similiar disk image formats. As sd2iec has to wait for commands
+  on D64 or similiar disk image formats. As NODISKEMU has to wait for commands
   from the C64 constantly the disk change buttons may become unresponsive,
   try multiple times if you need to. Dreamload is a "captive" fastloader,
-  sd2iec stay in Dreamload mode until it receives a "quit loader" command
-  from the C64. To force sd2iec to resume normal operation, hold the disk
+  NODISKEMU stay in Dreamload mode until it receives a "quit loader" command
+  from the C64. To force NODISKEMU to resume normal operation, hold the disk
   change button until the red LED turns on (just like sleep mode).
 
   Please note that Dreamload does not work with more than one device on the
@@ -633,9 +633,9 @@ Note: Using sd2iec without an external crystal or similiar precise
   GEOS 2.0 can be booted from D64 images made from original disks
   as well as D41/71/81 images created using geoMakeBoot (make sure to
   Configure the system for a 1541/1571/1581 before using geoMakeBoot).
-  When file-based M-R emulation is disabled, GEOS may detect sd2iec as
+  When file-based M-R emulation is disabled, GEOS may detect NODISKEMU as
   a 1541 or 1581, depending on the version of Configure used. This may
-  cause the system to fail to boot, e.g. if sd2iec is detected as a 1581
+  cause the system to fail to boot, e.g. if NODISKEMU is detected as a 1581
   while booting from a D64 disk image. It is recommended to set up file-
   based M-R emulation when using GEOS to avoid these problems.
 
@@ -661,7 +661,7 @@ Note: Using sd2iec without an external crystal or similiar precise
   ELoad Version 1
   ---------------
   This loader was made for EasyProg but may also be used in other programs.
-  It detects and supports the sd2iec natively.
+  It detects and supports the NODISKEMU natively.
 
 JiffyDOS:
 =========
@@ -674,7 +674,7 @@ P00/S00/U00/R00 files are transparently supported, that means they show
 up in the directory listing with their internal file name instead of the
 FAT file name. Renaming them only changes the internal name. The XE
 command defines if x00 extensions are used when writing files, by
-default sd2iec uses them for SEQ/USR/REL files but not for PRG.
+default NODISKEMU uses them for SEQ/USR/REL files but not for PRG.
 Parsing of x00 files is always enabled even when writing them is not.
 
 x00 files are recognized by checking both the extension of the file
@@ -694,7 +694,7 @@ THE WIZ) which generates broken DNP files. The usual symptom is that
 moving from a subdirectory that was created with this program back to
 its parent directory using CD:_ (left arrow) sets the current directory
 not to the parent directory, but to an incorrect sector instead. A
-workaround for this problem in sd2iec would require an unreasonable
+workaround for this problem in NODISKEMU would require an unreasonable
 amount of system resources, so it is recommended to avoid creating
 subdirectories with this version of DirMaster. It is possible to fix
 this problem using a hex editor, but the exact process is beyond the scope
@@ -705,7 +705,7 @@ M2I files:
 NOTICE: Support for M2I files will be removed in the next release, see
         the deprecation notices at the top of this file for advice.
 
-M2I files are fully supported. sd2iec supports SEQ and USR files in this
+M2I files are fully supported. NODISKEMU supports SEQ and USR files in this
 format in addition to PRG and DEL which were already implemented in MMC2IEC.
 For compatibility reasons the file type is not checked when opening files.
 Inside an M2I file the files are always shown as 0 (DEL) or 1 blocks
@@ -741,7 +741,7 @@ pins of the chip to ground.
   PC4 is pin 26 on the DIL version of the controller or pin 23 on the
   surface-mount version. PC3 is pin 25 on DIL, pin 22 on SMD.
 
-- For Shadowolf's sd2iec 1.x PCBs ("sw2"):
+- For Shadowolf's NODISKEMU 1.x PCBs ("sw2"):
   The two required pins are available on the pin header which runs
   parallel to the long side of the board. In the documentation of the
   board, the NEXT button is named "DISKSWITCH", the PREV button is
@@ -753,19 +753,19 @@ pins of the chip to ground.
   to find out how to connect it.
 
 To use this functionality, you can either create a swap list file
-yourself or let sd2iec create one for you.
+yourself or let NODISKEMU create one for you.
 
 Creating a swap list
 --------------------
 A swap list is a text file with one line per disk image or directory
 you want to be able to change into. You are not limited to using disk
 images, a swap list file may also refer to standard directories on the
-SD card or anything else the CD command of sd2iec will accept.
+SD card or anything else the CD command of NODISKEMU will accept.
 
 The swap list file is relatively tolerant against multiple styles of
-line-endings, sd2iec should be able to parse the file no matter if you
+line-endings, NODISKEMU should be able to parse the file no matter if you
 create it on a Windows system, Unix or even the C64 itself - as a side
-effect, empty lines are also ignored. By default sd2iec assumes that
+effect, empty lines are also ignored. By default NODISKEMU assumes that
 the file is encoded in ASCII (for files created on a PC or similar),
 but if the first line of the file exactly reads "#PETSCII" (in hex: 23
 50 45 54 53 43 49 49), file names are assumed to be encoded in PETSCII
@@ -792,26 +792,26 @@ again by sending "XS" on the command channel or you manually activate
 another swap list with "XS:otherfilename".
 
 Since the manual activation of swap lists is still a bit of a hassle,
-sd2iec will automatically try to activate a swap list named
+NODISKEMU will automatically try to activate a swap list named
 "AUTOSWAP.LST" in the current directory if you use the disk change
 buttons while no swap list is active. A swap list enabled in this way
 behaves almost exactly as a swap list enabled with XS, but it
 auto-deactivates when a CD (change directory) command is received by
-sd2iec. This way a different AUTOSWAP.LST file is always correctly
+NODISKEMU. This way a different AUTOSWAP.LST file is always correctly
 recognized after you have changed into a different directory.
 
-sd2iec can even auto-generate a swap list for you that contains all
+NODISKEMU can even auto-generate a swap list for you that contains all
 disk images (e.g. D64/D71/D81/DNP) in the current directory if no
 AUTOSWAP.LST is present in this directory. To do so, change into the
 directory that you want scanned and use the HOME function (see below).
-sd2iec will then create a file called AUTOSWAP.GEN and activate it as
+NODISKEMU will then create a file called AUTOSWAP.GEN and activate it as
 if it was the standard AUTOSWAP.LST, including its auto-deactivation
 features. The AUTOSWAP.GEN file will never be recognized the same way
 as AUTOSWAP.LST, so you will need to either rename the file
-(R:AUTOSWAP.LST=AUTOSWAP.GEN) or ask sd2iec to generate it again by
+(R:AUTOSWAP.LST=AUTOSWAP.GEN) or ask NODISKEMU to generate it again by
 using the HOME function in the same directory if you want to use it
 again. This mode of operation was chosen to avoid the accidental
-destruction of pre-existing AUTOSWAP.LST files and to allow sd2iec to
+destruction of pre-existing AUTOSWAP.LST files and to allow NODISKEMU to
 recognize newly-added disk images in the directory without manually
 removing the generated swap list.
 
@@ -828,14 +828,14 @@ of the file if they hit the beginning/end of the list. You can also
 hit both buttons together to trigger the HOME function which jumps to
 the first entry of the swap list.
 
-sd2iec will confirm each of these three actions with a specific
+NODISKEMU will confirm each of these three actions with a specific
 flashing pattern on the device's LEDs. The pattern first flashed both
 the red and green LEDs on for a short moment, then it flashes either
 one or both of them. For the NEXT function, the green LED flashes; for
 the PREV function the red LED flashes and for HOME both LEDs flash.
 
 If any of these three functions is activated without an active swap
-list and sd2iec finds an AUTOSWAP.LST file, they will all be treated
+list and NODISKEMU finds an AUTOSWAP.LST file, they will all be treated
 as the HOME function: The first line of the file is active and the
 red and green LEDs both flash twice. The same happens when an
 AUTOSWAP.GEN file is created, although the flashing pattern may not be
@@ -844,11 +844,11 @@ very discernible because of the preceding card activity.
 
 Sleep Mode:
 ===========
-If you hold the disk change button down for two seconds, sd2iec will
+If you hold the disk change button down for two seconds, NODISKEMU will
 enter "sleep mode". In this mode it doesn't listen to the bus at all
 until you hold down the disk change button for two seconds again
 which resumes normal operation. Sleep mode allows you to keep
-sd2iec connected to the serial bus even when you load something
+NODISKEMU connected to the serial bus even when you load something
 from a different drive that uses a fast loader that doesn't
 work with more than one device on the bus.
 
@@ -865,7 +865,7 @@ is on the card detect switch is closed. Please note that this does not
 indicate successful communication with the card but merely that the
 mechanical switch in the SD card slot is closed.
 
-On units with two sd2iec-controlled LEDs, the green (busy) LED will
+On units with two NODISKEMU-controlled LEDs, the green (busy) LED will
 indicate the state of the write protect switch - if the LED is lit,
 the write protection is on. Due to the way the write protect notch
 works on SD cards, the indication is only valid when the card is fully
@@ -896,14 +896,14 @@ Other important notes:
 
 Compilation notes:
 ==================
-sd2iec requires avr-libc version 1.6.x.
+NODISKEMU requires avr-libc version 1.6.x.
 
-sd2iec is set up to be compiled in multiple configurations, controlled by
+NODISKEMU is set up to be compiled in multiple configurations, controlled by
 configuration files. By default the Makefile looks for a file named
 'config', but you can override it by providing the name on the make
 command line with "make CONFIG=filename[,filename...]".
 
 An example configuration file named "config-example" is provided with
 the source code, as well as abridged files corresponding to the
-release binaries. If you want to compile sd2iec for a custom hardware
+release binaries. If you want to compile NODISKEMU for a custom hardware
 you may have to edit config.h too to change the port definitions.
