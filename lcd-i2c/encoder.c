@@ -1,5 +1,7 @@
-/* sd2iec - SD/MMC to Commodore serial bus interface/controller
+/* NODISKEMU - SD/MMC to IEEE-488 interface/controller
    Copyright (C) 2007-2012  Ingo Korb <ingo@akana.de>
+
+   NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 

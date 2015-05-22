@@ -1,9 +1,11 @@
-/* sd2iec - SD/MMC to Commodore serial bus interface/controller
+/* NODISKEMU - SD/MMC to IEEE-488 interface/controller
    Copyright (C) 2007-2014  Ingo Korb <ingo@akana.de>
    Final Cartridge III, DreamLoad, ELoad fastloader support:
    Copyright (C) 2008-2011  Thomas Giesel <skoe@directbox.com>
    Nippon Loader support:
    Copyright (C) 2010  Joerg Jungermann <abra@borkum.net>
+
+   NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
