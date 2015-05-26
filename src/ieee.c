@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// If nonzero, output all bus data
+#define DEBUG_BUS_DATA 0
 
 #include "config.h"
 
@@ -593,6 +595,10 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     buf->data[buf->position] = c;
     mark_buffer_dirty(buf);
 
+#if DEBUG_BUS_DATA
+    uart_puthex(c); uart_putc(' ');
+#endif
+
     if (buf->lastused < buf->position) buf->lastused = buf->position;
     buf->position++;
 
@@ -680,6 +686,11 @@ void ieee488_TalkLoop(uint8_t sa) {
         }
 
       // Listeners have received our byte
+
+#if DEBUG_BUS_DATA
+      uart_puthex(c); uart_putc(' ');
+#endif
+
     } while (buf->position++ < buf->lastused);
 
     // PET/CBM-II wait here without timeout until DAV=1
