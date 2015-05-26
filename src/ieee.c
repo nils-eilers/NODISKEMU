@@ -665,12 +665,16 @@ void ieee488_TalkLoop(uint8_t sa) {
       // Wait for NRFD low, NDAC must stay low
       while (ieee488_NRFD())
         if (ieee488_NDAC() || !ieee488_ATN()) {
+          ieee488_SetDAV(1);
+          ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T5\r\n"));
           return;
         }
 
       while (!ieee488_NDAC())           // Wait for NDAC high
         if (!ieee488_ATN()) {
+          ieee488_SetDAV(1);
+          ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T6\r\n"));
           return;
         }
@@ -686,6 +690,8 @@ void ieee488_TalkLoop(uint8_t sa) {
     if (buf->sendeoi && sa != 15 && !buf->recordlen &&
         buf->refill != directbuffer_refill) {
       buf->read = 0;
+      ieee488_SetDAV(1);
+      ieee488_SetEOI(1);                // Release DAV and EOI
       uart_puts_P(PSTR("T8\r\n"));
       break;
     }
