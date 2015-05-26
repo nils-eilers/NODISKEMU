@@ -728,12 +728,10 @@ void ieee488_Unlisten(void) {
   uart_puts_P(PSTR("ULN\r\n"));
 
   if (command_received) {
-    command_received = false;
+    command_received = open_active = false;
     parse_doscommand();
-  }
-
-  if (open_active) {
-    open_active = false;
+  } else if (open_active) {
+    command_received = open_active = false;
     datacrc = 0xffff;                   // filename in command buffer
     file_open(open_sa);
   }
