@@ -7,7 +7,7 @@ PATCHLEVEL = 0
 FIX =
 
 # Forces bootloader version to 0, comment out or leave empty for release
-PRERELEASE = ALPHA0
+PRERELEASE = ALPHA0-$(shell scripts/last-commit.sh -d)-$(shell scripts/last-commit.sh -h)
 
 #----------------------------------------------------------------------------
 # WinAVR Makefile Template written by Eric B. Weddington, Joerg Wunsch, et al.
