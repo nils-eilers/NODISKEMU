@@ -196,15 +196,16 @@ imgtype_t check_imageext(uint8_t *name) {
   t = toupper(*++ext);
 
 #ifdef CONFIG_M2I
-  if (f == 'M' && s == '2' && t == 'I')
+  if (f == 'M' && s == '2' && t == 'I')         // M2I
     return IMG_IS_M2I;
 #endif
 
   if (f == 'D')
-    if ((s == '6' && t == '4') ||
-        (s == 'N' && t == 'P') ||
-        ((s == '4' || s == '7' || s == '8') &&
-         (t == '1')))
+    if ((s == '6' && t == '4') ||               // D64
+        (s == 'N' && t == 'P') ||               // DNP
+        ((s == '4' || s == '7' || s == '8') &&  // D41, D71, D81
+         (t == '1'))           ||
+        (s == '8' && (t == '0' || t == '2')))   // D80, D82
       return IMG_IS_DISK;
 
  return IMG_UNKNOWN;
