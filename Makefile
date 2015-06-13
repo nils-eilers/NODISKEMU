@@ -4,7 +4,7 @@ ifndef CONFIG
   CONFIG = config
 endif
 
-CONFDATA     := $(shell scripts/configparser.pl --confdata $(CONFIG))
+CONFDATA     := $(shell perl scripts/configparser.pl --confdata $(CONFIG))
 CONFIGSUFFIX := $(word 1,$(CONFDATA))
 OBJDIR       := obj-$(CONFIGSUFFIX)
 CONFFILES    := $(wordlist 2,99,$(CONFDATA))
@@ -25,7 +25,7 @@ all: $(OBJDIR) $(OBJDIR)/make.inc
 
 $(OBJDIR)/make.inc: $(CONFFILES) | $(OBJDIR)
 	$(E) "  CONFIG $(CONFFILES)"
-	$(Q)scripts/configparser.pl --genfiles --makeinc $(OBJDIR)/make.inc --header $(OBJDIR)/autoconf.h $(CONFIG)
+	$(Q)perl scripts/configparser.pl --genfiles --makeinc $(OBJDIR)/make.inc --header $(OBJDIR)/autoconf.h $(CONFIG)
 
 $(OBJDIR):
 	$(E) "  MKDIR  $(OBJDIR)"
