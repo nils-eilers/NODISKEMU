@@ -22,33 +22,24 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-#  config-petSD: NODISKEMU configuration for Nils Eilers' petSD+
+#  config-petSD+: NODISKEMU configuration for Nils Eilers' petSD+
 #
 #
 # This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
-
-
-# Preferred configuration without crystal / internal RC osc.:
-CONFIG_MCU_FREQ=8000000
-CONFIG_UART_BAUDRATE=38400
-CONFIG_LFUSE=0xE2
-
-# Alternative configuration with crystal:
-#CONFIG_MCU_FREQ=18432000
-#CONFIG_UART_BAUDRATE=115200
-#CONFIG_LFUSE=0xF7
 
 CONFIG_ARCH=avr
 CONFIG_HARDWARE_NAME=petSD+
 CONFIG_HARDWARE_VARIANT=10
 CONFIG_MCU=atmega1284p
 CONFIG_LINKER_RELAX=y
+CONFIG_MCU_FREQ=18432000
 CONFIG_BOOTLOADER=y
 CONFIG_BOOT_DEVID=0x2b445370
 # UART TxD shares the port pin with the busy LED, so you'd usually
 # prefer to disable debug output
 CONFIG_UART_DEBUG=n
+CONFIG_UART_BAUDRATE=115200
 CONFIG_UART_BUF_SHIFT=8
 CONFIG_COMMAND_CHANNEL_DUMP=y
 CONFIG_SD_AUTO_RETRIES=10
@@ -68,3 +59,4 @@ CONFIG_HAVE_EEPROMFS=y
 # 2048 words boot section, Brown-out detection level at Vcc=4.3V
 CONFIG_EFUSE=0xFC
 CONFIG_HFUSE=0xD2
+CONFIG_LFUSE=0xF7
