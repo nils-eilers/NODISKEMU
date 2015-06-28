@@ -555,6 +555,19 @@ void RxChar(char c) {
 }
 
 
+
+static void ieee488_IgnoreBytes(void) {
+  // Fetch and ignore bytes in case of errors while saving
+  uint8_t BusSignals;
+  char c;
+
+  uart_puts_P(PSTR("Ignoring data\n"));
+  do {
+    BusSignals = ieee488_RxByte(&c);
+  } while (BusSignals != RX_ATN);
+}
+
+
 void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
   char    c;
   uint8_t BusSignals;
@@ -563,8 +576,11 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
   buf = find_buffer(sa);
   // Abort if there is no buffer or it's not open for writing
   // and it isn't an OPEN command
-  if ((buf == NULL || !buf->write) && (action != LL_OPEN))
+  if ((buf == NULL || !buf->write) && (action != LL_OPEN)) {
+    uart_puts_P(PSTR("LLabort\n"));
+    ieee488_IgnoreBytes();
     return;
+  }
 
   if (sa == 15)
     command_received = true;
@@ -585,6 +601,7 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     if (buf->mustflush) {
       if (buf->refill(buf)) {
         uart_puts_P(PSTR("refill abort\r\n"));
+        ieee488_IgnoreBytes();
         return;
       }
       // Search the buffer again,
@@ -609,6 +626,7 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     if (buf->recordlen && BusSignals == RX_EOI) {
       if (buf->refill(buf)) {
         uart_puts_P(PSTR("refill abort2\r\n"));
+        ieee488_IgnoreBytes();
         return;
       }
     }
