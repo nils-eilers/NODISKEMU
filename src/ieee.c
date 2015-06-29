@@ -26,7 +26,7 @@
  */
 
 // If nonzero, output all bus data
-#define DEBUG_BUS_DATA 0
+#define DEBUG_BUS_DATA 1
 
 #include "config.h"
 
