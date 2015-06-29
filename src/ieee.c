@@ -475,6 +475,7 @@ void ieee488_BusIdle(void) {
   ieee488_SetNRFD(1);                           // NRFD high
   if (ieee488_TE75160 != TE_LISTEN)
     ieee488_DataListen();
+  uart_puts_P(PSTR("idle\n"));
 }
 
 /* Please note that the init-code is spread across two functions:
@@ -755,12 +756,14 @@ void ieee488_Unlisten(void) {
   }
 
   command_length = 0;
+  ieee488_BusIdle();
 }
 
 
 void ieee488_Untalk(void) {
   uart_puts_P(PSTR("UTK\r\n"));
   ieee488_TalkingDevice = 0;            // we don't talk any more
+  ieee488_BusIdle();
 }
 
 
@@ -844,7 +847,14 @@ void ieee488_Handler(void) {
       open_sa = sa;
       ieee488_ListenLoop(LL_OPEN, sa);
     }
-  } else uart_puts_P(PSTR("UKN\r\n"));
+  } else {
+    uart_puts_P(PSTR("UKN\r\n"));
+    ieee488_BusIdle();
+  }
+
+  // Bus Idle if we're neither listener nor talker
+  if (!ieee488_ListenActive && (ieee488_TalkingDevice == 0))
+    ieee488_BusIdle();
 }
 
 
