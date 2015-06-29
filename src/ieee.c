@@ -830,6 +830,7 @@ void ieee488_Handler(void) {
       printf("CLO %d\r\n", sa);
       if (sa == 15)
         free_multiple_buffers(FMB_USER_CLEAN);
+        ieee488_TalkingDevice = 0;
       else {
         buffer_t *buf;
         buf = find_buffer(sa);
