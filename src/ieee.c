@@ -828,10 +828,10 @@ void ieee488_Handler(void) {
   } else if (cmd4 == IEEE_CLOSE) {      // CLOSE
     if (ieee488_ListenActive) {
       printf("CLO %d\r\n", sa);
-      if (sa == 15)
+      if (sa == 15) {
         free_multiple_buffers(FMB_USER_CLEAN);
         ieee488_TalkingDevice = 0;
-      else {
+      } else {
         buffer_t *buf;
         buf = find_buffer(sa);
         if (buf != NULL) {
