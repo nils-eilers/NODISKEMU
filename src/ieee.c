@@ -76,14 +76,32 @@ volatile bool ieee488_TE75161;          // direction set for ctrl lines
 #define DC_BUSMASTER    0
 #define DC_DEVICE       1
 
+// Upper three bit commands with attached device number
+#define IEEE_LISTEN      0x20    // 0x20 - 0x3E
+#define IEEE_UNLISTEN    0x3F
+#define IEEE_TALK        0x40    // 0x40 - 0x5E
+#define IEEE_UNTALK      0x5F
 
+// Upper four bit commands with attached secondary address
+#define IEEE_SECONDARY   0x60
+#define IEEE_CLOSE       0xE0
+#define IEEE_OPEN        0xF0
+
+
+static uint8_t ieee488_ListenActive;     // device number
+static uint8_t ieee488_TalkingDevice;    // device number if we are talker
+static bool    command_received;
+static bool    open_active;
+static uint8_t open_sa;
+static bool    ieee488_IFCreceived;
 
 
 // ieee488_RxByte return values:
 enum {
   RX_DATA,                              // byte received, EOI not set
   RX_EOI,                               // byte received, EOI set
-  RX_ATN                                // aborted by ATN
+  RX_ATN,                               // aborted by ATN
+  RX_IFC                                // aborted by IFC
 };
 
 // listen_loop actions:
@@ -105,6 +123,33 @@ static inline void ieee488_SetEOI(bool x);
 static inline void ieee488_SetDAV(bool x);
 static inline void ieee488_SetNDAC(bool x);
 static inline void ieee488_SetNRFD(bool x);
+
+
+#ifdef IEEE_INPUT_IFC
+static inline uint8_t ieee488_IFC(void) {
+  return IEEE_INPUT_IFC & _BV(IEEE_PIN_IFC);
+}
+
+
+static inline bool ieee488_CheckIFC(void) {
+  if (ieee488_IFC()) return false;
+  ieee488_IFCreceived = true;
+  return true;
+}
+
+
+#else
+static inline uint8_t ieee488_IFC(void) {
+  return 0xff;
+}
+
+
+static inline bool ieee488_CheckIFC(void) {
+  return false;
+}
+#endif
+
+
 
 static inline uint8_t ieee488_ATN(void) {
   return IEEE_INPUT_ATN & _BV(IEEE_PIN_ATN);
@@ -475,7 +520,7 @@ void ieee488_BusIdle(void) {
   ieee488_SetNRFD(1);                           // NRFD high
   if (ieee488_TE75160 != TE_LISTEN)
     ieee488_DataListen();
-  uart_puts_P(PSTR("idle\n"));
+  uart_puts_P(PSTR("idle\r\n"));
 }
 
 /* Please note that the init-code is spread across two functions:
@@ -484,6 +529,8 @@ void ieee488_BusIdle(void) {
    there and called as such from main().
 */
 void ieee488_Init(void) {
+  ieee488_ListenActive = ieee488_TalkingDevice = open_sa = 0;
+  command_received = open_active = false;
   device_hw_address_init();
   device_address = device_hw_address();
   ieee488_InitDC();
@@ -500,24 +547,6 @@ void ieee488_Init(void) {
 
 void bus_init(void) __attribute__((weak, alias("ieee488_Init")));
 
-// Upper three bit commands with attached device number
-#define IEEE_LISTEN      0x20    // 0x20 - 0x3E
-#define IEEE_UNLISTEN    0x3F
-#define IEEE_TALK        0x40    // 0x40 - 0x5E
-#define IEEE_UNTALK      0x5F
-
-// Upper four bit commands with attached secondary address
-#define IEEE_SECONDARY   0x60
-#define IEEE_CLOSE       0xE0
-#define IEEE_OPEN        0xF0
-
-
-uint8_t ieee488_ListenActive;     // device number
-uint8_t ieee488_TalkingDevice;    // device number if we are talker
-bool    command_received;
-bool    open_active;
-uint8_t open_sa;
-
 
 uint8_t ieee488_RxByte(char *c) {
   uint8_t eoi = RX_DATA;
@@ -530,6 +559,7 @@ uint8_t ieee488_RxByte(char *c) {
     do {
       if (!ieee488_ATN())
         return RX_ATN;                  // ATN became low, abort
+      if (ieee488_CheckIFC()) return RX_IFC;
     } while (ieee488_DAV());            // Wait for DAV low
     // DAV is now low, NDAC must be high in max. 64 ms
     ieee488_SetNRFD(0);
@@ -539,11 +569,12 @@ uint8_t ieee488_RxByte(char *c) {
   } while (ieee488_DAV());              // If DAV is high again, we've
                                         // seen only a glitch
   ieee488_SetNDAC(1);
+
   do {
-    if (!ieee488_ATN())
-      return RX_ATN;                    // ATN became low, abort
-  }
-  while (!ieee488_DAV());               // wait for DAV high
+    if (ieee488_CheckIFC()) return RX_IFC;
+    if (!ieee488_ATN()) return RX_ATN;
+  } while (!ieee488_DAV());             // wait for DAV high
+
   ieee488_SetNDAC(0);
   return eoi;
 }
@@ -565,7 +596,7 @@ static void ieee488_IgnoreBytes(void) {
   uart_puts_P(PSTR("Ignoring data\n"));
   do {
     BusSignals = ieee488_RxByte(&c);
-  } while (BusSignals != RX_ATN);
+  } while ((BusSignals != RX_ATN) && (BusSignals != RX_IFC));
 }
 
 
@@ -591,7 +622,9 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
   for (;;) {
     BusSignals = ieee488_RxByte(&c);  // Read byte from IEEE bus
 
-    if (BusSignals == RX_ATN) return; // ATN received, abort
+    if (BusSignals == RX_ATN || BusSignals == RX_IFC)
+      return; // ATN received, abort
+    if (ieee488_CheckIFC()) return;
 
     if (action == LL_OPEN || command_received) {
       RxChar(c);
@@ -647,25 +680,30 @@ void ieee488_TalkLoop(uint8_t sa) {
   buf = find_buffer(sa);
   if (buf == NULL) {
     uart_puts_P(PSTR("T0\r\n"));
-    return;
+    goto cleanup;
   }
 
   ieee488_CtrlPortsTalk();              // Set hardware to TALK mode
 
   while (buf->read) {
     do {
+      if (ieee488_CheckIFC()) return;   // IFC received, abort
       ieee488_SetDAV(1);                // Release DAV and EOI
       ieee488_SetEOI(1);
-      while (ieee488_NDAC())            // Wait for NDAC low
+      while (ieee488_NDAC()) {          // Wait for NDAC low
         if (!ieee488_ATN()) {
           uart_puts_P(PSTR("T1\r\n"));
-          return;
+          goto cleanup;
         }
-      while (!ieee488_NRFD())           // Wait for NRFD high
+        if (ieee488_CheckIFC()) return;
+      }
+      while (!ieee488_NRFD()) {         // Wait for NRFD high
         if (!ieee488_ATN()) {
           uart_puts_P(PSTR("T2\r\n"));
           return;
         }
+        if (ieee488_CheckIFC()) return;
+      }
 
       // Fetch preloaded byte within less than 64 ms
       LastByte = (buf->position == buf->lastused);
@@ -673,7 +711,7 @@ void ieee488_TalkLoop(uint8_t sa) {
 
       if (ieee488_NDAC() || !ieee488_ATN()) {   // NDAC must stay low
         uart_puts_P(PSTR("T3\r\n"));
-        return;
+        goto cleanup;
       }
 
       ieee488_SetEOI(LastByte && buf->sendeoi ? 0 : 1);
@@ -688,21 +726,25 @@ void ieee488_TalkLoop(uint8_t sa) {
       ieee488_SetDAV(0);                // Say data valid
 
       // Wait for NRFD low, NDAC must stay low
-      while (ieee488_NRFD())
+      while (ieee488_NRFD()) {
         if (ieee488_NDAC() || !ieee488_ATN()) {
           ieee488_SetDAV(1);
           ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T5\r\n"));
-          return;
+          goto cleanup;
         }
+        if (ieee488_CheckIFC()) return;
+      }
 
-      while (!ieee488_NDAC())           // Wait for NDAC high
+      while (!ieee488_NDAC()) {         // Wait for NDAC high
         if (!ieee488_ATN()) {
           ieee488_SetDAV(1);
           ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T6\r\n"));
           return;
         }
+        if (ieee488_CheckIFC()) return;
+      }
 
       // Listeners have received our byte
 
@@ -736,6 +778,8 @@ void ieee488_TalkLoop(uint8_t sa) {
     // Search the buffer again, it can change when using large buffers
     buf = find_buffer(sa);
   }
+
+cleanup:
   ieee488_BusIdle();
   uart_puts_P(PSTR("TA\r\n"));
 }
@@ -767,6 +811,16 @@ void ieee488_Untalk(void) {
 }
 
 
+void ieee488_ProcessIFC(void) {
+  ieee488_IFCreceived = false;
+  uart_puts_P(PSTR("\r\nIFC\r\n"));
+  free_multiple_buffers(FMB_USER_CLEAN);
+  ieee488_Init();
+  set_error(ERROR_DOSVERSION);
+  while(!ieee488_IFC());
+}
+
+
 void ieee488_Handler(void) {
   uint8_t cmd, cmd3, cmd4;              // Received IEEE-488 command byte
   uint8_t Device;                       // device number from cmd byte
@@ -775,83 +829,96 @@ void ieee488_Handler(void) {
   //if (!(ieee488_ListenActive || ieee488_TalkingDevice))
   //   set_busy_led(0);
 
-  if (ieee488_ATN())
-    return;                             // Wait for ATN low
+  if (ieee488_CheckIFC()) return;       // Check IFC
+  if (ieee488_ATN()) return;            // Wait for ATN low
 
   // ATN interrupt routine switched to LISTEN mode, released NDAC
   // and pulled NRFD low. We can wait here any time long until we
   // release NRFD.
 
-  ieee488_SetNDAC(0);
-  ieee488_SetNRFD(1);                   // Say ready for data
-  if (ieee488_TE75160 != TE_LISTEN) ieee488_DataListen();
-  while (ieee488_DAV())                 // Wait for DAV low
-    if (ieee488_ATN())
-      return;
-  ieee488_SetNRFD(0);                   // Say not ready for data
-  cmd = ieee488_Data();
-  ieee488_SetNDAC(1);                   // Say data accepted
-  while (!ieee488_DAV());               // Wait for DAV high
 
-  cmd3   = cmd & 0b11100000;
-  cmd4   = cmd & 0b11110000;
-  Device = cmd & 0b00011111;
-  sa     = cmd & 0b00001111;
+  for (;;) {
 
-  uart_puthex(cmd); uart_putc(' ');
+    // Fetch all commands sent in the same ATN-low-cycle
 
-  if (cmd == IEEE_UNLISTEN)             // UNLISTEN
-    ieee488_Unlisten();
-  else if (cmd == IEEE_UNTALK)          // UNTALK
-    ieee488_Untalk();
-  else if (cmd3 == IEEE_LISTEN) {       // LISTEN
-    if (Device == device_address) {
-      uart_puts_P(PSTR("LSN\r\n"));
-      ieee488_ListenActive = Device;
-      //set_busy_led(1);
+    ieee488_SetNDAC(0);
+    ieee488_SetNRFD(1);                   // Say ready for data
+    if (ieee488_TE75160 != TE_LISTEN) ieee488_DataListen();
+
+    while (ieee488_DAV()) {               // Wait for DAV low
+      if (ieee488_ATN()) goto cleanup;    // ATN became hi, abort
+      if (ieee488_CheckIFC()) return;
     }
-  } else if (cmd3 == IEEE_TALK) {       // TALK
-    if (Device == device_address) {
-      uart_puts_P(PSTR("TLK\r\n"));
-      ieee488_TalkingDevice = Device;
-      //set_busy_led(1);
-    }
-  } else if (cmd4 == IEEE_SECONDARY) {  // DATA
-    while (!ieee488_ATN());             // Wait for ATN high
-    if (ieee488_ListenActive) {
-      printf("DTA L %d\r\n", sa);
-      ieee488_ListenLoop(LL_RECEIVE, sa);
-    } else if (ieee488_TalkingDevice) {
-      printf("DTA T %d\r\n", sa);
-      ieee488_TalkLoop(sa);
-    }
-  } else if (cmd4 == IEEE_CLOSE) {      // CLOSE
-    if (ieee488_ListenActive) {
-      printf("CLO %d\r\n", sa);
-      if (sa == 15) {
-        free_multiple_buffers(FMB_USER_CLEAN);
-        ieee488_TalkingDevice = 0;
-      } else {
-        buffer_t *buf;
-        buf = find_buffer(sa);
-        if (buf != NULL) {
-          buf->cleanup(buf);
-          free_buffer(buf);
+
+
+    ieee488_SetNRFD(0);                   // Say not ready for data
+    cmd = ieee488_Data();
+    ieee488_SetNDAC(1);                   // Say data accepted
+    while (!ieee488_DAV())                // Wait for DAV high
+      if (ieee488_CheckIFC()) return;
+
+    cmd3   = cmd & 0b11100000;
+    cmd4   = cmd & 0b11110000;
+    Device = cmd & 0b00011111;
+    sa     = cmd & 0b00001111;
+
+    uart_puthex(cmd); uart_putc(' ');
+
+    if (cmd == IEEE_UNLISTEN)             // UNLISTEN
+      ieee488_Unlisten();
+    else if (cmd == IEEE_UNTALK)          // UNTALK
+      ieee488_Untalk();
+    else if (cmd3 == IEEE_LISTEN) {       // LISTEN
+      if (Device == device_address) {
+        uart_puts_P(PSTR("LSN\r\n"));
+        ieee488_ListenActive = Device;
+        //set_busy_led(1);
+      }
+    } else if (cmd3 == IEEE_TALK) {       // TALK
+      if (Device == device_address) {
+        uart_puts_P(PSTR("TLK\r\n"));
+        ieee488_TalkingDevice = Device;
+        //set_busy_led(1);
+      }
+    } else if (cmd4 == IEEE_SECONDARY) {  // DATA
+      while (!ieee488_ATN());             // Wait for ATN high
+      if (ieee488_ListenActive) {
+        printf("DTA L %d\r\n", sa);
+        ieee488_ListenLoop(LL_RECEIVE, sa);
+      } else if (ieee488_TalkingDevice) {
+        printf("DTA T %d\r\n", sa);
+        ieee488_TalkLoop(sa);
+      }
+    } else if (cmd4 == IEEE_CLOSE) {      // CLOSE
+      if (ieee488_ListenActive) {
+        printf("CLO %d\r\n", sa);
+        if (sa == 15) {
+          free_multiple_buffers(FMB_USER_CLEAN);
+          ieee488_TalkingDevice = 0;
+        } else {
+          buffer_t *buf;
+          buf = find_buffer(sa);
+          if (buf != NULL) {
+            buf->cleanup(buf);
+            free_buffer(buf);
+          }
         }
       }
+    } else if (cmd4 == IEEE_OPEN) {       // OPEN
+      while (!ieee488_ATN())              // Wait for ATN high
+        if (ieee488_CheckIFC()) return;
+      if (ieee488_ListenActive) {
+        printf("OPN %d\r\n", sa);
+        open_active = true;
+        open_sa = sa;
+        ieee488_ListenLoop(LL_OPEN, sa);
+      }
+    } else {
+      uart_puts_P(PSTR("UKN\r\n"));
     }
-  } else if (cmd4 == IEEE_OPEN) {       // OPEN
-    while (!ieee488_ATN());             // Wait for ATN high
-    if (ieee488_ListenActive) {
-      printf("OPN %d\r\n", sa);
-      open_active = true;
-      open_sa = sa;
-      ieee488_ListenLoop(LL_OPEN, sa);
-    }
-  } else {
-    uart_puts_P(PSTR("UKN\r\n"));
-    ieee488_BusIdle();
   }
+
+cleanup:
 
   // Bus Idle if we're neither listener nor talker
   if (!ieee488_ListenActive && (ieee488_TalkingDevice == 0))
@@ -881,6 +948,7 @@ void ieee_mainloop(void) {
   set_error(ERROR_DOSVERSION);
   for (;;) {
     ieee488_Handler();
+    if (ieee488_IFCreceived) ieee488_ProcessIFC();
     handle_card_changes();
     // We are allowed to do here whatever we want for any time long
     // as long as the ATN interrupt stays enabled
