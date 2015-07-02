@@ -3,6 +3,10 @@
 #---------------- Source code ----------------
 ASMSRC = avr/crc7asm.S
 
+ifeq ($(CONFIG_UART_DEBUG),y)
+  ASMSRC += avr/uartint.S
+endif
+
 ifeq ($(CONFIG_HAVE_IEC),y)
   ASMSRC += avr/fastloader-ll.S
 endif

@@ -33,17 +33,12 @@
 #include "avrcompat.h"
 #include "uart.h"
 
-static uint8_t txbuf[1 << CONFIG_UART_BUF_SHIFT];
-static volatile uint16_t read_idx;
-static volatile uint16_t write_idx;
+// uint8_t txbuf[1 << CONFIG_UART_BUF_SHIFT];
+// FIXME: use CONFIG_UART_BUF_SHIFT in interrupt routine
+uint8_t txbuf[1 << 8];
 
-ISR(USART_UDRE_vect) {
-  if (read_idx == write_idx) return;
-  UDR = txbuf[read_idx];
-  read_idx = (read_idx+1) & (sizeof(txbuf)-1);
-  if (read_idx == write_idx)
-    UCSRB &= ~ _BV(UDRIE);
-}
+volatile uint16_t read_idx;
+volatile uint16_t write_idx;
 
 void uart_putc(char c) {
   uint16_t t=(write_idx+1) & (sizeof(txbuf)-1);
