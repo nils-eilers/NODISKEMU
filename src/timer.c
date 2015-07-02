@@ -33,6 +33,7 @@
 #include "rtc.h"
 #include "softrtc.h"
 #include "timer.h"
+#include "system.h"
 
 #define DEBOUNCE_TICKS 4
 #define SLEEP_TICKS    2*HZ
@@ -72,6 +73,10 @@ static void buttons_changed(void) {
 
 /* The main timer interrupt */
 SYSTEM_TICK_HANDLER {
+
+  /* Enable interrupts ASAP again, esp. for ATN */
+  enable_interrupts();
+
   rawbutton_t tmp = buttons_read();
 
   if (tmp != buttonstate) {

@@ -128,13 +128,4 @@ void system_reset(void) {
   restart_call();
 }
 
-/* Disable interrupts */
-void disable_interrupts(void) {
-  cli();
-}
-
-/* Enable interrupts */
-void enable_interrupts(void) {
-  sei();
-}
 

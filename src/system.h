@@ -40,8 +40,27 @@ void system_sleep(void);
 /* Reset MCU */
 __attribute__((noreturn)) void system_reset(void);
 
+
+
+/* AVR Inline Code */
+
+#ifdef __AVR__
+
+/* Disable interrupts */
+static inline void disable_interrupts(void) {
+  cli();
+}
+
+/* Enable interrupts */
+static inline void enable_interrupts(void) {
+  sei();
+}
+
+#else
+
 /* Enable/disable interrupts */
 void disable_interrupts(void);
 void enable_interrupts(void);
 
+#endif
 #endif
