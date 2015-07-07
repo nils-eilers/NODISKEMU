@@ -76,6 +76,9 @@ int main(void) {
   system_init_late();
   enable_interrupts();
 
+  /* Prompt software name and version string */
+  uart_puts_P(PSTR("\r\nNODISKEMU " VERSION "\r\n"));
+
   /* Internal-only initialisation, called here because it's faster */
   buffers_init();
   buttons_init();
@@ -90,7 +93,9 @@ int main(void) {
   filesystem_init(0);
   change_init();
 
-  uart_puts_P(PSTR("\r\nNODISKEMU " VERSION " #"));
+  /* Unit number may depend on hardware and stored settings */
+  /* so present it here at last */
+  uart_putc('#');
   uart_puthex(device_address);
   uart_putcrlf();
 
