@@ -917,6 +917,12 @@ static inline void toggle_dirty_led(void) {
 #  define IEEE_D_PIN            PINA    /* Data */
 #  define IEEE_D_PORT           PORTA
 #  define IEEE_D_DDR            DDRA
+/* IFC is only used if ethernet chip is not detected because
+   the hardware shares the port pin with ETINT ethernet interrupt */
+#  define IEEE_INPUT_IFC        PIND    /* IFC */
+#  define IEEE_PORT_IFC         PORTD
+#  define IEEE_DDR_IFC          DDRD
+#  define IEEE_PIN_IFC          PD3
 
 static inline void ieee_interface_init(void) {
   IEEE_PORT_TE  &= ~_BV(IEEE_PIN_TE);   // Set TE low
@@ -949,6 +955,9 @@ static inline void buttons_init(void) {
 #  define SOFTI2C_DELAY         6
 
 #  define HAVE_BOARD_INIT
+#  define ENC28J60_CONTROL_PORT PORTC
+#  define ENC28J60_CONTROL_CS   PC4
+#  define SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
 
 static inline void board_init(void) {
   DDRC  |= _BV(PC4);
@@ -1490,6 +1499,16 @@ static inline __attribute__((always_inline)) void sdcard_set_ss(uint8_t state) {
     SPI_PORT |= SPI_SS;
   else
     SPI_PORT &= ~SPI_SS;
+}
+#endif
+
+/* ENC28J60 ethernet interface chip select */
+#ifdef SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
+static inline __attribute__((always_inline)) void enc28j60_set_ss(uint8_t state) {
+  if (state)
+    ENC28J60_CONTROL_PORT |=  _BV(ENC28J60_CONTROL_CS);
+  else
+    ENC28J60_CONTROL_PORT &= ~_BV(ENC28J60_CONTROL_CS);
 }
 #endif
 

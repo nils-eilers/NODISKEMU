@@ -132,6 +132,12 @@ ifeq ($(CONFIG_ONBOARD_DISPLAY),y)
   SRC += avr/lcd.c
 endif
 
+# petSD requires ENC28J60 detection
+# If it is not available, the then unused ETINT pin is used for IFC
+ifeq ($(CONFIG_HARDWARE_VARIANT),8)
+  SRC += enc28j60.c
+endif
+
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)

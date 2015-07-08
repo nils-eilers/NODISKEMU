@@ -125,7 +125,52 @@ static inline void ieee488_SetNDAC(bool x);
 static inline void ieee488_SetNRFD(bool x);
 
 
+#ifdef SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
+#include "enc28j60.h"
+
+bool have_enc28j60;
+
+void ieee488_InitIFC(void) {
+  // Try to read ENC28J60's die revision to detect the chip
+  // If it's not present, use port for IFC line instead of ETINT
+  uint8_t revision = enc28j60_read(EREVID);
+  uart_puts_P(PSTR("ENC28J60 REVID: "));
+  uart_puthex(revision);
+  uart_puts_P(PSTR(", IFC "));
+  if (revision == 0 || revision == 0xFF) {
+    have_enc28j60= false;
+    IEEE_DDR_IFC &= ~_BV(IEEE_PIN_IFC);         // IFC as input
+    IEEE_PORT_IFC |= _BV(IEEE_PIN_IFC);         // enable pull-up
+    uart_puts_P(PSTR("en"));
+  } else {
+    have_enc28j60= true;
+    uart_puts_P(PSTR("dis"));
+  }
+  uart_puts_P(PSTR("abled\r\n"));
+}
+
+
+uint8_t ieee488_IFC(void) {
+  if (have_enc28j60)
+    return 0xFF;
+  else
+    return IEEE_INPUT_IFC & _BV(IEEE_PIN_IFC);
+}
+
+
+bool ieee488_CheckIFC(void) {
+  if (have_enc28j60) return false;
+  if (ieee488_IFC()) return false;
+  ieee488_IFCreceived = true;
+  return true;
+}
+#else
 #ifdef IEEE_INPUT_IFC
+static inline void ieee488_InitIFC(void) {
+  IEEE_DDR_IFC &= ~_BV(IEEE_PIN_IFC);           // IFC as input
+  IEEE_PORT_IFC |= _BV(IEEE_PIN_IFC);           // enable pull-up
+}
+
 static inline uint8_t ieee488_IFC(void) {
   return IEEE_INPUT_IFC & _BV(IEEE_PIN_IFC);
 }
@@ -136,18 +181,19 @@ static inline bool ieee488_CheckIFC(void) {
   ieee488_IFCreceived = true;
   return true;
 }
-
-
 #else
+static inline void ieee488_InitIFC(void) {}
+
 static inline uint8_t ieee488_IFC(void) {
-  return 0xff;
+  return 0xFF;
 }
 
 
 static inline bool ieee488_CheckIFC(void) {
   return false;
 }
-#endif
+#endif // #ifdef IEEE_INPUT_IFC
+#endif // #ifdef SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
 
 
 
@@ -945,6 +991,7 @@ void handle_card_changes(void) {
 
 
 void ieee_mainloop(void) {
+  ieee488_InitIFC();
   set_error(ERROR_DOSVERSION);
   for (;;) {
     ieee488_Handler();
