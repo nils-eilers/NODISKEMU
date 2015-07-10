@@ -918,12 +918,18 @@ void ieee488_Handler(void) {
       if (Device == device_address) {
         uart_puts_P(PSTR("LSN\r\n"));
         ieee488_ListenActive = Device;
+        // Override talk state because we can't be
+        // listener and talker at the same time
+        ieee488_TalkingDevice = 0;
         //set_busy_led(1);
       }
     } else if (cmd3 == IEEE_TALK) {       // TALK
       if (Device == device_address) {
         uart_puts_P(PSTR("TLK\r\n"));
         ieee488_TalkingDevice = Device;
+        // Override listen state because we can't be
+        // listener and talker at the same time
+        ieee488_ListenActive = false;
         //set_busy_led(1);
       }
     } else if (cmd4 == IEEE_SECONDARY) {  // DATA
