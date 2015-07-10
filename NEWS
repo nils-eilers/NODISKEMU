@@ -1,3 +1,8 @@
+	- Several bugfixes for the new IEEE-488 routines
+	- Add support for D80/D82
+	- Enable compilation on BSD systems
+	- Include date and git hash in version number
+
 2015-05-22 - fork to NODISKEMU
 	- IEEE-488 routines replaced with new ones rewritten
           from scratch, ported from the emily project
