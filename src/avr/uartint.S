@@ -29,8 +29,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-; FIXME: this version is still too slow for the CBM-II line
-
 .extern txbuf
 .extern read_idx
 .extern write_idx
@@ -41,22 +39,39 @@ USART0_UDRE_vect:
         push	r0
         in	r0, 0x3f	; save SREG
 
+; We want to enable interrupts ASAP again for a fast ATN acknowledge,
+; but the UDRE interrupt is level triggered. That means, it will
+; trigger as long as the UDR register is empty or it gets disabled.
+; That's why we disable the UART interrupt now:
+
         push	r18
-        push	r19
+; UCSRB &= ~ _BV(UDRIE);        ; disable UART interrupt
+        lds	r18, 0x00C1
+        andi	r18, 0xDF
+        sts	0x00C1, r18
+; Enable interrupts ASAP again, esp. for ATN
+        sei
+
+        push	r19             ; save other registers
         push	r24
         push	r25
         push	r30
         push	r31
 
+; If the transmit buffer is emtpy, return without enabling the
+; interrupt again
 ; if (read_idx == write_idx) return;
         lds	r18, read_idx
         lds	r19, read_idx+1
         lds	r24, write_idx
         lds	r25, write_idx+1
         cp	r18, r24        ; compare low byte
-        cpc	r19, r25        ; compare high byte
+        brne    .Lcont
+        cp 	r19, r25        ; compare high byte
         breq quit
+.Lcont:
 
+; There is something to transmit, copy it to the UART's data register
 ; UDR = txbuf[read_idx];
         lds	r30, read_idx
         lds	r31, read_idx+1
@@ -65,32 +80,32 @@ USART0_UDRE_vect:
         ld	r24, Z
         sts	0x00C6, r24     ; UDR0
 
-; Enable interrupts ASAP again, esp. for ATN
-        sei
-
+; Compute next position for transmit buffer
 ; read_idx = (read_idx+1) & (sizeof(txbuf)-1);
         lds	r24, read_idx
         lds	r25, read_idx+1
         adiw	r24, 1          ; increment
         eor	r25, r25        ; clear high byte
+        sts	read_idx,   r24
         sts	read_idx+1, r25
-        sts	read_idx, r24
 
-;  if (read_idx == write_idx)
-        lds	r18, read_idx
-        lds	r19, read_idx+1
-        lds	r24, write_idx
-        lds	r25, write_idx+1
+; If the transmit buffer is empty now, leave the UART interrupt disabled
+; if (read_idx == write_idx)    ; buffer empty?
+        lds	r18, write_idx
+        lds	r19, write_idx+1
         cp	r18, r24
-        cpc	r19, r25
+        brne .Lcont2
+        cp 	r19, r25
         brne    quit
-; UCSRB &= ~ _BV(UDRIE);
+.Lcont2:
+
+; no, enable uart interrupt again
         lds	r24, 0x00C1
-        andi	r24, 0xDF
+        ori 	r24, 0x20
         sts	0x00C1, r24
 
 quit:
-        pop	r31
+        pop	r31             ; restore registers
         pop	r30
         pop	r25
         pop	r24
