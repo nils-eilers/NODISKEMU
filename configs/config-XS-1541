@@ -23,7 +23,6 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #  config-XS-1541: NODISKEMU configuration for XS-1541 boards
-#                  (currently IEEE488-only)
 #
 #
 # This file is included in the main NODISKEMU Makefile and also parsed
@@ -46,7 +45,8 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 CONFIG_BUFFER_COUNT=6
 CONFIG_MAX_PARTITIONS=2
 CONFIG_RTC_SOFTWARE=y
-#CONFIG_HAVE_IEEE=y
+# Enable IEEE-488 by default
+CONFIG_HAVE_IEEE=y
 # Device has a serial Commodore bus
 #CONFIG_HAVE_IEC=y
 CONFIG_M2I=y
