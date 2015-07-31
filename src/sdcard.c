@@ -44,6 +44,9 @@
 #  define MAX_CARDS 1
 #endif
 
+/* Timeouts for SD card operations */
+#define CARD_TIMEOUT_TICKS        (HZ*0.6)      /* timeout = 600 ms */
+
 /* SD/MMC commands */
 #define GO_IDLE_STATE             0x40
 #define SEND_OP_COND              0x41
@@ -193,7 +196,7 @@ SD2_CHANGE_HANDLER {
 /* (with 500ms timeout) */
 static uint8_t expect_byte(uint8_t value) {
   uint8_t b;
-  tick_t  timeout = getticks() + HZ/2;
+  tick_t  timeout = getticks() + CARD_TIMEOUT_TICKS;
 
   do {
     b = spi_rx_byte();
@@ -267,7 +270,7 @@ static uint8_t send_command(const uint8_t  card,
     spi_tx_byte(crc);
 
     /* wait up to 500ms for a valid response */
-    timeout = getticks() + HZ/2;
+    timeout = getticks() + CARD_TIMEOUT_TICKS;
     do {
       res = spi_rx_byte();
     } while ((res & 0x80) &&
@@ -426,7 +429,7 @@ DSTATUS sd_initialize(BYTE drv) {
   deselect_card();
 
   /* tell SD/SDHC cards to initialize */
-  timeout = getticks() + HZ/2;
+  timeout = getticks() + CARD_TIMEOUT_TICKS;
   do {
     /* send APP_CMD */
     res = send_command(drv, APP_CMD, 0);
@@ -460,7 +463,7 @@ DSTATUS sd_initialize(BYTE drv) {
 
  not_sd:
   /* tell MMC cards to initialize (SD ignores this) */
-  timeout = getticks() + HZ/2;
+  timeout = getticks() + CARD_TIMEOUT_TICKS;
   do {
     res = send_command(drv, SEND_OP_COND, 1L<<30);
     deselect_card();
