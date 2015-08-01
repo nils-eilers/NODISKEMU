@@ -50,7 +50,7 @@ TARGET = $(OBJDIR)/NODISKEMU
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC  = buffers.c fatops.c fileops.c main.c errormsg.c
-SRC += doscmd.c ff.c d64ops.c diskchange.c
+SRC += doscmd.c ff.c d64ops.c diskchange.c diagnose.c
 SRC += eeprom-conf.c parser.c utils.c led.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
 SRC += $(CONFIG_ARCH)/system.c
@@ -136,6 +136,11 @@ endif
 # If it is not available, the then unused ETINT pin is used for IFC
 ifeq ($(CONFIG_HARDWARE_VARIANT),8)
   SRC += enc28j60.c
+endif
+
+# petSD+ uses analog/digital converter to read the buttons
+ifeq ($(CONFIG_HARDWARE_VARIANT),10)
+  SRC += avr/analogbuttons.c
 endif
 
 # Optimization level, can be [0, 1, 2, 3, s].

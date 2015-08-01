@@ -48,6 +48,7 @@
 #include "uart.h"
 #include "ustring.h"
 #include "utils.h"
+#include "diagnose.h"
 
 
 #if defined(__AVR__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 1))
@@ -115,15 +116,7 @@ int main(void) {
 
 #if defined(HAVE_SD) && BUTTON_PREV != 0
   /* card switch diagnostic aid - hold down PREV button to use */
-  if (!(buttons_read() & BUTTON_PREV)) {
-    while (buttons_read() & BUTTON_NEXT) {
-      set_dirty_led(sdcard_detect());
-# ifndef SINGLE_LED
-      set_busy_led(sdcard_wp());
-# endif
-    }
-    reset_key(0xff);
-  }
+  if (!(buttons_read() & BUTTON_PREV)) board_diagnose();
 #endif
 
   bus_mainloop();

@@ -1258,7 +1258,14 @@ static inline void buttons_init(void) {
 #    define HAVE_BOARD_INIT
 #    include <avr/pgmspace.h>
 #    include "lcd.h"
+#    include "analogbuttons.h"
+#    include "diagnose.h"
 static inline void board_init(void) {
+  // TODO: rewrite buttons_read() to make this check work in main()
+  // Hold PREV button during reset/power on for board diagose
+  adc_init();
+  uint16_t buttons = adc_value();
+  if (buttons > 580 && buttons < 630) board_diagnose();
   lcd_init();   // ....:....1....:....2
   lcd_puts_P(PSTR("Congrats! Your\n"
                   "(so far) completely\n"
