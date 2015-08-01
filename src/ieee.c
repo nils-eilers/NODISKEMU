@@ -1000,6 +1000,9 @@ void ieee_mainloop(void) {
   ieee488_InitIFC();
   set_error(ERROR_DOSVERSION);
   for (;;) {
+    //FIXME: something disturbs the LEDs on the petSD+
+    //re-assign port definitions here regulary as a workaround :-/
+    leds_init();
     ieee488_Handler();
     if (ieee488_IFCreceived) ieee488_ProcessIFC();
     handle_card_changes();
