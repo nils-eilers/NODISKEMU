@@ -256,16 +256,15 @@ static inline uint8_t ieee488_Data(void) {
 }
 
 static inline void ieee488_DataListen(void) {
-  // This code assumes that D7 on this port is also used as input!
-  IEEE_D_DDR  = 0x00;                   // data lines as input
-  IEEE_DDR_D7 &= _BV(IEEE_PIN_D7);
+  IEEE_D_DDR &= 0b10000000;             // data lines as input
+  IEEE_DDR_D7 &= ~_BV(IEEE_PIN_D7);
   ieee488_TE75160 = TE_LISTEN;
 }
 
 
 static inline void ieee488_DataTalk(void) {
-  IEEE_D_PORT = 0b01111111;             // release data lines
-  IEEE_D_DDR  = 0b01111111;             // data lines as output
+  IEEE_D_PORT |= 0b01111111;            // release data lines
+  IEEE_D_DDR  |= 0b01111111;            // data lines as output
   IEEE_PORT_D7 |= _BV(IEEE_PIN_D7);
   IEEE_DDR_D7  |= _BV(IEEE_PIN_D7);
   ieee488_TE75160 = TE_TALK;
@@ -1000,9 +999,6 @@ void ieee_mainloop(void) {
   ieee488_InitIFC();
   set_error(ERROR_DOSVERSION);
   for (;;) {
-    //FIXME: something disturbs the LEDs on the petSD+
-    //re-assign port definitions here regulary as a workaround :-/
-    leds_init();
     ieee488_Handler();
     if (ieee488_IFCreceived) ieee488_ProcessIFC();
     handle_card_changes();
