@@ -54,7 +54,7 @@
 
 #define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
 
-uint8_t detected_loader;
+uint8_t detected_loader = FL_NONE;
 
 /* Function pointer to the current byte transmit/receive functions */
 /* (to simplify loaders with multiple variations of these)         */

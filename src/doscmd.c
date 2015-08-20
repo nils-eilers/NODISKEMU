@@ -297,12 +297,15 @@ date_t date_match_start;
 date_t date_match_end;
 
 uint16_t datacrc = 0xffff;
+
+#ifdef CONFIG_HAVE_IEC
 static uint8_t previous_loader;
 
 /* partial fastloader data capture */
 static uint16_t  capture_address, capture_remain;
 static uint8_t   capture_offset;
 static buffer_t *capture_buffer;
+#endif
 
 #ifdef CONFIG_STACK_TRACKING
 //FIXME: AVR-only code
@@ -1061,10 +1064,12 @@ static void parse_initialize(void) {
 
 /* --- M-E --- */
 static void handle_memexec(void) {
+#ifdef HAVE_IEC
   uint16_t address;
 
   if (command_length < 5)
     return;
+
 
   if (detected_loader == FL_NONE) {
     uart_puts_P(PSTR("M-E at "));
@@ -1111,6 +1116,7 @@ static void handle_memexec(void) {
   datacrc = 0xffff;
   previous_loader = detected_loader;
   detected_loader = FL_NONE;
+#endif /* HAVE_IEC */
 }
 
 /* --- M-R --- */
@@ -1193,6 +1199,7 @@ static void handle_memread(void) {
 }
 
 /* --- M-W --- */
+#ifdef CONFIG_HAVE_IEC
 /* helper function for copying to capture buffer, needed twice */
 static void capture_fl_data(uint16_t address, uint8_t length) {
   uint8_t dataofs = capture_address - address;
@@ -1319,6 +1326,9 @@ static void handle_memwrite(void) {
     uart_putcrlf();
   }
 }
+#else
+static inline void handle_memwrite(void) {}
+#endif /* #ifdef CONFIG_HAVE_IEC */
 
 /* --- M subparser --- */
 static void parse_memory(void) {
@@ -2044,11 +2054,15 @@ void parse_doscommand(void) {
   }
 
 #ifdef CONFIG_COMMAND_CHANNEL_DUMP
+#  ifdef CONFIG_HAVE_IEC
   /* Debugging aid: Dump the whole command via serial */
   if (detected_loader == FL_NONE) {
     /* Dump only if no loader was detected because it may ruin the timing */
     uart_trace(command_buffer,0,command_length);
   }
+#  else
+     uart_trace(command_buffer,0,command_length);
+#  endif
 #endif
 
   /* Remove one CR at end of command */

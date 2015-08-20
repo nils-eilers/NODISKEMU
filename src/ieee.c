@@ -58,7 +58,6 @@
 //  Global variables
 // -------------------------------------------------------------------------
 
-uint8_t detected_loader = FL_NONE;      // Workaround serial fastloader
 uint8_t device_address;                 // Current device address
 volatile bool ieee488_TE75160;          // direction set for data lines
 volatile bool ieee488_TE75161;          // direction set for ctrl lines
@@ -66,9 +65,6 @@ volatile bool ieee488_TE75161;          // direction set for ctrl lines
 
 #define PRESERVE_CURRENT_DIRECTORY      1
 #define CHANGE_TO_ROOT_DIRECTORY        0
-
-#define IEEE_EOI        0x100
-#define IEEE_NO_DATA    0x200
 
 #define TE_LISTEN       0
 #define TE_TALK         1
@@ -725,7 +721,8 @@ void ieee488_TalkLoop(uint8_t sa) {
   buf = find_buffer(sa);
   if (buf == NULL) {
     uart_puts_P(PSTR("T0\r\n"));
-    goto cleanup;
+    ieee488_BusIdle();
+    return;
   }
 
   ieee488_CtrlPortsTalk();              // Set hardware to TALK mode
@@ -738,7 +735,8 @@ void ieee488_TalkLoop(uint8_t sa) {
       while (ieee488_NDAC()) {          // Wait for NDAC low
         if (!ieee488_ATN()) {
           uart_puts_P(PSTR("T1\r\n"));
-          goto cleanup;
+          ieee488_BusIdle();
+          return;
         }
         if (ieee488_CheckIFC()) return;
       }
@@ -756,7 +754,8 @@ void ieee488_TalkLoop(uint8_t sa) {
 
       if (ieee488_NDAC() || !ieee488_ATN()) {   // NDAC must stay low
         uart_puts_P(PSTR("T3\r\n"));
-        goto cleanup;
+        ieee488_BusIdle();
+        return;
       }
 
       ieee488_SetEOI(LastByte && buf->sendeoi ? 0 : 1);
@@ -776,7 +775,8 @@ void ieee488_TalkLoop(uint8_t sa) {
           ieee488_SetDAV(1);
           ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T5\r\n"));
-          goto cleanup;
+          ieee488_BusIdle();
+          return;
         }
         if (ieee488_CheckIFC()) return;
       }
@@ -824,35 +824,30 @@ void ieee488_TalkLoop(uint8_t sa) {
     buf = find_buffer(sa);
   }
 
-cleanup:
-  ieee488_BusIdle();
   uart_puts_P(PSTR("TA\r\n"));
 }
 
 
 void ieee488_Unlisten(void) {
-  ieee488_ListenActive = false;
-  // If we received a command or a file name to open, process it now
   uart_puts_P(PSTR("ULN\r\n"));
+  ieee488_BusIdle();
 
+  // If we received a command or a file name to open, process it now
   if (command_received) {
-    command_received = open_active = false;
     parse_doscommand();
   } else if (open_active) {
-    command_received = open_active = false;
     datacrc = 0xffff;                   // filename in command buffer
     file_open(open_sa);
   }
-
+  ieee488_ListenActive = command_received = open_active = false;
   command_length = 0;
-  ieee488_BusIdle();
 }
 
 
 void ieee488_Untalk(void) {
   uart_puts_P(PSTR("UTK\r\n"));
-  ieee488_TalkingDevice = 0;            // we don't talk any more
   ieee488_BusIdle();
+  ieee488_TalkingDevice = 0;            // we don't talk any more
 }
 
 
@@ -871,16 +866,15 @@ void ieee488_Handler(void) {
   uint8_t Device;                       // device number from cmd byte
   uint8_t sa;                           // secondary address from cmd byte
 
-  //if (!(ieee488_ListenActive || ieee488_TalkingDevice))
-  //   set_busy_led(0);
+  // If IFC was received during last iteration, reset bus interface now
+  if (ieee488_IFCreceived) ieee488_ProcessIFC();
 
-  if (ieee488_CheckIFC()) return;       // Check IFC
-  if (ieee488_ATN()) return;            // Wait for ATN low
+  // Fetch commands sent with ATN low
+  if (ieee488_ATN() || ieee488_CheckIFC()) return;
 
   // ATN interrupt routine switched to LISTEN mode, released NDAC
   // and pulled NRFD low. We can wait here any time long until we
   // release NRFD.
-
 
   for (;;) {
 
@@ -891,8 +885,7 @@ void ieee488_Handler(void) {
     if (ieee488_TE75160 != TE_LISTEN) ieee488_DataListen();
 
     while (ieee488_DAV()) {               // Wait for DAV low
-      if (ieee488_ATN()) goto cleanup;    // ATN became hi, abort
-      if (ieee488_CheckIFC()) return;
+      if (ieee488_ATN() || ieee488_CheckIFC()) return;
     }
 
 
@@ -920,7 +913,6 @@ void ieee488_Handler(void) {
         // Override talk state because we can't be
         // listener and talker at the same time
         ieee488_TalkingDevice = 0;
-        //set_busy_led(1);
       }
     } else if (cmd3 == IEEE_TALK) {       // TALK
       if (Device == device_address) {
@@ -929,7 +921,6 @@ void ieee488_Handler(void) {
         // Override listen state because we can't be
         // listener and talker at the same time
         ieee488_ListenActive = false;
-        //set_busy_led(1);
       }
     } else if (cmd4 == IEEE_SECONDARY) {  // DATA
       while (!ieee488_ATN());             // Wait for ATN high
@@ -968,12 +959,6 @@ void ieee488_Handler(void) {
       uart_puts_P(PSTR("UKN\r\n"));
     }
   }
-
-cleanup:
-
-  // Bus Idle if we're neither listener nor talker
-  if (!ieee488_ListenActive && (ieee488_TalkingDevice == 0))
-    ieee488_BusIdle();
 }
 
 
@@ -1000,7 +985,6 @@ void ieee_mainloop(void) {
   set_error(ERROR_DOSVERSION);
   for (;;) {
     ieee488_Handler();
-    if (ieee488_IFCreceived) ieee488_ProcessIFC();
     handle_card_changes();
     // We are allowed to do here whatever we want for any time long
     // as long as the ATN interrupt stays enabled
