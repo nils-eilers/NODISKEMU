@@ -1266,11 +1266,7 @@ static inline void board_init(void) {
   adc_init();
   uint16_t buttons = adc_value();
   if (buttons > 580 && buttons < 630) board_diagnose();
-  lcd_init();   // ....:....1....:....2
-  lcd_puts_P(PSTR("Congrats! Your\n"
-                  "(so far) completely\n"
-                  "useless display\n"
-                  "works as desired :-)"));
+  lcd_init();
 }
 
 #  endif

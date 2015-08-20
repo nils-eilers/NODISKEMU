@@ -39,6 +39,8 @@
 
 #define LCD_DDRAM 128
 
+static uint16_t lcd_last_screen;
+
 uint8_t lcd_x, lcd_y;
 
 
@@ -174,3 +176,27 @@ void lcd_puts_P(const char *s) {
   while ((c = pgm_read_byte(s++)))
     lcd_putc(c);
 }
+
+
+void lcd_screen(uint16_t screen) {
+  extern const char PROGMEM versionstr[];
+
+  if (screen == lcd_last_screen) return;
+
+  switch (screen) {
+  case SCRN_SPLASH:
+    lcd_clear();
+    lcd_puts_P(versionstr);
+    lcd_locate(0,3); lcd_puts_P(PSTR(HWNAME));
+    // TODO: if available, print serial number here
+    // TODO: start timer for splash screen
+    break;
+
+  default:
+    break;
+  }
+  lcd_last_screen = screen;
+}
+
+
+

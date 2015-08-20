@@ -49,6 +49,7 @@
 #include "ustring.h"
 #include "utils.h"
 #include "diagnose.h"
+#include "lcd.h"
 
 
 #if defined(__AVR__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 1))
@@ -118,6 +119,8 @@ int main(void) {
   /* card switch diagnostic aid - hold down PREV button to use */
   if (!(buttons_read() & BUTTON_PREV)) board_diagnose();
 #endif
+
+  lcd_screen(SCRN_SPLASH);
 
   bus_mainloop();
 

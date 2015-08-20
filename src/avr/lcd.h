@@ -39,3 +39,7 @@ void lcd_send_command(uint8_t cmd);
 void lcd_putc(char c);
 void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
+void lcd_screen(uint16_t screen);
+
+
+enum { SCRN_SPLASH = 1 };
