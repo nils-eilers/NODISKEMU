@@ -23,8 +23,10 @@
 
    rtc.h: Definitions for RTC support
 
-   There is no rtc.c, the functions defined here are implemented by a
-   device-specific .c file, e.g. pcf8583.c.
+   rtc.c contains wrapper functions around the best available RTC at
+   runtime: an interrupt driven softrtc can act as fallback, if the clock
+   chip wasn't found. The main functions for a particular clock chip are
+   defined in device-specific .c files, e.g. pcf8583.c.
 
 */
 
