@@ -30,6 +30,9 @@
 
 #include "bus.h"
 
+uint8_t device_address; // Current device address
+
+
 void ieee_init(void);
 
 void __attribute__ ((noreturn)) ieee_mainloop(void);

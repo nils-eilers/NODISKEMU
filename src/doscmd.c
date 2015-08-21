@@ -55,6 +55,7 @@
 #include "utils.h"
 #include "wrapops.h"
 #include "doscmd.h"
+#include "lcd.h"
 
 #define CURSOR_RIGHT 0x1d
 
@@ -1790,6 +1791,7 @@ static void parse_time(void) {
 /*  U commands  */
 /* ------------ */
 static void parse_user(void) {
+  lcd_refresh(SCRN_STATUS);
   switch (command_buffer[1]) {
   case 'A':
   case '1':

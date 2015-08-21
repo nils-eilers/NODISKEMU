@@ -120,7 +120,7 @@ int main(void) {
   if (!(buttons_read() & BUTTON_PREV)) board_diagnose();
 #endif
 
-  lcd_screen(SCRN_SPLASH);
+  lcd_splashscreen();
 
   bus_mainloop();
 

@@ -28,6 +28,10 @@
 // If nonzero, output all bus data
 #define DEBUG_BUS_DATA 1
 
+// Ratio of bus interactions / other actions
+#define BUS_RATIO 255
+
+
 #include "config.h"
 
 #include <avr/io.h>
@@ -53,6 +57,7 @@
 #include "ctype.h"
 #include "display.h"
 #include "system.h"
+#include "lcd.h"
 
 // -------------------------------------------------------------------------
 //  Global variables
@@ -861,7 +866,7 @@ void ieee488_ProcessIFC(void) {
 }
 
 
-void ieee488_Handler(void) {
+void handle_ieee488(void) {
   uint8_t cmd, cmd3, cmd4;              // Received IEEE-488 command byte
   uint8_t Device;                       // device number from cmd byte
   uint8_t sa;                           // secondary address from cmd byte
@@ -984,11 +989,11 @@ void ieee_mainloop(void) {
   ieee488_InitIFC();
   set_error(ERROR_DOSVERSION);
   for (;;) {
-    ieee488_Handler();
-    handle_card_changes();
+    for (uint8_t i = BUS_RATIO; i != 0; i--) handle_ieee488();
     // We are allowed to do here whatever we want for any time long
     // as long as the ATN interrupt stays enabled
-    // TODO: handle user input / LCD
+    handle_card_changes();
+    handle_lcd();
   }
 }
 

@@ -27,19 +27,25 @@
 
 
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 
 #include "config.h"
 #include "lcd.h"
+#include "timer.h"
+
+#ifdef CONFIG_HAVE_IEEE
+#include "ieee.h"               // device_address
+#endif
 
 #define LCD_DELAY_US_DATA   46
 #define LCD_DELAY_MS_CLEAR  1000
 
 #define LCD_DDRAM 128
-
-static uint16_t lcd_last_screen;
 
 uint8_t lcd_x, lcd_y;
 
@@ -47,6 +53,11 @@ uint8_t lcd_x, lcd_y;
 static int lcd_putchar(char c, FILE *stream);
 static FILE lcd_stream = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
 static FILE *lcd_stdout;
+static tick_t lcd_timeout;
+static bool lcd_timer, lcd_refresh_required;
+static uint16_t lcd_current_screen;
+
+
 static inline void lcd_set_data_mode(void) {
   LCD_PORT_RS |= _BV(LCD_PIN_RS);
 }
@@ -199,10 +210,11 @@ void lcd_puts_P(const char *s) {
 }
 
 
-void lcd_screen(uint16_t screen) {
+void lcd_draw_screen(uint16_t screen) {
   extern const char PROGMEM versionstr[];
 
-  if (screen == lcd_last_screen) return;
+  lcd_current_screen = screen;
+  lcd_refresh_required = false;
 
   switch (screen) {
   case SCRN_SPLASH:
@@ -210,14 +222,42 @@ void lcd_screen(uint16_t screen) {
     lcd_puts_P(versionstr);
     lcd_locate(0,3); lcd_puts_P(PSTR(HWNAME));
     // TODO: if available, print serial number here
-    // TODO: start timer for splash screen
+    break;
+
+  case SCRN_STATUS:
+    lcd_clear();
+    lcd_printf("#%d ", device_address);
     break;
 
   default:
     break;
   }
-  lcd_last_screen = screen;
 }
 
 
+void lcd_splashscreen(void) {
+  lcd_draw_screen(SCRN_SPLASH);
+  lcd_timeout = getticks() + MS_TO_TICKS(1000 * 5);
+  lcd_timer = true;
+}
 
+
+void handle_lcd(void) {
+  tick_t ticks;
+
+  if (lcd_refresh_required) lcd_draw_screen(lcd_current_screen);
+
+  if (lcd_timer) {
+    ticks = getticks();
+    if (time_before(lcd_timeout, ticks)) {
+      lcd_draw_screen(SCRN_STATUS);
+      lcd_timer = false;
+    }
+  }
+}
+
+
+void lcd_refresh(uint16_t screen) {
+  if (lcd_current_screen == screen)
+    lcd_refresh_required = true;
+}

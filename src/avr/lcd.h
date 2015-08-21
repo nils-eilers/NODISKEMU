@@ -29,7 +29,10 @@
 #pragma once
 #include "config.h"
 
-enum { SCRN_SPLASH = 1 };
+enum {
+  SCRN_SPLASH = 1,      // Software version info, hardware name
+  SCRN_STATUS           // Disk status, device number, clock
+};
 
 
 
@@ -46,11 +49,18 @@ void lcd_send_command(uint8_t cmd);
 void lcd_putc(char c);
 void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
-void lcd_screen(uint16_t screen);
 void lcd_printf(const char *fmt, ...);
+
+void lcd_splashscreen(void);
+void lcd_draw_screen(uint16_t screen);
+void lcd_refresh(uint16_t screen);
+void handle_lcd(void);
 
 #else
 
-static inline void lcd_screen(uint16_t screen) {}
+static inline void lcd_splashscreen(void) {}
+static inline void lcd_draw_screen(uint16_t screen) {}
+static inline void lcd_refresh(uint16_t screen) {}
+static inline void handle_lcd(void) {}
 
 #endif
