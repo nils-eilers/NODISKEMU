@@ -31,8 +31,8 @@
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 
-#include "lcd.h"
 #include "config.h"
+#include "lcd.h"
 
 #define LCD_DELAY_US_DATA   46
 #define LCD_DELAY_MS_CLEAR  1000

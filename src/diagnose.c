@@ -32,10 +32,11 @@
 #include "config.h"
 #include "timer.h"
 #include "led.h"
+#include "progmem.h"
 
 
 // petSD+ diagnose
-#if CONFIG_HARDWARE_VARIANT == 10
+#if (CONFIG_HARDWARE_VARIANT == 10) && defined(CONFIG_ONBOARD_DISPLAY)
 #include "analogbuttons.h"
 #include "lcd.h"
 

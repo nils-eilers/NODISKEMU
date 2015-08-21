@@ -1252,8 +1252,7 @@ static inline void buttons_init(void) {
 #  define LCD_ADDR_LINE3        20
 #  define LCD_ADDR_LINE4        84
 
-// Just a very simple demo as long as there is no
-// other LCD code integrated yet:
+
 #  ifdef CONFIG_ONBOARD_DISPLAY
 #    define HAVE_BOARD_INIT
 #    include <avr/pgmspace.h>

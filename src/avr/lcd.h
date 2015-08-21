@@ -27,6 +27,13 @@
 
 
 #pragma once
+#include "config.h"
+
+enum { SCRN_SPLASH = 1 };
+
+
+
+#ifdef CONFIG_ONBOARD_DISPLAY
 
 extern uint8_t lcd_x; // 0..LCD_COLS-1
 extern uint8_t lcd_y; // 0..LCD_LINES-1
@@ -41,5 +48,8 @@ void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
 void lcd_screen(uint16_t screen);
 
+#else
 
-enum { SCRN_SPLASH = 1 };
+static inline void lcd_screen(uint16_t screen) {}
+
+#endif
