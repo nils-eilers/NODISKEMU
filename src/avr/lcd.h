@@ -47,6 +47,7 @@ void lcd_putc(char c);
 void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
 void lcd_screen(uint16_t screen);
+void lcd_printf(const char *fmt, ...);
 
 #else
 

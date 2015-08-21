@@ -44,6 +44,9 @@ static uint16_t lcd_last_screen;
 uint8_t lcd_x, lcd_y;
 
 
+static int lcd_putchar(char c, FILE *stream);
+static FILE lcd_stream = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
+static FILE *lcd_stdout;
 static inline void lcd_set_data_mode(void) {
   LCD_PORT_RS |= _BV(LCD_PIN_RS);
 }
@@ -144,6 +147,8 @@ void lcd_init(void) {
   lcd_write(0x0C);             // Display on, cursor off
   lcd_write(0x06);             // Automatic increment, no shift
   lcd_clear();
+
+  lcd_stdout = &lcd_stream;
 }
 
 
@@ -162,6 +167,22 @@ void lcd_putc(char c) {
     lcd_x++;
   }
 }
+
+
+static int lcd_putchar(char c, FILE *stream) {
+  lcd_putc(c);
+  return 0;
+}
+
+
+void lcd_printf_P(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vfprintf_P(lcd_stdout, fmt, args);
+  va_end(args);
+}
+
+#define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
 
 
 void lcd_puts(const char *s) {
