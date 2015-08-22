@@ -125,9 +125,7 @@ void lcd_clear(void) {
 
 
 void lcd_home(void) {
-  lcd_send_command(0x02);
-  lcd_x = lcd_y = 0;
-  _delay_us(LCD_DELAY_MS_CLEAR);
+  lcd_locate(0,0);
 }
 
 
