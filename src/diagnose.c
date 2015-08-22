@@ -44,8 +44,7 @@ void board_diagnose(void) {
   char buffer[21];
   unsigned int counter = 0;
 
-  lcd_init();
-  adc_init();
+  lcd_clear();
   sdcard_interface_init();
 
   DDRD |= _BV(PD0) | _BV(PD1);

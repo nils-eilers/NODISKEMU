@@ -1791,7 +1791,6 @@ static void parse_time(void) {
 /*  U commands  */
 /* ------------ */
 static void parse_user(void) {
-  lcd_refresh(SCRN_STATUS);
   switch (command_buffer[1]) {
   case 'A':
   case '1':
@@ -1854,6 +1853,7 @@ static void parse_user(void) {
         command_buffer[3] <= 30) {
       device_address = command_buffer[3];
       display_address(device_address);
+      lcd_update_device_addr();
       break;
     }
     /* Fall through */

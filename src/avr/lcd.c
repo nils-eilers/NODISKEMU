@@ -43,7 +43,7 @@
 #endif
 
 #define LCD_DELAY_US_DATA   46
-#define LCD_DELAY_MS_CLEAR  1000
+#define LCD_DELAY_MS_CLEAR  10
 
 #define LCD_DDRAM 128
 
@@ -54,7 +54,7 @@ static int lcd_putchar(char c, FILE *stream);
 static FILE lcd_stream = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
 static FILE *lcd_stdout;
 static tick_t lcd_timeout;
-static bool lcd_timer, lcd_refresh_required;
+static bool lcd_timer;
 static uint16_t lcd_current_screen;
 
 
@@ -208,23 +208,28 @@ void lcd_puts_P(const char *s) {
 }
 
 
+void lcd_update_device_addr(void) {
+  if (lcd_current_screen == SCRN_STATUS) {
+    lcd_home();
+    lcd_printf("#%d ", device_address);
+  }
+}
+
 void lcd_draw_screen(uint16_t screen) {
   extern const char PROGMEM versionstr[];
 
   lcd_current_screen = screen;
-  lcd_refresh_required = false;
+  lcd_clear();
 
   switch (screen) {
   case SCRN_SPLASH:
-    lcd_clear();
     lcd_puts_P(versionstr);
     lcd_locate(0,3); lcd_puts_P(PSTR(HWNAME));
     // TODO: if available, print serial number here
     break;
 
   case SCRN_STATUS:
-    lcd_clear();
-    lcd_printf("#%d ", device_address);
+    lcd_update_device_addr();
     break;
 
   default:
@@ -234,7 +239,6 @@ void lcd_draw_screen(uint16_t screen) {
 
 
 void lcd_splashscreen(void) {
-  lcd_draw_screen(SCRN_SPLASH);
   lcd_timeout = getticks() + MS_TO_TICKS(1000 * 5);
   lcd_timer = true;
 }
@@ -242,8 +246,6 @@ void lcd_splashscreen(void) {
 
 void handle_lcd(void) {
   tick_t ticks;
-
-  if (lcd_refresh_required) lcd_draw_screen(lcd_current_screen);
 
   if (lcd_timer) {
     ticks = getticks();
@@ -255,7 +257,3 @@ void handle_lcd(void) {
 }
 
 
-void lcd_refresh(uint16_t screen) {
-  if (lcd_current_screen == screen)
-    lcd_refresh_required = true;
-}

@@ -1262,10 +1262,11 @@ static inline void buttons_init(void) {
 static inline void board_init(void) {
   // TODO: rewrite buttons_read() to make this check work in main()
   // Hold PREV button during reset/power on for board diagose
+  lcd_init();
+  lcd_bootscreen();
   adc_init();
   uint16_t buttons = adc_value();
   if (buttons > 580 && buttons < 630) board_diagnose();
-  lcd_init();
 }
 
 #  endif
