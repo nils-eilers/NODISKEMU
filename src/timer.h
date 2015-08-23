@@ -89,7 +89,7 @@ static inline tick_t getticks(void) {
 #define time_before(a,b)        time_after(b,a)
 
 
-/* Timer initialisation - defined in $ARCH/timer-init.c */
+/* Timer initialisation - defined in $ARCH/arch-timer.c */
 void timer_init(void);
 
 #endif
