@@ -32,6 +32,7 @@
 #include "uart.h"
 
 /* LED-to-bit mapping - BUSY/DIRTY are only used for SINGLE_LED */
+/* The AVR assembler code relies on LED_ERROR stored in bit 0, bit value 1 */
 #define LED_ERROR      1
 #define LED_BUSY       2
 #define LED_DIRTY      4

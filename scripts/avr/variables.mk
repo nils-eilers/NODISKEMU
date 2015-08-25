@@ -1,7 +1,7 @@
 # architecture-dependent variables
 
 #---------------- Source code ----------------
-ASMSRC = avr/crc7asm.S
+ASMSRC = avr/crc7asm.S avr/timerint.S
 
 ifeq ($(CONFIG_UART_DEBUG),y)
   ASMSRC += avr/uartint.S

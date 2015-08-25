@@ -46,6 +46,10 @@ volatile uint8_t active_keys;
 rawbutton_t buttonstate;
 tick_t      lastbuttonchange;
 
+
+/* AVR timer code defined in src/avr/timerint.S */
+#ifdef SYTEM_TICK_HANDLER
+
 /* Called by the timer interrupt when the button state has changed */
 static void buttons_changed(void) {
   /* Check if the previous state was stable for two ticks */
@@ -71,11 +75,9 @@ static void buttons_changed(void) {
   buttonstate = buttons_read();
 }
 
+
 /* The main timer interrupt */
 SYSTEM_TICK_HANDLER {
-
-  /* Enable interrupts ASAP again, esp. for ATN */
-  enable_interrupts();
 
   rawbutton_t tmp = buttons_read();
 
@@ -121,3 +123,5 @@ SYSTEM_TICK_HANDLER {
   }
 #endif
 }
+
+#endif // SYSTEM_TICK_HANDLER

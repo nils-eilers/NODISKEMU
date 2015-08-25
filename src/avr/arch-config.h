@@ -38,9 +38,6 @@
 /* Return value of buttons_read() */
 typedef uint8_t rawbutton_t;
 
-/* Interrupt handler for system tick */
-#define SYSTEM_TICK_HANDLER ISR(TIMER1_COMPA_vect)
-
 /* EEPROMFS: offset and size must be multiples of 4 */
 /* to actually enable it, CONFIG_HAVE_EEPROMFS must be set in config */
 #  define EEPROMFS_OFFSET     512
@@ -181,18 +178,9 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 }
 
 /* --- "DIRTY" led, recommended color: red (errors, unwritten data in memory) --- */
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTC |= _BV(PC1);
-  else
-    PORTC &= ~_BV(PC1);
-}
-
-/* Toggle function used for error blinking */
-static inline void toggle_dirty_led(void) {
-  /* Sufficiently new AVR cores have a toggle function */
-  PINC |= _BV(PC1);
-}
+#  define LED_DIRTY_PORT        PORTC
+#  define LED_DIRTY_INPUT       PINC
+#  define LED_DIRTY_PIN         PC1
 
 
 /*** IEC signals ***/
@@ -329,16 +317,10 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
     PORTC &= ~_BV(PC0);
 }
 
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTC |= _BV(PC1);
-  else
-    PORTC &= ~_BV(PC1);
-}
+#  define LED_DIRTY_PORT        PORTC
+#  define LED_DIRTY_INPUT       PINC
+#  define LED_DIRTY_PIN         PC1
 
-static inline void toggle_dirty_led(void) {
-  PINC |= _BV(PC1);
-}
 
 #  define IEC_INPUT             PINA
 #  define IEC_DDR               DDRA
@@ -415,16 +397,10 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
     PORTA |= _BV(PA0);
 }
 
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTA &= ~_BV(PA1);
-  else
-    PORTA |= _BV(PA1);
-}
+#  define LED_DIRTY_PORT        PORTA
+#  define LED_DIRTY_INPUT       PINA
+#  define LED_DIRTY_PIN         PA1
 
-static inline void toggle_dirty_led(void) {
-  PINA |= _BV(PA1);
-}
 
 #  define IEC_INPUT             PINC
 #  define IEC_DDR               DDRC
@@ -674,16 +650,10 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
     PORTC &= ~_BV(PC0);
 }
 
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTC |= _BV(PC1);
-  else
-    PORTC &= ~_BV(PC1);
-}
+#  define LED_DIRTY_PORT        PORTC
+#  define LED_DIRTY_INPUT       PINC
+#  define LED_DIRTY_PIN         PC1
 
-static inline void toggle_dirty_led(void) {
-  PINC |= _BV(PC1);
-}
 
 #  define IEC_INPUT             PINA
 #  define IEC_DDR               DDRA
@@ -872,16 +842,10 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
     PORTD &= (uint8_t) ~_BV(PD5);
 }
 
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTD |= _BV(PD6);
-  else
-    PORTD &= (uint8_t) ~_BV(PD6);
-}
+#  define LED_DIRTY_PORT        PORTD
+#  define LED_DIRTY_INPUT       PIND
+#  define LED_DIRTY_PIN         PD6
 
-static inline void toggle_dirty_led(void) {
-  PIND |= _BV(PD6);
-}
 
 #  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
@@ -1008,16 +972,10 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
     PORTC &= ~_BV(PC0);
 }
 
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTB |= _BV(PB0);
-  else
-    PORTB &= ~_BV(PB0);
-}
+#  define LED_DIRTY_PORT        PORTB
+#  define LED_DIRTY_INPUT       PINB
+#  define LED_DIRTY_PIN         PB0
 
-static inline void toggle_dirty_led(void) {
-  PINB |= _BV(PB0);
-}
 
 // dual-interface device, currently only as a compile-time option
 #ifdef CONFIG_HAVE_IEC
@@ -1154,16 +1112,10 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #endif
 }
 
-static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
-  if (state)
-    PORTD |= _BV(PD0);
-  else
-    PORTD &=  ~_BV(PD0);
-}
+#  define LED_DIRTY_PORT        PORTD
+#  define LED_DIRTY_INPUT       PIND
+#  define LED_DIRTY_PIN         PD0
 
-static inline void toggle_dirty_led(void) {
-  PIND |= _BV(PD0);
-}
 
 #  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
@@ -1543,5 +1495,21 @@ static inline uint8_t display_intrq_active(void) {
   CONFIG_UART_BUF_SHIFT < 8  // 7 may work with short file names
 #  error Enabling both DolphinDOS and UART debugging requires CONFIG_UART_BUF_SHIFT >= 8 !
 #endif
+
+
+/* LED functions */
+static inline __attribute__((always_inline)) void set_dirty_led(uint8_t state) {
+  if (state)
+    LED_DIRTY_PORT |= _BV(LED_DIRTY_PIN);
+  else
+    LED_DIRTY_PORT &= ~_BV(LED_DIRTY_PIN);
+}
+
+/* Toggle function used for error blinking */
+static inline void toggle_dirty_led(void) {
+  /* Sufficiently new AVR cores have a toggle function */
+  LED_DIRTY_INPUT |= _BV(LED_DIRTY_PIN);
+}
+
 
 #endif
