@@ -35,6 +35,7 @@
 #include "timer.h"
 #include "ustring.h"
 #include "eeprom-conf.h"
+#include "uart.h"
 
 uint8_t rom_filename[ROM_NAME_LENGTH+1];
 
