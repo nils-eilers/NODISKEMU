@@ -87,10 +87,10 @@ int main(void) {
 
   /* Anything that does something which needs the system clock */
   /* should be placed after system_init_late() */
-  bus_init();    // needs delay
+  bus_init();    // needs delay, inits device address with HW settings
   rtc_init();    // accesses I2C
   disk_init();   // accesses card
-  read_configuration();
+  read_configuration(); // restores configuration, may change device address
 
   filesystem_init(0);
   change_init();

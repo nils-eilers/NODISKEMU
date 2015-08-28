@@ -1171,8 +1171,8 @@ static inline void ieee_interface_init(void) {
 
 // TODO: Add ADC buttons
 #  define HAVE_ANALOG_BUTTONS
-#  define BUTTON_NEXT           0
-#  define BUTTON_PREV           0
+#  define BUTTON_NEXT           1
+#  define BUTTON_PREV           2
 
 static inline rawbutton_t buttons_read(void) {
   return 0xFF;

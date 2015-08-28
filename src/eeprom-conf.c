@@ -112,6 +112,7 @@ void read_configuration(void) {
   /* Abort if the checksum doesn't match */
   if (checksum != eeprom_read_byte(&storedconfig.checksum)) {
     eeprom_safety();
+    uart_puts_P(PSTR("EEPROM checksum error\r\n"));
     return;
   }
 
