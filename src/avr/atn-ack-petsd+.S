@@ -29,6 +29,7 @@
 #include <avr/io.h>
 
 .global INT0_vect
+.extern ieee488_ATN_received
 
 
 #define SAVE_SREG       r2
@@ -83,6 +84,11 @@ INT0_vect:
 
         cbi IO_PORT_NRFD, NRFD  ; pull NRFD low
         sbi IO_PORT_NDAC, NDAC  ; release NDAC
+
+; Set ATN received flag
+
+        ser TMP                 ; set all bits in register
+        sts ieee488_ATN_received, TMP
 
 ; restore registers
         pop TMP

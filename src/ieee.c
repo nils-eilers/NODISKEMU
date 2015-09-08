@@ -66,6 +66,7 @@
 uint8_t device_address;                 // Current device address
 volatile bool ieee488_TE75160;          // direction set for data lines
 volatile bool ieee488_TE75161;          // direction set for ctrl lines
+volatile bool ieee488_ATN_received;     // ATN interrupt sets this to true
 
 
 #define PRESERVE_CURRENT_DIRECTORY      1
@@ -603,10 +604,9 @@ uint8_t ieee488_RxByte(char *c) {
     if (ieee488_TE75160 != TE_LISTEN)
       ieee488_DataListen();
     do {
-      if (!ieee488_ATN())
-        return RX_ATN;                  // ATN became low, abort
-      if (ieee488_CheckIFC()) return RX_IFC;
-    } while (ieee488_DAV());            // Wait for DAV low
+      if (ieee488_ATN_received) return RX_ATN;  // ATN became low, abort
+      if (ieee488_CheckIFC())   return RX_IFC;
+    } while (ieee488_DAV());                    // Wait for DAV low
     // DAV is now low, NDAC must be high in max. 64 ms
     ieee488_SetNRFD(0);
     if (!ieee488_EOI())
@@ -617,8 +617,8 @@ uint8_t ieee488_RxByte(char *c) {
   ieee488_SetNDAC(1);
 
   do {
-    if (ieee488_CheckIFC()) return RX_IFC;
-    if (!ieee488_ATN()) return RX_ATN;
+    if (ieee488_ATN_received) return RX_ATN;
+    if (ieee488_CheckIFC())   return RX_IFC;
   } while (!ieee488_DAV());             // wait for DAV high
 
   ieee488_SetNDAC(0);
@@ -738,7 +738,7 @@ void ieee488_TalkLoop(uint8_t sa) {
       ieee488_SetDAV(1);                // Release DAV and EOI
       ieee488_SetEOI(1);
       while (ieee488_NDAC()) {          // Wait for NDAC low
-        if (!ieee488_ATN()) {
+        if (ieee488_ATN_received) {
           uart_puts_P(PSTR("T1\r\n"));
           ieee488_BusIdle();
           return;
@@ -746,7 +746,7 @@ void ieee488_TalkLoop(uint8_t sa) {
         if (ieee488_CheckIFC()) return;
       }
       while (!ieee488_NRFD()) {         // Wait for NRFD high
-        if (!ieee488_ATN()) {
+        if (ieee488_ATN_received) {
           uart_puts_P(PSTR("T2\r\n"));
           return;
         }
@@ -757,7 +757,7 @@ void ieee488_TalkLoop(uint8_t sa) {
       LastByte = (buf->position == buf->lastused);
       c = buf->data[buf->position];
 
-      if (ieee488_NDAC() || !ieee488_ATN()) {   // NDAC must stay low
+      if (ieee488_NDAC() || ieee488_ATN_received) {   // NDAC must stay low
         uart_puts_P(PSTR("T3\r\n"));
         ieee488_BusIdle();
         return;
@@ -768,7 +768,7 @@ void ieee488_TalkLoop(uint8_t sa) {
       if (ieee488_TE75160 != TE_TALK)
         ieee488_DataTalk();
       ieee488_SetData(c);
-      if (ieee488_NDAC() || !ieee488_ATN()) {
+      if (ieee488_NDAC() || ieee488_ATN_received) {
         uart_puts_P(PSTR("T4\r\n"));
         return;
       }
@@ -776,7 +776,7 @@ void ieee488_TalkLoop(uint8_t sa) {
 
       // Wait for NRFD low, NDAC must stay low
       while (ieee488_NRFD()) {
-        if (ieee488_NDAC() || !ieee488_ATN()) {
+        if (ieee488_NDAC() || ieee488_ATN_received) {
           ieee488_SetDAV(1);
           ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T5\r\n"));
@@ -787,7 +787,7 @@ void ieee488_TalkLoop(uint8_t sa) {
       }
 
       while (!ieee488_NDAC()) {         // Wait for NDAC high
-        if (!ieee488_ATN()) {
+        if (ieee488_ATN_received) {
           ieee488_SetDAV(1);
           ieee488_SetEOI(1);            // Release DAV and EOI
           uart_puts_P(PSTR("T6\r\n"));
@@ -872,10 +872,13 @@ void handle_ieee488(void) {
   uint8_t sa;                           // secondary address from cmd byte
 
   // If IFC was received during last iteration, reset bus interface now
-  if (ieee488_IFCreceived) ieee488_ProcessIFC();
+  if (ieee488_IFCreceived || ieee488_CheckIFC()) ieee488_ProcessIFC();
 
-  // Fetch commands sent with ATN low
-  if (ieee488_ATN() || ieee488_CheckIFC()) return;
+  // Return to scheduler if ATN is inactive
+  if (!ieee488_ATN_received) return;
+
+  // Reset ATN received flag
+  ieee488_ATN_received = false;
 
   // ATN interrupt routine switched to LISTEN mode, released NDAC
   // and pulled NRFD low. We can wait here any time long until we
@@ -890,15 +893,26 @@ void handle_ieee488(void) {
     if (ieee488_TE75160 != TE_LISTEN) ieee488_DataListen();
 
     while (ieee488_DAV()) {               // Wait for DAV low
-      if (ieee488_ATN() || ieee488_CheckIFC()) return;
+      if (ieee488_ATN_received ||         // new ATN cycle?
+          ieee488_ATN()        ||         // ATN cycle aborted?
+          ieee488_CheckIFC())             // interface clear?
+      {
+         return;
+      }
     }
 
 
     ieee488_SetNRFD(0);                   // Say not ready for data
     cmd = ieee488_Data();
     ieee488_SetNDAC(1);                   // Say data accepted
-    while (!ieee488_DAV())                // Wait for DAV high
-      if (ieee488_CheckIFC()) return;
+    while (!ieee488_DAV()) {              // Wait for DAV high
+      if (ieee488_ATN_received ||         // new ATN cycle?
+          ieee488_ATN()        ||         // ATN cycle aborted?
+          ieee488_CheckIFC())             // interface clear?
+      {
+         return;
+      }
+    }
 
     cmd3   = cmd & 0b11100000;
     cmd4   = cmd & 0b11110000;

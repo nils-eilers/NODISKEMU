@@ -30,6 +30,7 @@
 #include <avr/interrupt.h>
 
 .global PCINT3_vect
+.extern ieee488_ATN_received
 
 
 PCINT3_vect:
@@ -66,6 +67,11 @@ PCINT3_vect:
         out _SFR_IO_ADDR(DDRA), r16
         ser r16                         ; set all bits in register
         out _SFR_IO_ADDR(PORTA), r16    ; enable all pull-ups for data lines
+
+; Set ATN received flag
+
+        ser r16                         ; set all bits in register
+        sts ieee488_ATN_received, r16
 
 ; restore registers
         pop r16
