@@ -76,10 +76,10 @@ const PROGMEM uint8_t dirheader[] = {
   1, 1,                            /* next line pointer */
   0, 0,                            /* line number 0 */
   0x12, 0x22,                      /* Reverse on, quote */
-  'S','D','2','I','E','C',' ',' ', /* 16 spaces as the disk name */
-  ' ',' ',' ',' ',' ',' ',' ',' ', /* will be overwritten if needed */
+  'N','O','D','I','S','K','E','M', /* 16 spaces as the disk name */
+  'U',' ',' ',' ',' ',' ',' ',' ', /* will be overwritten if needed */
   0x22,0x20,                       /* quote, space */
-  'I','K',' ','2','A',             /* id IK, shift-space, dosmarker 2A */
+  'D','S',' ','2','A',             /* id DS, shift-space, dosmarker 2A */
   00                               /* line-end marker */
 };
 
