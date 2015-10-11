@@ -2063,6 +2063,7 @@ void parse_doscommand(void) {
     uart_trace(command_buffer,0,command_length);
   }
 #  else
+     uart_flush(); uart_putcrlf();
      uart_trace(command_buffer,0,command_length);
 #  endif
 #endif
