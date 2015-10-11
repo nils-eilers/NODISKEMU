@@ -897,6 +897,10 @@ void handle_ieee488(void) {
           ieee488_ATN()        ||         // ATN cycle aborted?
           ieee488_CheckIFC())             // interface clear?
       {
+         // Bus Idle if we're neither listener nor talker
+         if (!ieee488_ListenActive && (ieee488_TalkingDevice == 0)) {
+           ieee488_BusIdle();
+         }
          return;
       }
     }
