@@ -1791,9 +1791,15 @@ static void parse_time(void) {
 /*  U commands  */
 /* ------------ */
 static void parse_user(void) {
-  switch (command_buffer[1]) {
-  case 'A':
-  case '1':
+
+  if (command_buffer[1] == 202) {
+    /* The real hard reset command */
+    system_reset();
+  }
+
+  uint8_t c = command_buffer[1] & 15;
+  switch (c) {
+  case 1:
     /* Tiny little hack: Rewrite as (B)-R and call that                */
     /* This will always work because there is either a : in the string */
     /* or the drive will start parsing at buf[3].                      */
@@ -1802,16 +1808,14 @@ static void parse_user(void) {
     parse_block();
     break;
 
-  case 'B':
-  case '2':
+  case 2:
     /* Tiny little hack: see above case for rationale */
     command_buffer[0] = '-';
     command_buffer[1] = 'W';
     parse_block();
     break;
 
-  case 'I':
-  case '9':
+  case 9:
     if (command_length == 2) {
       /* Soft-reset - just return the dos version */
       set_error(ERROR_DOSVERSION);
@@ -1833,20 +1837,14 @@ static void parse_user(void) {
     }
     break;
 
-  case 'J':
-  case ':':
+  case 10:
     /* Reset - technically hard-reset */
     /* Faked because Ultima 5 sends UJ. */
     free_multiple_buffers(FMB_USER);
     set_error(ERROR_DOSVERSION);
     break;
 
-  case 202: /* Shift-J */
-    /* The real hard reset command */
-    system_reset();
-    break;
-
-  case '0':
+  case 0:
     /* U0 - only device address changes for now */
     if ((command_buffer[2] & 0x1f) == 0x1e &&
         command_buffer[3] >= 4 &&
