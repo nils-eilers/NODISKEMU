@@ -93,7 +93,7 @@ int main(void) {
   read_configuration(); // restores configuration, may change device address
 
   filesystem_init(0);
-  change_init();
+  // FIXME: change_init();
 
   /* Unit number may depend on hardware and stored settings */
   /* so present it here at last */

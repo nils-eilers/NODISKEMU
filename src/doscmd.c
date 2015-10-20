@@ -532,8 +532,10 @@ void do_chdir(uint8_t *parsestr) {
 static void parse_chdir(void) {
   do_chdir(command_buffer + 2);
 
+  /* FIXME
   if (globalflags & AUTOSWAP_ACTIVE)
     set_changelist(NULL, NULLSTRING);
+  */
 }
 
 /* --- RD --- */
@@ -866,8 +868,10 @@ static void parse_changepart(void) {
   }
 
   current_part = part;
+  /* FIXME
   if (globalflags & AUTOSWAP_ACTIVE)
     set_changelist(NULL, NULLSTRING);
+  */
 
   display_current_part(current_part);
 
@@ -1987,7 +1991,7 @@ static void parse_xcommand(void) {
     if (parse_path(command_buffer+2, &path, &str, 0))
       return;
 
-    set_changelist(&path, str);
+    // FIXME set_changelist(&path, str);
     break;
 
   case '*':

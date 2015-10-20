@@ -1465,7 +1465,7 @@ void fatops_init(uint8_t preserve_path) {
   if (!preserve_path) {
     current_part = 0;
     display_current_part(0);
-    set_changelist(NULL, NULLSTRING);
+    // FIXME: set_changelist(NULL, NULLSTRING);
     previous_file_dirent.name[0] = 0; // clear '*' file
   }
 

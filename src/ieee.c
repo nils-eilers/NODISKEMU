@@ -992,7 +992,7 @@ void handle_card_changes(void) {
     // If the disk was changed the buffer contents are useless
     if (disk_state == DISK_CHANGED || disk_state == DISK_REMOVED) {
       free_multiple_buffers(FMB_ALL);
-      change_init();
+      // FIXME change_init();
       filesystem_init(CHANGE_TO_ROOT_DIRECTORY);
     } else {
       // Disk state indicated an error, try to recover by initialising
