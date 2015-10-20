@@ -28,10 +28,13 @@
 #ifndef BUS_H
 #define BUS_H
 
+#include <stdbool.h>
+
 extern uint8_t device_address;
 
 void bus_interface_init(void);
 void bus_init(void);
+void bus_sleep(bool sleep);
 void __attribute__((noreturn)) bus_mainloop(void);
 
 #endif

@@ -117,9 +117,11 @@ void handle_lcd(void) {
 
 
 void menu(void) {
+  bus_sleep(true);
   lcd_clear();
   lcd_printf("Insert fancy\nmenu system here!");
   while(!get_key_press(KEY_ANY));
+  bus_sleep(false);
   lcd_draw_screen(SCRN_STATUS);
 }
 

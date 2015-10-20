@@ -572,6 +572,21 @@ void ieee488_BusIdle(void) {
   uart_puts_P(PSTR("idle\r\n"));
 }
 
+
+void ieee488_BusSleep(bool sleep) {
+  if (sleep) {
+    ieee488_DisableAtnInterrupt();
+    ieee488_BusIdle();
+    set_dirty_led(1);
+  } else {
+    ieee488_EnableAtnInterrupt();
+    update_leds();
+  }
+}
+
+void bus_sleep(bool sleep) __attribute__((weak, alias("ieee488_BusSleep")));
+
+
 /* Please note that the init-code is spread across two functions:
    ieee488_Init() follows below, but in src/avr/arch-config.h there
    is ieee_interface_init() also, which is aliased to bus_interface_init()
