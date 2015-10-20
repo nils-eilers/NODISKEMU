@@ -37,6 +37,7 @@
 #include "config.h"
 #include "lcd.h"
 #include "timer.h"
+#include "errormsg.h"
 
 #ifdef CONFIG_HAVE_IEEE
 #include "ieee.h"               // device_address
@@ -208,6 +209,13 @@ void lcd_puts_P(const char *s) {
     lcd_putc(c);
 }
 
+// ----------------------------------------------------------------------
+
+static inline uint8_t min(uint8_t a, uint8_t b) {
+  if (a < b) return a;
+  return b;
+}
+
 
 void lcd_update_device_addr(void) {
   if (lcd_current_screen == SCRN_STATUS) {
@@ -215,6 +223,23 @@ void lcd_update_device_addr(void) {
     lcd_printf("#%d ", device_address);
   }
 }
+
+
+void lcd_update_disk_status(void) {
+  bool visible = true;
+
+  if (lcd_current_screen == SCRN_STATUS) {
+    lcd_locate(0, 1);
+    for (uint8_t i = 0;
+         i < min(CONFIG_ERROR_BUFFER_SIZE, LCD_COLS * (LCD_LINES > 3 ? 3: 1));
+         i++)
+    {
+      if (error_buffer[i] == 13) visible = false;
+      lcd_putc(visible ? error_buffer[i] : ' ');
+    }
+  }
+}
+
 
 void lcd_draw_screen(uint16_t screen) {
   extern const char PROGMEM versionstr[];
@@ -231,6 +256,7 @@ void lcd_draw_screen(uint16_t screen) {
 
   case SCRN_STATUS:
     lcd_update_device_addr();
+    lcd_update_disk_status();
     break;
 
   default:

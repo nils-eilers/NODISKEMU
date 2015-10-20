@@ -56,6 +56,7 @@ void lcd_splashscreen(void);
 void lcd_draw_screen(uint16_t screen);
 void lcd_refresh(uint16_t screen);
 void lcd_update_device_addr(void);
+void lcd_update_disk_status(void);
 void handle_lcd(void);
 
 static inline void lcd_bootscreen(void) {
@@ -73,5 +74,6 @@ static inline void lcd_clear(void) {}
 static inline void lcd_locate(uint8_t x, uint8_t y) {}
 static inline void lcd_printf(const char *fmt, ...) {}
 static inline void handle_lcd(void) {}
+static inline void lcd_update_disk_status(void) {}
 
 #endif

@@ -262,6 +262,7 @@ void set_error_ts(uint8_t errornum, uint8_t track, uint8_t sector) {
 
   /* Send message without the final 0x0d */
   display_errorchannel(msg - error_buffer, error_buffer);
+  lcd_update_disk_status();
 }
 
 /* Callback for the error channel buffer */
