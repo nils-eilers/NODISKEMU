@@ -54,9 +54,6 @@ uint8_t lcd_x, lcd_y;
 static int lcd_putchar(char c, FILE *stream);
 static FILE lcd_stream = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
 static FILE *lcd_stdout;
-static tick_t lcd_timeout;
-static bool lcd_timer;
-static uint16_t lcd_current_screen;
 
 
 static inline void lcd_set_data_mode(void) {
@@ -208,79 +205,4 @@ void lcd_puts_P(const char *s) {
   while ((c = pgm_read_byte(s++)))
     lcd_putc(c);
 }
-
-// ----------------------------------------------------------------------
-
-static inline uint8_t min(uint8_t a, uint8_t b) {
-  if (a < b) return a;
-  return b;
-}
-
-
-void lcd_update_device_addr(void) {
-  if (lcd_current_screen == SCRN_STATUS) {
-    lcd_home();
-    lcd_printf("#%d ", device_address);
-  }
-}
-
-
-void lcd_update_disk_status(void) {
-  bool visible = true;
-
-  if (lcd_current_screen == SCRN_STATUS) {
-    lcd_locate(0, 1);
-    for (uint8_t i = 0;
-         i < min(CONFIG_ERROR_BUFFER_SIZE, LCD_COLS * (LCD_LINES > 3 ? 3: 1));
-         i++)
-    {
-      if (error_buffer[i] == 13) visible = false;
-      lcd_putc(visible ? error_buffer[i] : ' ');
-    }
-  }
-}
-
-
-void lcd_draw_screen(uint16_t screen) {
-  extern const char PROGMEM versionstr[];
-
-  lcd_current_screen = screen;
-  lcd_clear();
-
-  switch (screen) {
-  case SCRN_SPLASH:
-    lcd_puts_P(versionstr);
-    lcd_locate(0,3); lcd_puts_P(PSTR(HWNAME));
-    // TODO: if available, print serial number here
-    break;
-
-  case SCRN_STATUS:
-    lcd_update_device_addr();
-    lcd_update_disk_status();
-    break;
-
-  default:
-    break;
-  }
-}
-
-
-void lcd_splashscreen(void) {
-  lcd_timeout = getticks() + MS_TO_TICKS(1000 * 5);
-  lcd_timer = true;
-}
-
-
-void handle_lcd(void) {
-  tick_t ticks;
-
-  if (lcd_timer) {
-    ticks = getticks();
-    if (time_before(lcd_timeout, ticks)) {
-      lcd_draw_screen(SCRN_STATUS);
-      lcd_timer = false;
-    }
-  }
-}
-
 

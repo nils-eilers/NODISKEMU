@@ -40,6 +40,7 @@
 #include "ustring.h"
 #include "utils.h"
 #include "errormsg.h"
+#include "menu.h"
 
 uint8_t current_error;
 uint8_t error_buffer[CONFIG_ERROR_BUFFER_SIZE];

@@ -55,7 +55,7 @@
 #include "utils.h"
 #include "wrapops.h"
 #include "doscmd.h"
-#include "lcd.h"
+#include "menu.h"
 
 #define CURSOR_RIGHT 0x1d
 

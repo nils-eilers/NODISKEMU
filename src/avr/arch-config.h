@@ -1221,6 +1221,7 @@ static inline void buttons_init(void) {
 #    define HAVE_BOARD_INIT
 #    include <avr/pgmspace.h>
 #    include "lcd.h"
+#    include "menu.h"
 #    include "diagnose.h"
 static inline void board_init(void) {
   // TODO: rewrite buttons_read() to make this check work in main()

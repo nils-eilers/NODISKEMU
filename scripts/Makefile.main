@@ -130,6 +130,7 @@ endif
 
 ifeq ($(CONFIG_ONBOARD_DISPLAY),y)
   SRC += avr/lcd.c
+  SRC += menu.c
 endif
 
 # petSD requires ENC28J60 detection

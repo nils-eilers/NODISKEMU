@@ -50,6 +50,7 @@
 #include "utils.h"
 #include "diagnose.h"
 #include "lcd.h"
+#include "menu.h"
 
 
 #if defined(__AVR__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 1))
