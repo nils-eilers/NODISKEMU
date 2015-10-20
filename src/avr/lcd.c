@@ -194,8 +194,6 @@ void lcd_printf_P(const char *fmt, ...) {
   va_end(args);
 }
 
-#define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
-
 
 void lcd_puts(const char *s) {
   while (*s)

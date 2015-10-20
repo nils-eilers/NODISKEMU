@@ -49,7 +49,8 @@ void lcd_send_command(uint8_t cmd);
 void lcd_putc(char c);
 void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
-void lcd_printf(const char *fmt, ...);
+void lcd_printf_P(const char *fmt, ...);
+#define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
 
 void lcd_splashscreen(void);
 void lcd_draw_screen(uint16_t screen);
@@ -68,6 +69,9 @@ static inline void lcd_splashscreen(void) {}
 static inline void lcd_draw_screen(uint16_t screen) {}
 static inline void lcd_refresh(uint16_t screen) {}
 static inline void lcd_update_device_addr(void) {}
+static inline void lcd_clear(void) {}
+static inline void lcd_locate(uint8_t x, uint8_t y) {}
+static inline void lcd_printf(const char *fmt, ...) {}
 static inline void handle_lcd(void) {}
 
 #endif
