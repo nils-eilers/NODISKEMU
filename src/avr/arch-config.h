@@ -28,6 +28,16 @@
 #ifndef ARCH_CONFIG_H
 #define ARCH_CONFIG_H
 
+#define HW_EXAMPLE       1
+#define HW_SHADOWOLF1    2
+#define HW_LARSP         3
+#define HW_UIEC          4
+#define HW_SHADOWOLF2    5
+#define HW_UIECV3        7
+#define HW_PETSD         8
+#define HW_XS1541        9
+#define HW_PETSDPLUS    10
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 /* Include avrcompat.h to get the PA0..PD7 macros on 1284P */
@@ -46,7 +56,7 @@ typedef uint8_t rawbutton_t;
 #  define EEPROMFS_SECTORSIZE 64
 
 
-#if CONFIG_HARDWARE_VARIANT==1
+#if CONFIG_HARDWARE_VARIANT==HW_EXAMPLE
 /* ---------- Hardware configuration: Example ---------- */
 /* This is a commented example for most of the available options    */
 /* in case someone wants to build Yet Another[tm] hardware variant. */
@@ -269,7 +279,7 @@ static inline void buttons_init(void) {
 
 /* Pre-configurated hardware variants */
 
-#elif CONFIG_HARDWARE_VARIANT==2
+#elif CONFIG_HARDWARE_VARIANT==HW_SHADOWOLF1
 /* ---------- Hardware configuration: Shadowolf 1 ---------- */
 #  define HAVE_SD
 #  define SD_CHANGE_HANDLER     ISR(INT0_vect)
@@ -350,7 +360,7 @@ static inline void buttons_init(void) {
 }
 
 
-#elif CONFIG_HARDWARE_VARIANT == 3
+#elif CONFIG_HARDWARE_VARIANT == HW_LARSP
 /* ---------- Hardware configuration: LarsP ---------- */
 #  define HAVE_SD
 #  define SD_CHANGE_HANDLER     ISR(INT0_vect)
@@ -438,7 +448,7 @@ static inline void buttons_init(void) {
 #  define SOFTI2C_DELAY         6
 
 
-#elif CONFIG_HARDWARE_VARIANT == 4
+#elif CONFIG_HARDWARE_VARIANT == HW_UIEC
 /* ---------- Hardware configuration: uIEC ---------- */
 /* Note: This CONFIG_HARDWARE_VARIANT number is tested in system.c */
 #  define HAVE_ATA
@@ -576,7 +586,7 @@ static inline void board_init(void) {
 }
 
 
-#elif CONFIG_HARDWARE_VARIANT==5
+#elif CONFIG_HARDWARE_VARIANT==HW_SHADOWOLF2
 /* ---------- Hardware configuration: Shadowolf 2 aka sd2iec 1.x ---------- */
 #  define HAVE_SD
 #  define SD_CHANGE_HANDLER     ISR(INT0_vect)
@@ -699,7 +709,7 @@ static inline void buttons_init(void) {
 /* Hardware configuration 6 was old NKC MMC2IEC */
 
 
-#elif CONFIG_HARDWARE_VARIANT == 7
+#elif CONFIG_HARDWARE_VARIANT == HW_UIECV3
 /* ---------- Hardware configuration: uIEC v3 ---------- */
 #  define HAVE_SD
 #  define SD_CHANGE_HANDLER     ISR(INT6_vect)
@@ -794,7 +804,7 @@ static inline void board_init(void) {
   PORTG |= _BV(PG1);
 }
 
-#elif CONFIG_HARDWARE_VARIANT == 8
+#elif CONFIG_HARDWARE_VARIANT == HW_PETSD
 /* ---------- Hardware configuration: petSD ---------- */
 #  define HAVE_SD
 #  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
@@ -921,7 +931,7 @@ static inline void board_init(void) {
 }
 
 
-#elif CONFIG_HARDWARE_VARIANT == 9
+#elif CONFIG_HARDWARE_VARIANT == HW_XS1541
 /* ---------- Hardware configuration: XS-1541 ---------- */
 #  define HAVE_SD
 #  define SD_SUPPLY_VOLTAGE     (1L<<18)
@@ -1043,7 +1053,7 @@ static inline void buttons_init(void) {
   PORTB |= BUTTON_NEXT | BUTTON_PREV;
 }
 
-#elif CONFIG_HARDWARE_VARIANT == 10
+#elif CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
 /* ---------- Hardware configuration: petSD+ --------- */
 #  define HAVE_SD
 #  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)

@@ -36,8 +36,7 @@
 
 
 // petSD+ diagnose
-#if (CONFIG_HARDWARE_VARIANT == 10) && defined(CONFIG_ONBOARD_DISPLAY)
-#include "analogbuttons.h"
+#if (CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS) && defined(CONFIG_ONBOARD_DISPLAY)
 #include "lcd.h"
 
 void board_diagnose(void) {
