@@ -99,7 +99,10 @@ void lcd_locate(uint8_t x, uint8_t y) {
     y++;
   }
 
-  if (y >= LCD_LINES) y = 0;
+  if (y >= LCD_LINES) {
+    lcd_clear();
+    y = 0;
+  }
 
   lcd_set_command_mode();
   uint8_t StartAddress = 0;
