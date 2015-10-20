@@ -46,6 +46,7 @@ void board_diagnose(void) {
 
   lcd_clear();
   sdcard_interface_init();
+  buttons_init();
 
   DDRD |= _BV(PD0) | _BV(PD1);
 
@@ -76,7 +77,7 @@ void board_diagnose(void) {
     }
 
     lcd_locate(5,0);
-    snprintf(buffer, sizeof(buffer), "%4u", adc_value());
+    snprintf(buffer, sizeof(buffer), "%4u", ADCW);
     lcd_puts(buffer);
 
     lcd_locate(13,0);
@@ -85,6 +86,9 @@ void board_diagnose(void) {
     lcd_locate(18,0);
     lcd_putc(sdcard_wp() ? 'Y' : 'N');
 
+    // Timer interrupt not initialized, so manual start
+    // of ADC conversion required
+    ADCSRA |= _BV(ADSC);
     delay_ms(200);
     counter++;
   }

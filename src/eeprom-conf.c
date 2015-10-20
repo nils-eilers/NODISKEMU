@@ -91,11 +91,14 @@ void read_configuration(void) {
   set_drive_config(get_default_driveconfig()); /* Set the default drive configuration */
   memset(rom_filename, 0, sizeof(rom_filename));
 
+#if 0
+  FIXME!
   /* Use the NEXT button to skip reading the EEPROM configuration */
   if (!(buttons_read() & BUTTON_NEXT)) {
     ignore_keys();
     return;
   }
+#endif
 
   size = eeprom_read_word(&storedconfig.structsize);
 

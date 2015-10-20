@@ -31,22 +31,6 @@
 #include "arch-timer.h"
 #include "atomic.h"
 
-// Bit masks for the (simulated) keys
-#define KEY_NEXT    (1<<0)
-#define KEY_PREV    (1<<1)
-#define KEY_HOME    (1<<2)
-#define KEY_SLEEP   (1<<3)
-/* Remote display service request */
-#define KEY_DISPLAY (1<<4)
-
-#define IGNORE_KEYS (1<<7)
-
-/// Logical keys that were pressed - must be reset by the reader.
-extern volatile uint8_t active_keys;
-
-#define key_pressed(x) (active_keys & (x))
-#define reset_key(x)   active_keys &= (uint8_t)~(x)
-#define ignore_keys()  active_keys = IGNORE_KEYS;
 
 /// Global timing variable, 100 ticks per second
 /// Use getticks() !
@@ -91,5 +75,34 @@ static inline tick_t getticks(void) {
 
 /* Timer initialisation - defined in $ARCH/arch-timer.c */
 void timer_init(void);
+
+
+
+// Bit masks for the keys
+#define KEY_SEL     (1<<0)
+#define KEY_NEXT    (1<<1)
+#define KEY_PREV    (1<<2)
+
+
+
+/* Check if a key has been pressed long enough such that the key repeat
+   functionality kicks in. After a small setup delay the key is reported
+   being pressed in subsequent calls to this function. This simulates the
+   user repeatedly pressing and releasing the key.
+*/
+uint8_t get_key_rpt(uint8_t key_mask);
+
+// Check if a key has been pressed. Each pressed key is reported only once
+uint8_t get_key_press(uint8_t key_mask);
+
+// Check if a key is pressed right now
+uint8_t get_key_state(uint8_t key_mask);
+
+// Check if a key has been pressed for a short while
+uint8_t get_key_short(uint8_t key_mask);
+
+// Check if a key has been pressed for a long while
+uint8_t get_key_long(uint8_t key_mask);
+
 
 #endif

@@ -897,17 +897,9 @@ static inline void ieee_interface_init(void) {
   IEEE_DDR_ATN  &= ~ _BV(IEEE_PIN_ATN); // Define ATN as input
 }
 
-
-#  define BUTTON_NEXT           _BV(PB1)
-#  define BUTTON_PREV           _BV(PB3)
-
-static inline rawbutton_t buttons_read(void) {
-  return (PINB & (BUTTON_NEXT | BUTTON_PREV));
-}
-
 static inline void buttons_init(void) {
-  DDRB  &= (uint8_t)~(BUTTON_NEXT | BUTTON_PREV);
-  PORTB |= BUTTON_NEXT | BUTTON_PREV;
+  DDRB  &= ~(_BV(PB1) | _BV(PB3));
+  PORTB |= _BV(PB1) | _BV(PB3);
 }
 
 #  define SOFTI2C_PORT          PORTC
@@ -1169,17 +1161,27 @@ static inline void ieee_interface_init(void) {
 }
 
 
-// TODO: Add ADC buttons
-#  define HAVE_ANALOG_BUTTONS
-#  define BUTTON_NEXT           1
-#  define BUTTON_PREV           2
-
-static inline rawbutton_t buttons_read(void) {
-  return 0xFF;
-}
-
 static inline void buttons_init(void) {
+  // AVcc as voltage reference, select ADC7
+  ADMUX |= _BV(REFS0) | _BV(MUX0) | _BV(MUX1) | _BV(MUX2);
+
+  // disable digitial input register for PA7
+  DIDR0 |= _BV(ADC7D);
+
+  // divider 128: 18.432 MHz / 128 = 144 kHz (50 kHz..200 kHz)
+  // enable ADC
+  ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN);
+
+  // Start first conversion
+  ADCSRA |= _BV(ADSC);
+
+  // Wait for conversion to complete
+  while (ADCSRA & _BV(ADSC));
+
+  // dummy read of result
+  (void) ADCW;
 }
+
 
 #  define SOFTI2C_PORT          PORTC
 #  define SOFTI2C_PIN           PINC
@@ -1209,15 +1211,14 @@ static inline void buttons_init(void) {
 #    define HAVE_BOARD_INIT
 #    include <avr/pgmspace.h>
 #    include "lcd.h"
-#    include "analogbuttons.h"
 #    include "diagnose.h"
 static inline void board_init(void) {
   // TODO: rewrite buttons_read() to make this check work in main()
   // Hold PREV button during reset/power on for board diagose
   lcd_init();
   lcd_bootscreen();
-  adc_init();
-  uint16_t buttons = adc_value();
+  buttons_init();
+  uint16_t buttons = ADCW;
   if (buttons > 580 && buttons < 630) board_diagnose();
 }
 

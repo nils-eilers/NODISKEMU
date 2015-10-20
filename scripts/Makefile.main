@@ -138,11 +138,6 @@ ifeq ($(CONFIG_HARDWARE_VARIANT),8)
   SRC += enc28j60.c
 endif
 
-# petSD+ uses analog/digital converter to read the buttons
-ifeq ($(CONFIG_HARDWARE_VARIANT),10)
-  SRC += avr/analogbuttons.c
-endif
-
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
