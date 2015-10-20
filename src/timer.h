@@ -82,6 +82,7 @@ void timer_init(void);
 #define KEY_SEL     (1<<0)
 #define KEY_NEXT    (1<<1)
 #define KEY_PREV    (1<<2)
+#define KEY_ANY     0xff
 
 
 
