@@ -28,6 +28,7 @@
 
 #pragma once
 #include "config.h"
+#include <stdbool.h>
 
 #ifdef CONFIG_ONBOARD_DISPLAY
 
@@ -43,6 +44,7 @@ void lcd_putc(char c);
 void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
 void lcd_printf_P(const char *fmt, ...);
+void lcd_cursor(bool on);
 #define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
 
 #else
@@ -51,5 +53,6 @@ static inline void lcd_init(void) {}
 static inline void lcd_clear(void) {}
 static inline void lcd_locate(uint8_t x, uint8_t y) {}
 static inline void lcd_printf(const char *fmt, ...) {}
+static inline void lcd_cursor(bool on) {}
 
 #endif

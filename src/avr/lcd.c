@@ -130,6 +130,11 @@ void lcd_home(void) {
 }
 
 
+void lcd_cursor(bool on) {
+  lcd_send_command(on ? 0x0F : 0x0C);
+}
+
+
 void lcd_init(void) {
   // LCD ports as output
   LCD_DDR_E  |= _BV(LCD_PIN_E);
