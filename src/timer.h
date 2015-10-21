@@ -92,6 +92,7 @@ void timer_init(void);
    user repeatedly pressing and releasing the key.
 */
 uint8_t get_key_rpt(uint8_t key_mask);
+uint8_t get_key_autorepeat(uint8_t key_mask);
 
 // Check if a key has been pressed. Each pressed key is reported only once
 uint8_t get_key_press(uint8_t key_mask);

@@ -74,6 +74,11 @@ uint8_t get_key_rpt(uint8_t key_mask) {
 }
 
 
+uint8_t get_key_autorepeat(uint8_t key_mask) {
+   return get_key_press(key_mask) || get_key_rpt(key_mask);
+}
+
+
 // Check if a key is pressed right now
 uint8_t get_key_state(uint8_t key_mask) {
   key_mask &= key_state;
