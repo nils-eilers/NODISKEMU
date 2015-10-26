@@ -116,11 +116,76 @@ void handle_lcd(void) {
 }
 
 
+int8_t menu_vertical(uint8_t min, uint8_t max) {
+  uint8_t pos = 0;
+
+  lcd_cursor(true);
+  for (;;) {
+    lcd_locate(0, pos);
+    if (get_key_autorepeat(KEY_PREV)) {
+      if (pos == 0) {
+        if (min < 0 ) return -1;
+      } else --pos;
+    }
+    if (get_key_autorepeat(KEY_NEXT)) {
+      if (pos < max) ++pos;
+    }
+    if (get_key_press(KEY_SEL)) break;
+  }
+  lcd_cursor(false);
+  return pos;
+}
+
+
+uint8_t menu_edit_value(uint8_t v, uint8_t min, uint8_t max) {
+  uint8_t x = lcd_x;
+  uint8_t y = lcd_y;
+
+  lcd_locate(x, y);
+  lcd_cursor(true);
+  for (;;) {
+    lcd_printf("%02d", v);
+    lcd_locate(x, y);
+    for (;;) {
+      if (get_key_autorepeat(KEY_PREV)) {
+        if (v == min) v = max;
+        else --v;
+        break;
+      }
+      if (get_key_autorepeat(KEY_NEXT)) {
+        if (v == max) v = min;
+        else ++v;
+        break;
+      }
+      if (get_key_press(KEY_SEL)) {
+        lcd_cursor(false);
+        return v;
+      }
+    }
+  }
+}
+
+
+void menu_device_number(void) {
+  lcd_printf("Change device number\nfrom %02d to:", device_address);
+  lcd_locate(12, 1);
+  device_address = menu_edit_value(device_address, 8, 30);
+}
+
+
 void menu(void) {
+  uint8_t sel;
   bus_sleep(true);
-  lcd_clear();
-  lcd_printf("Insert fancy\nmenu system here!");
-  while(!get_key_press(KEY_ANY));
+
+  for (;;) {
+    lcd_clear();
+    lcd_printf("Exit Menu\nChange device number");
+    sel = menu_vertical(0,1);
+    lcd_clear();
+    if (sel == 1) menu_device_number();
+    else break;
+  }
+
   bus_sleep(false);
   lcd_draw_screen(SCRN_STATUS);
 }

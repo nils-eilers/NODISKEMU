@@ -48,7 +48,8 @@
 
 #define LCD_DDRAM 128
 
-uint8_t lcd_x, lcd_y;
+uint8_t lcd_x;                  // 0..LCD_LINES-1
+uint8_t lcd_y;                  // 0..LCD_COLS-1
 
 
 static int lcd_putchar(char c, FILE *stream);
