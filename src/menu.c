@@ -179,24 +179,10 @@ uint8_t menu_edit_value(uint8_t v, uint8_t min, uint8_t max) {
 
 
 void menu_ask_store_settings(void) {
-  bool store = true;
   lcd_clear();
-  lcd_printf("Save settings?\n\nyes     no");
-  lcd_cursor(true);
-  for (;;) {
-    if (store) lcd_locate(0,2);
-    else       lcd_locate(8,2);
-    for (;;) {
-      if (get_key_press(KEY_PREV) || get_key_press(KEY_NEXT)) {
-        store = !store;
-        break;
-      }
-      if (get_key_press(KEY_SEL)) {
-        if (store) write_configuration();
-        lcd_cursor(false);
-        return;
-      }
-    }
+  lcd_puts_P(PSTR("Save settings?\n\nyes\nno"));
+  if (menu_vertical(2,3) == 2) {
+    write_configuration();
   }
 }
 
