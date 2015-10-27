@@ -212,3 +212,11 @@ void lcd_puts_P(const char *s) {
     lcd_putc(c);
 }
 
+
+void lcd_clrlines(uint8_t from, uint8_t to) {
+  lcd_locate(0, from);
+  for (uint8_t i = from; i <= to; i++)
+    for (uint8_t j = 0; j < LCD_COLS; j++)
+      lcd_putc(' ');
+}
+

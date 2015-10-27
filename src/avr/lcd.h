@@ -45,6 +45,7 @@ void lcd_puts(const char *s);
 void lcd_puts_P(const char *progmem_s);
 void lcd_printf_P(const char *fmt, ...);
 void lcd_cursor(bool on);
+void lcd_clrlines(uint8_t from, uint8_t to);
 #define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
 
 #else
@@ -54,5 +55,5 @@ static inline void lcd_clear(void) {}
 static inline void lcd_locate(uint8_t x, uint8_t y) {}
 static inline void lcd_printf(const char *fmt, ...) {}
 static inline void lcd_cursor(bool on) {}
-
+static inline void lcd_clrlines(uint8_t from, uint8_t to) {}
 #endif
