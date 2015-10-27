@@ -723,7 +723,7 @@ button during powerup.
 Devices with built-in LCD support (read: petSD+) will show their
 diagnostics on the display.
 
-The further notes applies only for devices without built-in LCD support
+The further notes apply only for devices without built-in LCD support
 (read: old petSD and pet microSD):
 
 The red (dirty) LED will reflect the card detect status - if the LED
