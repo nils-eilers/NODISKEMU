@@ -151,6 +151,7 @@ uint8_t menu_edit_value(uint8_t v, uint8_t min, uint8_t max) {
 
   lcd_locate(x, y);
   lcd_cursor(true);
+  set_busy_led(true);
   for (;;) {
     lcd_printf("%02d", v);
     lcd_locate(x, y);
@@ -167,6 +168,7 @@ uint8_t menu_edit_value(uint8_t v, uint8_t min, uint8_t max) {
       }
       if (get_key_press(KEY_SEL)) {
         lcd_cursor(false);
+        set_busy_led(false);
         return v;
       }
     }
