@@ -1641,15 +1641,15 @@ static void parse_timeread(void) {
   }
 }
 
+/* day of week calculation by M. Keith and T. Craver via */
+/* https://en.wikipedia.org/wiki/Determination_of_the_day_of_the_week */
+uint8_t day_of_week(uint16_t y, uint8_t m, uint8_t d) {
+  y += 1900;
+  return (d+=m<3?y--:y-2,23*m/9+d+4+y/4-y/100+y/400)%7;
+}
+
 /* --- T-W --- */
 static void parse_timewrite(void) {
-
-  /* day of week calculation by M. Keith and T. Craver via */
-  /* https://en.wikipedia.org/wiki/Determination_of_the_day_of_the_week */
-  uint8_t day_of_week(uint16_t y, uint8_t m, uint8_t d) {
-    y += 1900;
-    return (d+=m<3?y--:y-2,23*m/9+d+4+y/4-y/100+y/400)%7;
-  }
 
   struct tm time;
   uint8_t i, *ptr;

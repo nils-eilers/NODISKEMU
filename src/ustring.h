@@ -37,6 +37,7 @@
 #define ustrcpy(s1,s2)       (strcpy((char *)(s1), (char *)(s2)))
 #define ustrcpy_P(s1,s2)     (strcpy_P((char *)(s1), (s2)))
 #define ustrncpy(s1,s2,n)    (strncpy((char *)(s1), (char *)(s2),(n)))
+#define ustrncpy_P(s1,s2,n)  (strncpy_P((char *)(s1), (char *)(s2), (n)))
 #define ustrlen(s)           (strlen((char *)(s)))
 #define ustrrchr(s,c)        ((uint8_t *)strrchr((char *)(s), (c)))
 

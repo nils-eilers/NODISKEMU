@@ -37,5 +37,6 @@ extern uint16_t datacrc;
 
 void parse_doscommand(void);
 void do_chdir(uint8_t *parsestr);
+uint8_t day_of_week(uint16_t y, uint8_t m, uint8_t d);
 
 #endif
