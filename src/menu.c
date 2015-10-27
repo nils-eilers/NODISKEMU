@@ -57,7 +57,7 @@ static inline uint8_t min(uint8_t a, uint8_t b) {
 void lcd_update_device_addr(void) {
   if (lcd_current_screen == SCRN_STATUS) {
     lcd_home();
-    lcd_printf("#%d ", device_address);
+    lcd_printf("Device ID: #%d ", device_address);
   }
 }
 
@@ -67,8 +67,10 @@ void lcd_update_disk_status(void) {
 
   if (lcd_current_screen == SCRN_STATUS) {
     lcd_locate(0, 1);
+    lcd_puts_P(PSTR("Status: "));
     for (uint8_t i = 0;
-         i < min(CONFIG_ERROR_BUFFER_SIZE, LCD_COLS * (LCD_LINES > 3 ? 3: 1));
+         i < min(CONFIG_ERROR_BUFFER_SIZE, LCD_COLS * (LCD_LINES > 3 ? 3:
+             1) - 8);
          i++)
     {
       if (error_buffer[i] == 13) visible = false;
