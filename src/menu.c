@@ -108,15 +108,18 @@ void lcd_splashscreen(void) {
 }
 
 
+static void menu_select_status(void) {
+  lcd_draw_screen(SCRN_STATUS);
+  lcd_timer = false;
+}
+
+
 void handle_lcd(void) {
   tick_t ticks;
 
   if (lcd_timer) {
     ticks = getticks();
-    if (time_before(lcd_timeout, ticks)) {
-      lcd_draw_screen(SCRN_STATUS);
-      lcd_timer = false;
-    }
+    if (time_before(lcd_timeout, ticks)) menu_select_status();
   }
 }
 
@@ -128,12 +131,12 @@ int8_t menu_vertical(uint8_t min, uint8_t max) {
   for (;;) {
     lcd_locate(0, pos);
     if (get_key_autorepeat(KEY_PREV)) {
-      if (pos == 0) {
-        if (min < 0 ) return -1;
-      } else --pos;
+      if (pos == 0) pos = max;
+      else --pos;
     }
     if (get_key_autorepeat(KEY_NEXT)) {
       if (pos < max) ++pos;
+      else pos = 0;
     }
     if (get_key_press(KEY_SEL)) break;
   }
@@ -174,7 +177,7 @@ uint8_t menu_edit_value(uint8_t v, uint8_t min, uint8_t max) {
 void menu_ask_store_settings(void) {
   bool store = true;
   lcd_clear();
-  lcd_printf("Store settings?\n\nyes     no");
+  lcd_printf("Save settings?\n\nyes     no");
   lcd_cursor(true);
   for (;;) {
     if (store) lcd_locate(0,2);
@@ -363,6 +366,7 @@ void menu(void) {
   uint8_t sel;
   bus_sleep(true);
 
+  menu_select_status();
   for (;;) {
     lcd_clear();
     lcd_printf("Exit Menu\nChange device number\n");
