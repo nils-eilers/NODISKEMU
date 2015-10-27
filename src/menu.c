@@ -127,18 +127,18 @@ void handle_lcd(void) {
 
 
 int8_t menu_vertical(uint8_t min, uint8_t max) {
-  uint8_t pos = 0;
+  uint8_t pos = min;
 
   lcd_cursor(true);
   for (;;) {
     lcd_locate(0, pos);
     if (get_key_autorepeat(KEY_PREV)) {
-      if (pos == 0) pos = max;
-      else --pos;
+      if (pos > min) --pos;
+      else pos = max;
     }
     if (get_key_autorepeat(KEY_NEXT)) {
       if (pos < max) ++pos;
-      else pos = 0;
+      else pos = min;
     }
     if (get_key_press(KEY_SEL)) break;
   }
@@ -245,6 +245,8 @@ uint8_t menu_edit_month(uint8_t m) {
     lcd_locate(3, 0);
     menu_print_month(m);
     lcd_locate(3, 0);
+    set_busy_led(true);
+    lcd_cursor(true);
     for (;;) {
       if (get_key_autorepeat(KEY_PREV)) {
         if (m == 0) m = 11;
@@ -256,7 +258,11 @@ uint8_t menu_edit_month(uint8_t m) {
         else ++m;
         break;
       }
-      if (get_key_press(KEY_SEL)) return m;
+      if (get_key_press(KEY_SEL)) {
+        set_busy_led(false);
+        lcd_cursor(false);
+        return m;
+      }
     }
   }
 }
@@ -271,7 +277,7 @@ uint8_t calc_number_of_days(uint8_t month, uint8_t year) {
 
 void menu_set_clock(void) {
   struct tm t;
-  uint8_t p = SETCLK_MDAY;
+  uint8_t p;
   uint8_t days;
 
   switch (rtc_state) {
@@ -290,79 +296,60 @@ void menu_set_clock(void) {
       return;
   }
 
-menu_set_clock_restart:
-
-  lcd_clear();
   lcd_printf("%02d-MMM-20%2d %02d:%02d:%02d",
       t.tm_mday, t.tm_year - 100, t.tm_hour, t.tm_min, t.tm_sec);
   lcd_locate(3, 0);
   menu_print_month(t.tm_mon);
-  lcd_locate(0, LCD_LINES - 1);
-  lcd_puts_P(PSTR("Set     Abort"));
+
+  p = SETCLK_MDAY;
   for (;;) {
-    set_busy_led(false);
-    lcd_locate(pgm_read_byte(&(menu_setclk_pos[p])), p >= SETCLK_SET ? LCD_LINES - 1: 0);
-    lcd_cursor(true);
-    if (get_key_autorepeat(KEY_PREV)) {
-      if (p == 0) p = SETCLK_ABORT;
-      else --p;
-    }
-    if (get_key_autorepeat(KEY_NEXT)) {
-      if (p == SETCLK_ABORT) p = 0;
-      else ++p;
-    }
-    if (get_key_press(KEY_SEL)) {
-      set_busy_led(true);
-      switch (p) {
+    if (p < SETCLK_SET) {
+      lcd_locate(pgm_read_byte(&(menu_setclk_pos[p])), 0);
+      switch (p++) {
         case SETCLK_MDAY:
-          days = calc_number_of_days(t.tm_mon, t.tm_year);
-          if (t.tm_mday > days) t.tm_mday = days;
-          t.tm_mday = menu_edit_value(t.tm_mday, 1, days);
-          break;
+          t.tm_mday = menu_edit_value(t.tm_mday, 1, 31);
+          continue;
         case SETCLK_MON:
           t.tm_mon = menu_edit_month(t.tm_mon);
-          break;
+          days = calc_number_of_days(t.tm_mon, t.tm_year);
+          if (t.tm_mon == 1) ++days; // Could be a leap year
+          if (t.tm_mday > days) p = SETCLK_MDAY;
+          continue;
         case SETCLK_YEAR:
           t.tm_year = menu_edit_value(t.tm_year - 100, 15, 99) + 100;
-          break;
+          days = calc_number_of_days(t.tm_mon, t.tm_year);
+          if (t.tm_mday > days) p = SETCLK_MDAY;
+          continue;
         case SETCLK_HOUR:
           t.tm_hour = menu_edit_value(t.tm_hour, 0, 23);
-          break;
+          continue;
         case SETCLK_MIN:
           t.tm_min = menu_edit_value(t.tm_min, 0, 59);
-          break;
+          continue;
         case SETCLK_SEC:
           t.tm_sec = menu_edit_value(t.tm_sec, 0, 59);
-          break;
-        case SETCLK_SET:
-          set_busy_led(false);
+          continue;
+      }
+    } else {
+      lcd_locate(0,1);
+      lcd_puts_P(PSTR("Set date & time now\nEdit again\nAbort"));
+      uint8_t sel = menu_vertical(1,3);
+      lcd_clrlines(1,3);
+      switch (sel) {
+        case 1:         // Set time
           t.tm_wday = day_of_week(t.tm_year, t.tm_mon, t.tm_mday);
-          days = calc_number_of_days(t.tm_mon, t.tm_year);
-          if (t.tm_mday > days) {
-            lcd_clear();
-            lcd_puts_P(PSTR("Sorry, "));
-            menu_print_month(t.tm_mon);
-            days = calc_number_of_days(t.tm_mon, t.tm_year);
-            lcd_printf(" has only %d days, not %d", days, t.tm_mday);
-#if LCD_LINES >= 4
-            lcd_puts_P(PSTR("\n\nPress any key..."));
-#endif
-            while (!get_key_press(KEY_ANY));
-            t.tm_mday = days;
-            p = SETCLK_MDAY;
-            goto menu_set_clock_restart;
-          } else {
-            set_rtc(&t);
-            goto menu_set_clock_exit;
-          }
-          break;
-        default:
-          goto menu_set_clock_exit;
+          set_rtc(&t);
+
+        // fall through
+
+        case 3:         // Abort
+          return;
+
+        default:        // Edit date & time
+          p = SETCLK_MDAY;
       }
     }
   }
-menu_set_clock_exit:
-  set_busy_led(false);
 }
 
 
