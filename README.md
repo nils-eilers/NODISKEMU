@@ -5,43 +5,46 @@ SD/MMC to IEEE-488 interface/controller
 ---------------------------------------
 
 Copyright (C) 2007-2014  Ingo Korb <ingo@akana.de>
+
 Copyright (C) 2015 Nils Eilers <nils.eilers@gmx.de>
 
 NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
 Parts based on code from others, see comments in main.c for details.
-JiffyDos send based on code by M.Kiesel
-Fat LFN support and lots of other ideas+code by Jim Brain
-Final Cartridge III fastloader support by Thomas Giesel
-IEEE488 support by Nils Eilers
+
+- JiffyDos send based on code by M.Kiesel
+- Fat LFN support and lots of other ideas+code by Jim Brain
+- Final Cartridge III fastloader support by Thomas Giesel
+- IEEE488 support by Nils Eilers
 
 Free software under GPL version 2 ONLY, see comments in main.c and
 COPYING for details.
 
-Are you kidding me?
--------------------
-
-This actually **IS** a disk emulator, isn't?
-
-NODISKEMU does not emulate any particular vintage Commodore disk drive.
-It neither emulates a 6502 CPU nor does it run any Commodore DOS.
-It's just a storage solution that is capable to interact on low level
-functions such as OPEN or TALK and interprets commands sent to channel 15
-in a way similiar to other drives.
-
-The deaper meaning of this name is to clarify that there actually are
-and ever will be some differences compared to real floppy drives.
 
 Deprecation notices
 -------------------
-The following feature(s) will be removed in the next release:
+The following feature(s) will or may be removed in the future:
 
 - M2I support
+- large buffers
+- partition support
 
+#### M2I support ####
 M2I support has been redundant since the introduction of transparent
 P00 support. To continue to use your M2I-format software, convert
 your files to P00 format (e.g. with m2itopc64.c) and set your device
-to extension mode 2 (XE2).
+to extension mode 2 (XE2). I'm not aware of any M2I files to be used
+with a PET so this shouldn't hurt anybody.
+
+#### Large buffers ####
+Seriously, would you like to destroy your FAT filesystem? Accessing blocks
+outside a disk image is not only for the brave, it shouldn't be possible.
+
+#### Partition support ####
+Commodore's hard drives didn't support them, Windows is unable to cope
+with multiple partitions on a single SD card and they're conflicting with
+support for multiple drives per disk unit.
+
 
 Introduction
 ------------
@@ -59,13 +62,27 @@ fastloader.
 
 [1] Homepage: http://pontoppidan.info/lars/index.php?proj=mmc2iec
 
-If you are the author of a program that needs to detect NODISKEMU for
-some reason, DO NOT use M-R for this purpose. Use the UI command
-instead and check the message you get for "nodiskemu" instead.
+NODISKEMU is not intended to be used on devices equipped with a
+Commodore serial bus, such as MMC2IEC, SD2IEC or uIEC. Though most
+code still persists, compilation for these targets may break at any
+time or is already broken. You better keep using sd2iec for those.
 
 
-Supported commands
-==================
+
+### Are you kidding me? ###
+
+This actually **IS** a disk emulator, isn't?
+
+NODISKEMU does not emulate any particular vintage Commodore disk drive.
+It neither emulates a 6502 CPU nor does it run any Commodore DOS.
+It's just a storage solution that is capable to interact on low level
+functions such as OPEN or TALK and interprets commands sent to channel 15
+in a way similiar to other drives.
+
+The deaper meaning of this name is to clarify that there actually are
+and ever will be some differences compared to real floppy drives.
+
+ 
 
 General notes
 -------------
@@ -127,7 +144,7 @@ as if they were a directory and use CD:_ (left arrow on the PET) to leave.
 Please note that image files are detected by file extension and file size
 and there is no reliable way to see if a file is a valid image file.
 
-CP, C<Shift-P>
+CP, C\<Shift-P>
 --------------
 This changes the current partition, see "Partitions" below for details.
 
@@ -253,7 +270,7 @@ P
 Positioning doesn't just work for REL files but also for regular
 files on a FAT partition. When used for regular files the format
 is `"P"+chr$(channel)+chr$(lo)+chr$(midlo)+chr$(midhi)+chr$(hi)`
-which will seek to the 0-based offset `hi\*2^24+midhi*65536+256*midlo+lo`
+which will seek to the 0-based offset `hi*2^24+midhi*65536+256*midlo+lo`
 in the file. If you send less than four bytes for the offset, the
 missing bytes are assumed to be zero.
 
@@ -302,19 +319,21 @@ The possible formats are:
 - "B"CD or "D"ecimal:
    Both these formats use 9 bytes to specify the time. For BCD everything
    is BCD-encoded, for Decimal the numbers are sent/parsed as-is.
-   Byte 0: Day of the week (0 for sunday)
-```
-           1: Year (modulo 100 for BCD; -1900 for Decimal, i.e. 108 for 2008)
-           2: Month (1-based)
-           3: Day (1-based)
-           4: Hour   (1-12)
-           5: Minute (0-59)
-           6: Second (0-59)
-           7: AM/PM-Flag (0 is AM, everything else is PM)
-           8: CHR$(13)
-```
 
-      When the time is set a year less than 80 is interpreted as 20xx.
+Byte        | Value
+------------|----------------------------------------------------------------
+           0| Day of the week (0 for sunday)
+           1| Year (modulo 100 for BCD; -1900 for Decimal, i.e. 108 for 2008)
+           2| Month (1-based)
+           3| Day (1-based)
+           4| Hour   (1-12)
+           5| Minute (0-59)
+           6| Second (0-59)
+           7| AM/PM-Flag (0 is AM, everything else is PM)
+           8| CHR$(13)
+
+
+When the time is set a year less than 80 is interpreted as 20xx.
 
 - "I"SO 8601 subset: "2008-01-20T13:23:45 SUN"+CHR$(13)
   This format complies with ISO 8601 and adds a day of week
@@ -379,7 +398,7 @@ will always be written without an x00 header and without
 any additional PRG file extension.
 
 
-### XE+/XE- ###
+### XE+ / XE- ###
 Enable/disable extension hiding. If enabled, files in FAT with
 a PRG/SEQ/USR/REL extension will have their extension removed
 and the file type changed to the type specified by the file
@@ -407,7 +426,7 @@ the CD command such software may still fail to mount a disk
 image with this option enabled.
 
 
-### X*+/X*-  ###
+### X\*+ / X\*-  ###
 Enable/disable 1581-style * matching. If enabled, characters
 after a * will be matched against the end of the file name.
 If disabled, any characters after a * will be ignored.
@@ -580,7 +599,7 @@ of each character in the name.
 
 EEPROM file system
 ==================
-*WARNING*: The EEPROM file system is a newly-implemented file system
+**WARNING**: The EEPROM file system is a newly-implemented file system
 that may still contain bugs. Do not store data on it that you cannot
 affort to lose. Always make sure that you have a backup. Also, the
 format may change in later releases, so please expect that the
@@ -698,8 +717,16 @@ Card detection test
 ===================
 Because some SD slots seem to suffer from bad/unreliable card detect
 switches a test mode for this has been implemented on the units that
-have SD card support. If you hold down the PREV button during powerup,
-the red (dirty) LED will reflect the card detect status - if the LED
+have SD card support. To enable this test mode, hold down the PREV
+button during powerup.
+
+Devices with built-in LCD support (read: petSD+) will show their
+diagnostics on the display.
+
+The further notes applies only for devices without built-in LCD support
+(read: old petSD and pet microSD):
+
+The red (dirty) LED will reflect the card detect status - if the LED
 is on the card detect switch is closed. Please note that this does not
 indicate successful communication with the card but merely that the
 mechanical switch in the SD card slot is closed.
@@ -717,7 +744,7 @@ Other important notes
 =====================
 - When you hold down the disk change (forward) button during power
   on the software will use default values instead of those stored
-  in the EEPROM.
+  in the EEPROM. (TODO: currently deactivated)
 - File overwrite (@foo) is implemented by deleting the file first.
 - File sizes in the directory are in blocks (of 254 bytes), but
   the blocks free message actually reports free clusters. It is
@@ -732,6 +759,10 @@ Other important notes
   all partitions to the root drive. Doing this just for the card that
   was changed would cause lots of problems if the number of partitions
   on the previous and the newly inserted cards are different.
+- If you are the author of a program that needs to detect NODISKEMU for
+  some reason, DO NOT use M-R for this purpose. Use the UI command
+  instead and check the message you get for "nodiskemu" instead.
+
 
 Compilation notes
 =================
@@ -745,4 +776,4 @@ command line with "make CONFIG=filename[,filename...]".
 An example configuration file named "config-example" is provided with
 the source code, as well as abridged files corresponding to the
 release binaries. If you want to compile NODISKEMU for a custom hardware
-you may have to edit config.h too to change the port definitions.
+you may have to edit arch-config.h too to change the port definitions.
