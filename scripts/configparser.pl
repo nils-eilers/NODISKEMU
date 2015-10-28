@@ -34,7 +34,6 @@ use Pod::Usage;
 use warnings;
 use strict;
 use feature ':5.10';
-no if ($]>=5.018),'warnings'=>'experimental';
 
 # --- utility ---
 
