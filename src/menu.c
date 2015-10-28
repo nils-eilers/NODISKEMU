@@ -318,7 +318,7 @@ void menu_set_clock(void) {
       }
     } else {
       lcd_locate(0,1);
-      lcd_puts_P(PSTR("Set date & time now\nEdit again\nAbort"));
+      lcd_puts_P(PSTR("Write to RTC\nEdit again\nAbort"));
       uint8_t sel = menu_vertical(1,3);
       lcd_clrlines(1,3);
       switch (sel) {
