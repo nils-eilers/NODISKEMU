@@ -77,9 +77,9 @@ NODISKEMU does not emulate any particular vintage Commodore disk drive.
 It neither emulates a 6502 CPU nor does it run any Commodore DOS.
 It's just a storage solution that is capable to interact on low level
 functions such as OPEN or TALK and interprets commands sent to channel 15
-in a way similiar to other drives.
+in a way similar to other drives.
 
-The deaper meaning of this name is to clarify that there actually are
+The deeper meaning of this name is to clarify that there actually are
 and ever will be some differences compared to real floppy drives.
 
  
@@ -117,18 +117,18 @@ Quick syntax overview:
 Command        | Remarks
 ---------------|------------------------------------------------------------
 `CD:_`         |changes into the parent dir (_ is the left arrow on the PET)
-`CD_`          |dito
+`CD_`          |ditto
 `CD:foo`       |changes into foo
-`CD/foo`       |dito
+`CD/foo`       |ditto
 `CD//foo`      |changes into \foo
 `CD/foo/:bar`  |changes into foo\bar
-`CD/foo/bar`   |dito
+`CD/foo/bar`   |ditto
 
 You can use wildcards anywhere in the path. To change into an disk
 image the image file must be the last component in the path, either
 after a slash or a colon character.
 
-MD uses a syntax similiar to CD and will create the directory listed
+MD uses a syntax similar to CD and will create the directory listed
 after the colon (:) relative to any directory listed before it.
 
 `MD/foo/:bar` creates bar in foo
@@ -173,11 +173,11 @@ in the same unit, an attempt to use that command with NODISKEMU should
 result in an error message.
 
 D has three subcommands: DI (Info), DR (Read) and DW (Write).
-Each of those commands requires a buffer to be opened (similiar
+Each of those commands requires a buffer to be opened (similar
 to U1/U2), but due to the larger sector size of the storage devices
 used by NODISKEMU it needs to be a large buffer of size 2 (512 bytes)
 or larger. The exception is the DI command with page set to 0,
-its result will always fir into a standard 256 byte buffer.
+its result will always fit into a standard 256 byte buffer.
 If you try to use one of the commands with a buffer that is too
 small a new error message is returned, "78,BUFFER TOO SMALL,00,00".
 
@@ -305,7 +305,7 @@ return 31,SYNTAX ERROR,00,00.
 
 Both commands expect a fourth character that specifies the time format
 to be used. T-W expects that the new time follows that character
-with no space or other characters inbetween. For the A, B and D
+with no space or other characters in between. For the A, B and D
 formats, the expected input format is exactly the same as returned
 by T-R with the same format character; for the I format the day of
 week is ignored and calculated based on the date instead.
@@ -322,7 +322,7 @@ The possible formats are:
 
 Byte        | Value
 ------------|----------------------------------------------------------------
-           0| Day of the week (0 for sunday)
+           0| Day of the week (0 for Sunday)
            1| Year (modulo 100 for BCD; -1900 for Decimal, i.e. 108 for 2008)
            2| Month (1-based)
            3| Day (1-based)
@@ -343,7 +343,7 @@ When the time is set a year less than 80 is interpreted as 20xx.
   based on the specified date. The year must always be specified
   including the century if this format is used to set the time.
   To save space, NODISKEMU only accepts this particular date/time
-  representation when setting the time with T-WI and no other ISo
+  representation when setting the time with T-WI and no other ISO
   8601-compliant representation.
 
 U0
@@ -358,7 +358,7 @@ Block reading and writing is fully supported while a disk image is mounted.
 
 B-P
 ---
-Supported, not checked against the original rom at all.
+Supported, not checked against the original ROM at all.
 
 
 UI/UJ
@@ -409,7 +409,7 @@ value is disabled (-).
 
 
 ### XInum ###
-Switches the display mode for mountables files (i.e. disk images
+Switches the display mode for mountable files (i.e. disk images
 and M2I). num can be 0, in which case the file will be shown
 with its normal type in the directory or 1 which will show all
 mountable files as DIRectory entries (but they can still be
@@ -467,7 +467,7 @@ drive configuration status information.
 
 ### X ###
 X without any following characters reports the current state
-of all extended parameters via the error channel, similiar
+of all extended parameters via the error channel, similar
 to DolphinDOS. Example result: "03,J-:C152:E01+:B+:*+,08,00"
 The track indicates the current device address.
 
@@ -534,15 +534,15 @@ forces most of the supported fast loaders into a compatible mode
 fastloader for Action Replay 6). If the address is not
 recognized, more-or-less random data will be returned.
 
-  Unfortunately GEOS reads rather large parts of the drive rom
+  Unfortunately GEOS reads rather large parts of the drive ROM
 using M-R to detect the drive, which cannot be reasonably added
 into the internal table. To enable the GEOS drive detection to
 work properly with NODISKEMU and to allow switching between
 1541/71/81 modes, file-based M-R emulation has been implemented.
 If a file has been set up as M-R data source using the XR
 command, its contents will be returned for M-R commands that try
-to read an address in the range of $8000-$ffff. The rom file
-should be a copy of the rom contents of a 1541/71/81 drive (any
+to read an address in the range of $8000-$ffff. The ROM file
+should be a copy of the ROM contents of a 1541/71/81 drive (any
 headers will be skipped automatically), its name must be 16
 characters or less. When an M-R command is received, the file
 will be searched in three locations on the storage medium:
@@ -552,8 +552,8 @@ will be searched in three locations on the storage medium:
 3) in the root directory of the first partition
 
 The internal emulation table will be used if the file wasn't found
-in any of those locations or an error occured while reading
-it. Please be aware that the rom file is ONLY used for M-R
+in any of those locations or an error occurred while reading
+it. Please be aware that the ROM file is ONLY used for M-R
 commands. Except for some very specific situations where drive
 detection fails (e.g. GEOS) it will probably decrease compatibility
 of NODISKEMU because most of the implemented fast loaders will only
@@ -594,14 +594,14 @@ FAT, but for compatibility reasons the 8.3 name is used if the long
 name exceeds 16 characters. If you use anything but ASCII characters
 on the PC or their PETSCII equivalents on the Commodore you may
 get strange characters on the other system because the LFN use
-unicode characters on disk, but NODISKEMU parses only the low byte
+Unicode characters on disk, but NODISKEMU parses only the low byte
 of each character in the name.
 
 EEPROM file system
 ==================
 **WARNING**: The EEPROM file system is a newly-implemented file system
 that may still contain bugs. Do not store data on it that you cannot
-affort to lose. Always make sure that you have a backup. Also, the
+afford to lose. Always make sure that you have a backup. Also, the
 format may change in later releases, so please expect that the
 partition may need to be erased in the future.
 
@@ -637,7 +637,7 @@ one directory entry.
 
 Partitions
 ==========
-NODISKEMU features a multi-partition support similiar to that of the CMD
+NODISKEMU features a multi-partition support similar to that of the CMD
 drives. The partitions (which may be on separate drives for some hardware
 configurations) are accessed using the drive number of the commands
 sent from the computer and are numbered starting with 1. Partition 0
@@ -718,7 +718,7 @@ Card detection test
 Because some SD slots seem to suffer from bad/unreliable card detect
 switches a test mode for this has been implemented on the units that
 have SD card support. To enable this test mode, hold down the PREV
-button during powerup.
+button during power-up.
 
 Devices with built-in LCD support (read: petSD+) will show their
 diagnostics on the display.
