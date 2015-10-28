@@ -4,7 +4,7 @@ NODISKEMU
 SD/MMC to IEEE-488 interface/controller
 ---------------------------------------
 
-Copyright (C) 2007-2014  Ingo Korb <ingo@akana.de>
+Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
 
 Copyright (C) 2015 Nils Eilers <nils.eilers@gmx.de>
 
