@@ -159,7 +159,8 @@ static void createentry(cbmdirent_t *dent, buffer_t *buf, dirformat_t format) {
   *data++ = dent->blocksize >> 8;
 
   /* Filler before file name */
-  data++;
+  if (dent->blocksize < 1000)
+    data++;
   if (dent->blocksize < 100)
     data++;
   if (dent->blocksize < 10)
