@@ -323,7 +323,7 @@ void menu_set_clock(void) {
       lcd_clrlines(1,3);
       switch (sel) {
         case 1:         // Set time
-          t.tm_wday = day_of_week(t.tm_year, t.tm_mon, t.tm_mday);
+          t.tm_wday = day_of_week(t.tm_year, t.tm_mon + 1, t.tm_mday);
           set_rtc(&t);
 
         // fall through
