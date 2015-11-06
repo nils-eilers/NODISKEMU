@@ -45,7 +45,7 @@
 #endif
 
 /* Timeouts for SD card operations */
-#define CARD_TIMEOUT_TICKS        (HZ*0.6)      /* timeout = 600 ms */
+#define CARD_TIMEOUT_TICKS        (HZ)          /* timeout = 1000 ms */
 
 /* SD/MMC commands */
 #define GO_IDLE_STATE             0x40
