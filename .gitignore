@@ -14,3 +14,5 @@ obj-*
 *.d64
 *.d81
 config
+# Qt Creator project files:
+NODISKEMU.*
