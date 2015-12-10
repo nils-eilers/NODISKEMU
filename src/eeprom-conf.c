@@ -87,7 +87,7 @@ void read_configuration(void) {
 
   /* Set default values */
   globalflags         |= POSTMATCH;            /* Post-* matching enabled */
-  file_extension_mode  = 1;                    /* Store x00 extensions except for PRG */
+  file_extension_mode  = 0;                    /* Never write x00 format files */
   set_drive_config(get_default_driveconfig()); /* Set the default drive configuration */
   memset(rom_filename, 0, sizeof(rom_filename));
 

@@ -390,7 +390,7 @@ Possible values for num are:
 
 If you set mode 3 or 4, extension hiding is automatically enabled.
 This setting can be saved in the EEPROM using XW, the default
-value is 1.
+value is 0.
 
 For compatibility with existing programs that write D64 files,
 PRG files that have D64, D41, D71, D81, DNP or M2I as an extension
