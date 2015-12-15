@@ -25,7 +25,6 @@ Deprecation notices
 -------------------
 The following feature(s) will or may be removed in the future:
 
-- M2I support
 - large buffers
 - partition support
 
@@ -393,7 +392,7 @@ This setting can be saved in the EEPROM using XW, the default
 value is 0.
 
 For compatibility with existing programs that write D64 files,
-PRG files that have D64, D41, D71, D81, DNP or M2I as an extension
+PRG files that have D64, D41, D71, D81, D80, D82 or DNP as an extension
 will always be written without an x00 header and without
 any additional PRG file extension.
 
@@ -409,8 +408,8 @@ value is disabled (-).
 
 
 ### XInum ###
-Switches the display mode for mountable files (i.e. disk images
-and M2I). num can be 0, in which case the file will be shown
+Switches the display mode for disk images.
+num can be 0, in which case the file will be shown
 with its normal type in the directory or 1 which will show all
 mountable files as DIRectory entries (but they can still be
 accessed as files too) or 2 in which case they will show up
@@ -420,7 +419,7 @@ permanently using XW.
 
 It may be useful to set it to 1 or 2 when using software that
 was originally written for CMD devices and which wouldn't
-recognize disk images/M2I files as mountable on its own.
+recognize disk images files as mountable on its own.
 However, due to limitations of the current implementation of
 the CD command such software may still fail to mount a disk
 image with this option enabled.
@@ -689,19 +688,6 @@ amount of system resources, so it is recommended to avoid creating
 subdirectories with this version of DirMaster. It is possible to fix
 this problem using a hex editor, but the exact process is beyond the scope
 of this document.
-
-M2I files
-=========
-NOTICE: Support for M2I files will be removed in the next release, see
-        the deprecation notices at the top of this file for advice.
-
-M2I files are fully supported. NODISKEMU supports SEQ and USR files in this
-format in addition to PRG and DEL which were already implemented in MMC2IEC.
-For compatibility reasons the file type is not checked when opening files.
-Inside an M2I file the files are always shown as 0 (DEL) or 1 blocks
-because calling stat for every file was slowing down the directory listing
-too much. For compatibility with existing M2I files the data files do not
-use P00 headers even when the file type is SEQ or USR.
 
 REL files
 =========

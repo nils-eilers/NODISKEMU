@@ -39,7 +39,6 @@
 #include "fatops.h"
 #include "flags.h"
 #include "ff.h"
-#include "m2iops.h"
 #include "parser.h"
 #include "progmem.h"
 #include "uart.h"
@@ -925,15 +924,6 @@ void file_open(uint8_t secondary) {
   if (parse_path(command_buffer, &path, &fname, 0))
       return;
 
-#ifdef CONFIG_M2I
-  /* For M2I only: Remove trailing spaces from name */
-  if (partition[path.part].fop == &m2iops) {
-    res = ustrlen(fname);
-    while (--res && fname[res] == ' ')
-      fname[res] = 0;
-  }
-#endif
-
   /* Filename matching */
   if (opendir(&matchdh, &path))
     return;
@@ -1005,13 +995,6 @@ void file_open(uint8_t secondary) {
         /* Rewrite existing file: Delete the old one */
         if (file_delete(&path, &dentcopy) == 255)
           return;
-
-#ifdef CONFIG_M2I
-        /* Force fatops to create a new name based on the (long) CBM- */
-        /* name instead of creating one with the old SFN and no LFN.  */
-        if (dent.opstype == OPSTYPE_FAT || dent.opstype == OPSTYPE_FAT_X00)
-          dent.pvt.fat.realname[0] = 0;
-#endif
       } else {
         /* Write existing file without replacement: Raise error */
         set_error(ERROR_FILE_EXISTS);

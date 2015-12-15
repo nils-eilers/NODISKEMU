@@ -59,10 +59,6 @@ ifneq ($(CONFIG_NO_SD),y)
   SRC += sdcard.c
 endif
 
-ifeq ($(CONFIG_M2I),y)
-  SRC += m2iops.c
-endif
-
 ifneq ($(CONFIG_HAVE_IEC),y)
   ifneq ($(CONFIG_HAVE_IEEE),y)
     .PHONY: nobus

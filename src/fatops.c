@@ -42,7 +42,6 @@
 #include "fileops.h"
 #include "flags.h"
 #include "led.h"
-#include "m2iops.h"
 #include "p00cache.h"
 #include "parser.h"
 #include "progmem.h"
@@ -180,9 +179,8 @@ static exttype_t check_extension(uint8_t *name, uint8_t **ext) {
  * @name: pointer to the file name
  *
  * This function checks if the given file name has an extension that
- * indicates a known image file type. Returns IMG_IS_M2I for M2I files,
- * IMG_IS_DISK for D64/D41/D71/D81 files or IMG_UNKNOWN for an unknown
- * file extension.
+ * indicates a known image file type. Returns IMG_IS_DISK for
+ * D64/D41/D71/D81 files or IMG_UNKNOWN for an unknown file extension.
  */
 imgtype_t check_imageext(uint8_t *name) {
   uint8_t f,s,t;
@@ -194,11 +192,6 @@ imgtype_t check_imageext(uint8_t *name) {
   f = toupper(*++ext);
   s = toupper(*++ext);
   t = toupper(*++ext);
-
-#ifdef CONFIG_M2I
-  if (f == 'M' && s == '2' && t == 'I')         // M2I
-    return IMG_IS_M2I;
-#endif
 
   if (f == 'D')
     if ((s == '6' && t == '4') ||               // D64
@@ -296,12 +289,6 @@ static bool is_valid_fat_name(const uint8_t *name) {
 static uint8_t* build_name(uint8_t *name, uint8_t type) {
   /* convert to PETSCII */
   pet2asc(name);
-
-#ifdef CONFIG_M2I
-  /* do not add a header for raw files, even if the name may be invalid */
-  if (type == TYPE_RAW)
-    return NULL;
-#endif
 
   /* known disk-image extensions are always without header or suffix */
   if (type == TYPE_PRG && check_imageext(name) != IMG_UNKNOWN)
@@ -658,17 +645,9 @@ FRESULT create_file(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_t *buf
 
   x00ext = NULL;
 
-  /* check if the FAT name is already defined (used only for M2I) */
-#ifdef CONFIG_M2I
-  if (dent->pvt.fat.realname[0])
-    name = dent->pvt.fat.realname;
-  else
-#endif
-  {
-    ustrcpy(ops_scratch, dent->name);
-    x00ext = build_name(ops_scratch, type);
-    name = ops_scratch;
-  }
+  ustrcpy(ops_scratch, dent->name);
+  x00ext = build_name(ops_scratch, type);
+  name = ops_scratch;
 
   partition[path->part].fatfs.curr_dir = path->dir.fat;
   do {
@@ -1038,7 +1017,7 @@ uint8_t fat_delete(path_t *path, cbmdirent_t *dent) {
  * @dent: Name of the directory/image to be changed into
  *
  * This function changes the directory of the path object to dirname.
- * If dirname specifies a file with a known extension (e.g. M2I or D64), the
+ * If dirname specifies a file with a known extension (e.g. D64), the
  * current(!) directory will be changed to the directory of the file and
  * it will be mounted as an image file. Returns 0 if successful,
  * 1 otherwise.
@@ -1076,7 +1055,7 @@ uint8_t fat_chdir(path_t *path, cbmdirent_t *dent) {
   } else {
     /* Changing into a file, could be a mount request */
     if (check_imageext(dent->pvt.fat.realname) != IMG_UNKNOWN) {
-      /* D64/M2I mount request */
+      /* D64 mount request */
       free_multiple_buffers(FMB_USER_CLEAN);
       /* Open image file */
       res = f_open(&partition[path->part].fatfs,
@@ -1094,16 +1073,9 @@ uint8_t fat_chdir(path_t *path, cbmdirent_t *dent) {
         return 1;
       }
 
-#ifdef CONFIG_M2I
-      if (check_imageext(dent->pvt.fat.realname) == IMG_IS_M2I)
-        partition[path->part].fop = &m2iops;
-      else
-#endif
-        {
-          if (d64_mount(path, dent->pvt.fat.realname))
-            return 1;
-          partition[path->part].fop = &d64ops;
-        }
+      if (d64_mount(path, dent->pvt.fat.realname))
+        return 1;
+      partition[path->part].fop = &d64ops;
 
       return 0;
     }
@@ -1628,7 +1600,7 @@ void format_dummy(uint8_t drive, uint8_t *name, uint8_t *id) {
   set_error(ERROR_SYNTAX_UNKNOWN);
 }
 
-const PROGMEM fileops_t fatops = {  // These should be at bottom, to be consistent with d64ops and m2iops
+const PROGMEM fileops_t fatops = {  // These should be at bottom, to be consistent with d64ops
   &fat_open_read,
   &fat_open_write,
   &fat_open_rel,

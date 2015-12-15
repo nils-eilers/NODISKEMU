@@ -49,9 +49,6 @@
 /* Internal file types used for the partition directory */
 #define TYPE_NAT 8
 
-/* Internal file type used to force files without header on FAT (for M2I) */
-#define TYPE_RAW 15
-
 /// Hidden is an unused bit on CBM
 #define FLAG_HIDDEN (1<<5)
 #define FLAG_RO     (1<<6)
@@ -130,7 +127,6 @@ typedef enum {
   OPSTYPE_FAT,
   OPSTYPE_FAT_X00,  /* X00 files can never be disk images */
                     /* and should match case-sensitive    */
-  OPSTYPE_M2I,
   OPSTYPE_DXX,
   OPSTYPE_EEFS
 } opstype_t;
@@ -147,7 +143,6 @@ typedef enum {
  * @pvt.fat.cluster : Start cluster of the entry
  * @pvt.fat.realname: Actual 8.3 name of the file (preferred if present)
  * @pvt.dxx.dh      : Dxx directory handle for the dir entry of this file
- * @pvt.m2i.offset  : Offset in the M2I file
  *
  * This structure holds a CBM filename, its type and its size. The typeflags
  * are almost compatible to the file type byte in a D64 image, but the splat
@@ -177,9 +172,6 @@ typedef struct {
     struct {
       struct d64dh dh;
     } dxx;
-    struct {
-      uint16_t offset;
-    } m2i;
   } pvt;
 } cbmdirent_t;
 
@@ -206,7 +198,6 @@ typedef struct d64fh {
  * struct dh_t - union of all directory handles
  * @part: partition number for the handle
  * @fat : fat directory handle
- * @m2i : m2i directory handle (offset of entry in the file)
  * @d64 : d64 directory handle
  *
  * This is a union of directory handles for all supported file types
@@ -217,7 +208,6 @@ typedef struct dh_s {
   uint8_t part;
   union {
     DIR          fat;
-    uint16_t     m2i;
     struct d64dh d64;
     eefs_dir_t   eefs;
   } dir;
