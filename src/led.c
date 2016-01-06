@@ -44,5 +44,5 @@ volatile uint8_t led_state;
  */
 void update_leds(void) {
   set_busy_led(active_buffers != 0);
-  set_dirty_led(get_dirty_buffer_count() != 0);
+  set_dirty_led(dirty_buffers != 0);
 }

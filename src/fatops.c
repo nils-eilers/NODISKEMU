@@ -211,7 +211,7 @@ imgtype_t check_imageext(uint8_t *name) {
  * This function converts the string in the given buffer from PETSCII to
  * ASCII in-place.
  */
-static void pet2asc(uint8_t *buf) {
+void pet2asc(uint8_t *buf) {
   uint8_t ch;
   while (*buf) {
     ch = *buf;

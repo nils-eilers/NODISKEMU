@@ -64,4 +64,7 @@ typedef enum { IMG_UNKNOWN, IMG_IS_DISK } imgtype_t;
 
 imgtype_t check_imageext(uint8_t *name);
 
+
+void pet2asc(uint8_t *buf);
+
 #endif

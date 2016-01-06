@@ -178,14 +178,14 @@ static void inline unstick_buffer(buffer_t *buf) {
 /* Returns pointer to buffer on success or NULL on failure */
 buffer_t *find_buffer(uint8_t secondary);
 
-/* Number of currently allocated buffers + 16 * number of write buffers */
+/* Number of currently allocated buffers */
 extern uint8_t active_buffers;
 
-/* Check if any buffers are free */
-#define check_free_buffers() ((active_buffers & 0x0f) < CONFIG_BUFFER_COUNT)
+/* Number of write buffers */
+extern uint8_t dirty_buffers;
 
-/* Return the number of dirty buffers */
-#define get_dirty_buffer_count() (active_buffers >> 4)
+/* Check if any buffers are free */
+#define check_free_buffers() (active_buffers < CONFIG_BUFFER_COUNT)
 
 /* Mark a buffer as write-buffer and sticky it */
 // Note: inline function is smaller than external on AVR with gcc 4.8.2
