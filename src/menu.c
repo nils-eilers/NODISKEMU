@@ -34,6 +34,7 @@
 
 #include "config.h"
 #include "lcd.h"
+#include "led.h"
 #include "menu.h"
 #include "timer.h"
 #include "errormsg.h"
@@ -428,10 +429,14 @@ void menu_browse_files(void) {
   uint16_t stack_mp[MAX_LASTPOS];
   uint8_t stack_my[MAX_LASTPOS];
   uint8_t pos_stack;
+  uint8_t save_active_buffers;
+  uint8_t save_dirty_buffers;
 
   pos_stack = 0;
   memset(stack_mp, 0, sizeof(stack_mp));
   memset(stack_my, 0, sizeof(stack_my));
+  save_active_buffers = active_buffers;
+  save_dirty_buffers = dirty_buffers;
 
 start:
   lcd_clear();
@@ -441,20 +446,23 @@ start:
   entries = entry_num = mp = 0;
   fat_filesystem = false;
 
-  // Allocate one buffer to read directory entries
+  // Allocate one buffer, used to read a single directory entry
   if ((buf = alloc_system_buffer()) == NULL) return;
 
   // Allocate buffers with continuous data segments
+  // Stores pointers to directory entries for qsort
   if ((buf_tbl = alloc_linked_buffers(CONFIG_DIR_BUFFERS)) == NULL) return;
 
+  // Buffers to store the actual diretory entries.
+  // Whilst the directory grows, new buffers get allocated and linked
   if ((buf_cur = alloc_system_buffer()) == NULL) return;
   first_buf = buf_cur;
 
-  // Allocating buffers affects the LEDs, so fix them
-  // TODO: fix leds
+  // Allocating buffers affects the LEDs
+  set_busy_led(false); set_dirty_led(true);
 
   path.part = current_part;
-  path.dir  = partition[path.part].current_dir;  // if you do not do this, get_label will fail below.
+  path.dir  = partition[path.part].current_dir;
   uart_trace(&path.dir, 0, sizeof(dir_t));
   uart_putcrlf();
   uart_flush();
@@ -482,6 +490,7 @@ start:
           printf("alloc buf_cur failed, %d entries", entries);
           goto cleanup;
         }
+        set_busy_led(false); set_dirty_led(true);
         buf_cur->pvt.buffer.next = NULL;
         old_buf->pvt.buffer.next = buf_cur;
       }
@@ -647,7 +656,6 @@ reread:
   do {
     p->allocated = 0;
     p = p->pvt.buffer.next;
-    active_buffers--;
   } while (p != NULL);
 
   p = first_buf;
@@ -656,6 +664,9 @@ reread:
     p = p->pvt.buffer.next;
   } while (p != NULL);
 
+  set_busy_led(false); set_dirty_led(true);
+  active_buffers = save_active_buffers;
+  dirty_buffers = save_dirty_buffers;
   if (mp == NAV_ABORT) return;
   goto start;
 
@@ -671,6 +682,7 @@ void menu(void) {
 
   menu_select_status();
   for (;;) {
+    set_busy_led(false); set_dirty_led(true);
     lcd_clear();
     lcd_printf("Exit menu\nBrowse files\nChange device number\n");
     if (rtc_state == RTC_NOT_FOUND)
@@ -688,5 +700,6 @@ void menu(void) {
 
   bus_sleep(false);
   lcd_draw_screen(SCRN_STATUS);
+  update_leds();
 }
 
