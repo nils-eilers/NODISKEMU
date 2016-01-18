@@ -216,7 +216,7 @@ static void createentry(cbmdirent_t *dent, buffer_t *buf, dirformat_t format) {
     data = appendnumber(data,dent->date.day) + 1;
     data = appendnumber(data,(dent->date.hour>12?dent->date.hour-12:dent->date.hour));
     *data++ = '.';
-    data = appendnumber(data,dent->date.minute) + 1;
+    data = appendnumber(data,dent->date.minute);
     *data++ = (dent->date.hour>11?'P':'A');
     while(*data)
       *data++ = 1;
