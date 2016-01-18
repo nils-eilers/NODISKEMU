@@ -103,6 +103,7 @@ void uart_trace(void *ptr, uint16_t start, uint16_t len) {
     }
     uart_putc('|');
     uart_putcrlf();
+    uart_flush();
     start+=16;
   }
 }
