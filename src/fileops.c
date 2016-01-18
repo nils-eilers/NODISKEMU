@@ -25,6 +25,13 @@
 
 */
 
+/* TODO: The output of $=t depends on the available busses:
+   - CMD compatible for devices with IEC bus
+   - 40 column friendly for CBM/PET
+   What should be done if a device offers both?
+*/
+
+
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
@@ -216,7 +223,13 @@ static void createentry(cbmdirent_t *dent, buffer_t *buf, dirformat_t format) {
     data = appendnumber(data,dent->date.day) + 1;
     data = appendnumber(data,(dent->date.hour>12?dent->date.hour-12:dent->date.hour));
     *data++ = '.';
+#if defined(CONFIG_HAVE_IEC)
+    // CMD compatible layout
+    data = appendnumber(data,dent->date.minute) + 1;
+#else
+    // 40 columns friendly for CBM/PET
     data = appendnumber(data,dent->date.minute);
+#endif
     *data++ = (dent->date.hour>11?'P':'A');
     while(*data)
       *data++ = 1;
