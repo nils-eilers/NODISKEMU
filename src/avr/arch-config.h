@@ -427,16 +427,12 @@ static inline void iec_interrupts_init(void) {
   PCIFR |= _BV(PCIF2);
 }
 
-#  define BUTTON_NEXT           _BV(PA4)
-#  define BUTTON_PREV           _BV(PA5)
-
-static inline rawbutton_t buttons_read(void) {
-  return PINA & (BUTTON_NEXT | BUTTON_PREV);
-}
+#  define BUTTON_NEXT           _BV(PA5)
+#  define BUTTON_SELECT         _BV(PA4)
 
 static inline void buttons_init(void) {
-  DDRA  &= (uint8_t)~(BUTTON_NEXT | BUTTON_PREV);
-  PORTA |= BUTTON_NEXT | BUTTON_PREV;
+  DDRA  &= (uint8_t)~(BUTTON_NEXT | BUTTON_SELECT);
+  PORTA |= BUTTON_NEXT | BUTTON_SELECT;
 }
 
 #  define SOFTI2C_PORT          PORTC

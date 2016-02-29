@@ -74,6 +74,8 @@ volatile uint8_t parallel_rxflag;
 
 /* Small helper for fastloaders that need to detect disk changes */
 static uint8_t __attribute__((unused)) check_keys(void) {
+#if 0
+  // FIXME: fastloader key_pressed
   /* Check for disk changes etc. */
   if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
     change_disk();
@@ -84,7 +86,7 @@ static uint8_t __attribute__((unused)) check_keys(void) {
     set_dirty_led(1);
     return 1;
   }
-
+#endif
   return 0;
 }
 

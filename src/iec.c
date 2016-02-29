@@ -561,9 +561,12 @@ void iec_mainloop(void) {
       set_dirty_led(1);
 
       /* Wait until the sleep key is used again */
+#if 0
+FIXME: key_pressed
       while (!key_pressed(KEY_SLEEP))
         system_sleep();
       reset_key(KEY_SLEEP);
+#endif
 
       update_leds();
 
@@ -575,6 +578,8 @@ void iec_mainloop(void) {
       parallel_set_dir(PARALLEL_DIR_IN);
       set_atn_irq(1);
       while (IEC_ATN) {
+#if 0
+FIXME: key_pressed
         if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
           change_disk();
         } else if (key_pressed(KEY_SLEEP)) {
@@ -585,6 +590,7 @@ void iec_mainloop(void) {
           display_service();
           reset_key(KEY_DISPLAY);
         }
+#endif
         system_sleep();
       }
 
@@ -765,7 +771,7 @@ void iec_mainloop(void) {
           /* If the disk was changed the buffer contents are useless */
           if (disk_state == DISK_CHANGED || disk_state == DISK_REMOVED) {
             free_multiple_buffers(FMB_ALL);
-            change_init();
+            // FIXME: change_init();
             filesystem_init(0);
           } else
             /* Disk state indicated an error, try to recover by initialising */
