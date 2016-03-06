@@ -1286,9 +1286,11 @@ typedef uint8_t iec_bus_t;
 #  define IEC_DDROUT IEC_DDR
 #endif
 
-/* The AVR asm modules don't support noninverted output lines, */
-/* so this can be staticalle defined for all configurations.   */
+/* The AVR based devices usually invert output lines, */
+/* so this can be the default for most configurations.   */
+#ifndef IEC_OUTPUTS_NONINVERTED
 #define IEC_OUTPUTS_INVERTED
+#endif
 
 #ifdef IEC_PCMSK
    /* For hardware configurations using PCINT for IEC IRQs */
@@ -1376,7 +1378,11 @@ static inline void iec_interface_init(void) {
   IEC_PORTIN |= IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA | IEC_BIT_SRQ;
   /* Set up the output port - all lines high */
   IEC_DDROUT |=            IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ;
+#ifdef IEC_OUTPUTS_INVERTED
   IEC_PORT   &= (uint8_t)~(IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
+#else
+  IEC_PORT   |= (IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
+#endif
 #else
   /* Pullups would be nice, but AVR can't switch from */
   /* low output to hi-z input directly                */
