@@ -1222,12 +1222,42 @@ static inline void buttons_init(void) {
 static inline void board_init(void) {
   // TODO: rewrite buttons_read() to make this check work in main()
   // Hold PREV button during reset/power on for board diagose
+#ifdef CONFIG_HAVE_IEC
+  IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
+  IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
+#endif
   lcd_init();
   lcd_bootscreen();
   buttons_init();
   uint16_t buttons = ADCW;
   if (buttons > 580 && buttons < 630) board_diagnose();
 }
+
+
+#ifdef CONFIG_HAVE_IEC
+#  define IEC_OUTPUTS_NONINVERTED
+#  define IEC_INPUT             PINC
+#  define IEC_DDR               DDRC
+#  define IEC_PORT              PORTC
+#  define IEC_PIN_ATN           PC2
+#  define IEC_PIN_DATA          PC4
+#  define IEC_PIN_CLOCK         PC5
+#  define IEC_PIN_SRQ           0
+#  define IEC_SEPARATE_OUT
+#  define IEC_OPIN_ATN          0
+#  define IEC_OPIN_DATA         PC6
+#  define IEC_OPIN_CLOCK        PC7
+#  define IEC_OPIN_SRQ          0
+#  define IEC_ATN_INT_VECT      PCINT2_vect
+#  define IEC_PCMSK             PCMSK2
+
+static inline void iec_interrupts_init(void) {
+  PCICR |= _BV(PCIE2);
+  PCIFR |= _BV(PCIF2);
+}
+#endif
+
+
 
 #  endif
 #else

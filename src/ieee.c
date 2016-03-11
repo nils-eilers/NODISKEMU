@@ -1020,21 +1020,6 @@ void handle_card_changes(void) {
 }
 
 
-static inline void handle_buttons(void) {
-  uint8_t buttons = get_key_press(KEY_ANY);
-  if (!buttons) return;
-  if (buttons & KEY_PREV) {
-    // If there's an error, PREV clears the disk status
-    // If not, enter menu system just as any other key
-    if (current_error != ERROR_OK) {
-      set_error(ERROR_OK);
-      return;
-    }
-  }
-  menu();
-}
-
-
 void ieee_mainloop(void) {
   ieee488_InitIFC();
   set_error(ERROR_DOSVERSION);

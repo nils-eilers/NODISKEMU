@@ -151,6 +151,21 @@ void handle_lcd(void) {
 }
 
 
+void handle_buttons(void) {
+  uint8_t buttons = get_key_press(KEY_ANY);
+  if (!buttons) return;
+  if (buttons & KEY_PREV) {
+    // If there's an error, PREV clears the disk status
+    // If not, enter menu system just as any other key
+    if (current_error != ERROR_OK) {
+      set_error(ERROR_OK);
+      return;
+    }
+  }
+  menu();
+}
+
+
 int8_t menu_vertical(uint8_t min, uint8_t max) {
   uint8_t pos = min;
 

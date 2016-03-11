@@ -54,6 +54,7 @@
 #include "timer.h"
 #include "uart.h"
 #include "iec.h"
+#include "menu.h"
 
 /* ------------------------------------------------------------------------- */
 /*  Global variables                                                         */
@@ -543,6 +544,23 @@ void iec_init(void) {
 }
 void bus_init(void) __attribute__((weak, alias("iec_init")));
 
+
+void iec_sleep(bool sleep) {
+  if (sleep) {
+    set_atn_irq(0);
+    set_data(1);
+    set_clock(1);
+    set_error(ERROR_OK);
+    set_dirty_led(1);
+  } else {
+    update_leds();
+    iec_data.bus_state = BUS_IDLE;
+    set_atn_irq(1);
+  }
+}
+void bus_sleep(bool sleep) __attribute__((weak, alias("iec_sleep")));
+
+
 void iec_mainloop(void) {
   int16_t cmd = 0; // make gcc happy...
 
@@ -553,24 +571,8 @@ void iec_mainloop(void) {
   while (1) {
     switch (iec_data.bus_state) {
     case BUS_SLEEP:
-      set_atn_irq(0);
-      set_data(1);
-      set_clock(1);
-      set_error(ERROR_OK);
-      set_busy_led(0);
-      set_dirty_led(1);
-
-      /* Wait until the sleep key is used again */
-#if 0
-FIXME: key_pressed
-      while (!key_pressed(KEY_SLEEP))
-        system_sleep();
-      reset_key(KEY_SLEEP);
-#endif
-
-      update_leds();
-
-      iec_data.bus_state = BUS_IDLE;
+      handle_lcd();
+      handle_buttons();
       break;
 
     case BUS_IDLE:  // EBFF
@@ -578,19 +580,8 @@ FIXME: key_pressed
       parallel_set_dir(PARALLEL_DIR_IN);
       set_atn_irq(1);
       while (IEC_ATN) {
-#if 0
-FIXME: key_pressed
-        if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
-          change_disk();
-        } else if (key_pressed(KEY_SLEEP)) {
-          reset_key(KEY_SLEEP);
-          iec_data.bus_state = BUS_SLEEP;
-          break;
-        } else if (display_found && key_pressed(KEY_DISPLAY)) {
-          display_service();
-          reset_key(KEY_DISPLAY);
-        }
-#endif
+        handle_lcd();
+        handle_buttons();
         system_sleep();
       }
 
