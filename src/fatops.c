@@ -238,7 +238,7 @@ void pet2asc(uint8_t *buf) {
 static bool is_valid_fat_char(const uint8_t c) {
   if (isalnum(c) || c == '!' ||
       (c >= '#' && c <= ')') ||
-      c == '-')
+      c == '-' || c == '.')
     return true;
   else
     return false;
@@ -254,8 +254,8 @@ static bool is_valid_fat_char(const uint8_t c) {
 static bool is_valid_fat_name(const uint8_t *name) {
   const uint8_t *ptr = name;
 
-  /* check for leading space */
-  if (*name == ' ')
+  /* check the first character */
+  if (*name == ' ' || *name == '.')
     return false;
 
   /* check all characters for validity */
@@ -267,10 +267,7 @@ static bool is_valid_fat_name(const uint8_t *name) {
   /* check the last character */
   ptr--;
 
-  if (*ptr == ' ')
-    return false;
-
-  if (*ptr == '.')
+  if (*name == ' ' || *name == '.')
     return false;
 
   return true;
