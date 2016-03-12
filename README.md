@@ -81,11 +81,48 @@ in a way similar to other drives.
 The deeper meaning of this name is to clarify that there actually are
 and ever will be some differences compared to real floppy drives.
 
- 
 
-General notes
--------------
-Any command not listed below is currently not supported.
+
+Supported cards
+---------------
+MMC, SD and SHDC cards (resp. microSD/microSDHC cards) are supported,
+formatted with either FAT16 or FAT32.
+
+SDXC, microSDXC or ex-FAT won't work.
+
+If you card refuses to work, try to format it with SD Formatter 4.0,
+freely available for Windows and Mac from
+https://www.sdcard.org/downloads/formatter_4/
+
+Compatibility (IEEE-488)
+=========================
+
+Known good
+----------
+Devices with IEEE-488 bus are compatible with any CBM/PET computer
+equipped with either BASIC 2, BASIC 4 or BSOS.
+
+The CBM-II series are fully supported, however you might want to
+upgrade to a recent KERNAL because the older ones contain a couple
+of bugs. The PROXA 7000 extension is fully supported.
+
+OS-9 on the SuperPET is reported to boot from the FAT filesystem, but not
+from disk images.
+
+Issues
+------
+The original PET equipped with BASIC 1 is not compatible because of its
+hopelessly broken IEEE routines.
+
+There are known issues with printer interfaces by Ultra Eletronic or
+several clones of them, including mine.
+
+Untested
+--------
+Tests are still missing for the Z-RAM card (a Z80 CP/M board)
+and the softbox by Small Systems Engineering, Ltd. which is a Z80 CP/M
+computer attached to the IEEE-488 bus.
+
 
 Directory filters
 -----------------
@@ -100,7 +137,7 @@ CMD-style "short" and "long" directory listings with timestamps are supported
 ("$=T"), including timestamp filters. Please read a CMD manual for the syntax
 until this file is updated.
 
- Partition directory
+Partition directory
 --------------------
 The CMD-style partition directory ($=P) is supported, including filters
 ($=P:S*). All partitions are listed with type "FAT", although this could
@@ -212,7 +249,7 @@ following data structure:
      1 byte : Sector size divided by 256
               This field holds the sector size of the storage device
               divided by 256.
-     4 bytes: Number of sectors on the device 
+     4 bytes: Number of sectors on the device
               A little-endian (same byte order as the 6502) value
               of the number of sectors on the storage device.
               If there is ever a need to increase the reported
@@ -663,7 +700,12 @@ P00/S00/U00/R00 files are transparently supported, that means they show
 up in the directory listing with their internal file name instead of the
 FAT file name. Renaming them only changes the internal name. The XE
 command defines if x00 extensions are used when writing files, by
-default NODISKEMU uses them for SEQ/USR/REL files but not for PRG.
+default NODISKEMU doesn't create x00 container files.
+
+The creation of x00 files is forced if the filename contains
+characters that would be illegal for FAT filenames. Spaces and dots are only
+allowed within the filename but not as the first or last character.
+
 Parsing of x00 files is always enabled even when writing them is not.
 
 x00 files are recognized by checking both the extension of the file
@@ -755,7 +797,22 @@ NODISKEMU requires avr-libc version 1.8.x.
 NODISKEMU is set up to be compiled in multiple configurations, controlled by
 configuration files. By default the Makefile looks for a file named
 'config', but you can override it by providing the name on the make
-command line with "make CONFIG=filename[,filename...]".
+command line with "make CONFIG=filename[,filename...]", e.g.:
+
+        make CONFIG=configs/config-petSD+
+
+The AVRDUDE settings use the Atmel ISP mkII programmer as default.
+If you're using another programmer, you'd have to change the settings
+in `scripts/avr/variables.mk`, section *Programming Options (avrdude)*.
+
+To initially set or fix your fuses (required only once), run the Makefile's
+fuses target, e.g.:
+
+        make CONFIG=configs/config-petSD+ fuses
+
+To program your firmware, run the Makefile's program target, e.g.:
+
+        make CONFIG=configs/config-petSD+ program
 
 An example configuration file named "config-example" is provided with
 the source code, as well as abridged files corresponding to the
