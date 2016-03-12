@@ -60,6 +60,7 @@
 #include "lcd.h"
 #include "timer.h"
 #include "menu.h"
+#include "eeprom-conf.h"
 
 // -------------------------------------------------------------------------
 //  Global variables
@@ -878,8 +879,12 @@ void ieee488_ProcessIFC(void) {
   uart_puts_P(PSTR("\r\nIFC\r\n"));
   free_multiple_buffers(FMB_USER_CLEAN);
   ieee488_Init();
+  read_configuration();
+  lcd_clear();
+  lcd_puts_P(PSTR("IFC: interface clear"));
   set_error(ERROR_DOSVERSION);
   while(!ieee488_IFC());
+  lcd_draw_screen(SCRN_STATUS);
 }
 
 
