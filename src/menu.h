@@ -40,7 +40,6 @@ enum {
 
 void lcd_splashscreen(void);
 void lcd_draw_screen(uint16_t screen);
-void lcd_refresh(uint16_t screen);
 void lcd_update_device_addr(void);
 void lcd_update_disk_status(void);
 void handle_lcd(void);
@@ -55,7 +54,6 @@ static inline void lcd_bootscreen(void) {
 static inline void lcd_bootscreen(void) {}
 static inline void lcd_splashscreen(void) {}
 static inline void lcd_draw_screen(uint16_t screen) {}
-static inline void lcd_refresh(uint16_t screen) {}
 static inline void lcd_update_device_addr(void) {}
 static inline void handle_lcd(void) {}
 static inline void lcd_update_disk_status(void) {}
