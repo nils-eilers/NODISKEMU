@@ -405,7 +405,7 @@ int compare(const void *p1, const void *p2) {
 
 static void rom_menu_browse(uint8_t y) {
   switch (y) {
-    case 0: lcd_puts_P(PSTR("Abort\n")); break;
+    case 0: lcd_puts_P(PSTR("Return to main menu\n")); break;
     case 1: lcd_puts_P(PSTR("Change to parent dir\n")); break;
     default: printf("Internal error: rom_menu_browse(%d)\r\n", y);
   }
