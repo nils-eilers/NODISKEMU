@@ -6,27 +6,31 @@ SD/MMC to IEEE-488 interface/controller
 
 Introduction
 ------------
+
 NODISKEMU is firmware, used in hardware designs like petSD, petSD+ or
 Dave Curran's pet microSD that allows the IEEE-488 bus to access
-SD cards  - think of it as a 2031 with a modern storage medium instead
+SD cards  - think of it as a CBM 2031 with a modern storage medium instead
 of disks. The project was inspired by (and uses a few bits of code from)
 MMC2IEC[1] by Lars Pontoppidan and once ran on the same hardware before it
 grew too big for the ATmega32 used there.
 
 Currently, the firmware provide good DOS and file-level compatibility with CBM
 drives, but much work remains.  Unless specifically noted, anything that tries
-to execute code on the 1541 will not work, this includes every software
+to execute code on the device will not work, this includes every software
 fastloader.
 
-NODISKEMU is not intended to be used on devices equipped with a
-Commodore serial bus, such as MMC2IEC, SD2IEC or uIEC. Though most
-code still persists, compilation for these targets may break at any
-time or is already broken. You better keep using sd2iec for those.
+NODISKEMU is a fork of sd2iec[2] by Ingo Korb (et al.) and is not intended to
+be used on devices equipped with a Commodore serial bus, such as MMC2IEC,
+SD2IEC or uIEC. Though most code still persists, compilation for these targets
+may break at any time or is already broken. You better keep using sd2iec
+for those.
 
 1. http://pontoppidan.info/lars/index.php?proj=mmc2iec
+2. http://sd2iec.de
 
 
-### Are you kidding me? ###
+Are you kidding me?
+-------------------
 
 This actually **IS** a disk emulator, isn't?
 
@@ -50,6 +54,7 @@ SDXC, microSDXC or ex-FAT won't work.
 If you card refuses to work, try to format it with SD Formatter 4.0,
 freely available for Windows and Mac from
 https://www.sdcard.org/downloads/formatter_4/
+
 
 Compatibility (IEEE-488)
 ------------------------
