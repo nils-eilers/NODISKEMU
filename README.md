@@ -18,13 +18,12 @@ drives, but much work remains.  Unless specifically noted, anything that tries
 to execute code on the 1541 will not work, this includes every software
 fastloader.
 
-[1] Homepage: http://pontoppidan.info/lars/index.php?proj=mmc2iec
-
 NODISKEMU is not intended to be used on devices equipped with a
 Commodore serial bus, such as MMC2IEC, SD2IEC or uIEC. Though most
 code still persists, compilation for these targets may break at any
 time or is already broken. You better keep using sd2iec for those.
 
+1. http://pontoppidan.info/lars/index.php?proj=mmc2iec
 
 
 ### Are you kidding me? ###
@@ -39,7 +38,6 @@ in a way similar to other drives.
 
 The deeper meaning of this name is to clarify that there actually are
 and ever will be some differences compared to real floppy drives.
-
 
 
 Supported cards
@@ -93,7 +91,8 @@ LOAD"$",8
 LIST
 ```
 
-or `CATALOG` for BASIC 4. You can abbreviate to `cA` and specify the unit address:
+or `CATALOG` for BASIC 4. You can abbreviate to `cA` and specify the
+unit address:
 
 ```
 cAu9
@@ -152,8 +151,8 @@ For anything else beyond basic loading and saving programs and displaying
 the directory, you have to send disk commands to the command channel 15
 of the drive.
 
-This can be done in two ways, either by appending the command to the
-OPEN command or by sending it separately with the PRINT# command. An an example:
+This can be done in two ways, either by appending the command to the OPEN
+command or by sending it separately with the PRINT# command. An an example:
 
 ```
 OPEN1,8,15,"CD:DIRNAME":CLOSE1
@@ -161,28 +160,30 @@ OPEN1,8,15,"CD:DIRNAME":CLOSE1
 This opens the logical channel 1 on device 8 and sends the string `CD:DIRNAME`
 to the command channel 15.
 
-BASIC 4 adds some more advanced commands such as `CATALOG`. BASIC parses the given
-parameters and builds a command string which is then sent to the command channel 15,
-so it's just a more convenient wrapper for sending disk commands but it doesn't add
-any DOS functions, they're still all processed inside the disk drive.
+BASIC 4 adds some more advanced commands such as `CATALOG`. BASIC parses the
+given parameters and builds a command string which is then sent to the command
+channel 15, so it's just a more convenient wrapper for sending disk commands
+but it doesn't add any DOS functions, they're still all processed inside the
+disk drive.
 
-However, even though BASIC 4 knows some more disk commands, they're kind of limited
-in their usage. The most advanced and most comfortable way is to use a so called
-DOS wedge. It cannot be used inside programs, only in direct mode.
+However, even though BASIC 4 knows some more disk commands, they're kind of
+limited in their usage. The most advanced and most comfortable way is to use a
+so called DOS wedge. It cannot be used inside programs, only in direct mode.
 
-Preceed any disk command with a `@` or a `>`, everything after that will be sent to
-the command channel 15, e.g.:
+Preceed any disk command with a `@` or a `>`, everything after that will be
+sent to the command channel 15, e.g.:
 
 ```
 @CD:DIRNAME
 ```
 
-A loadable DOS wedge (as a terminate and stay resident program) is available from
-http://petsd.net/wedge.php for CBM/PET computers with BASIC 2 and BASIC 4 and from
-http://cbm2wedge.sourceforge.net for the CBM-II series.
+A loadable DOS wedge (as a terminate and stay resident program) is available
+from http://petsd.net/wedge.php for CBM/PET computers with BASIC 2 and BASIC 4
+and from http://cbm2wedge.sourceforge.net for the CBM-II series.
 
-Better yet, get an updated editor ROM with built-in wedge[1] or upgrade your CBM 8296
-to BSOS[2] to have the wedge available right from the start after power-on.
+Better yet, get an updated editor ROM with built-in wedge[1] or upgrade your
+CBM 8296 to BSOS[2] to have the wedge available right from the start after
+power-on.
 
 1. http://www.6502.org/users/sjgray/projects/editrom
 2. https://github.com/Edilbert/BSOS
@@ -191,8 +192,8 @@ to BSOS[2] to have the wedge available right from the start after power-on.
 Retrieving the Disk Status
 --------------------------
 
-If an error occurs, a red LED of the drive flashes to indicate an
-error. To get the error message, you have to retrieve the disk status by reading from
+If an error occurs, a red LED of the drive flashes to indicate an error. To
+get the error message, you have to retrieve the disk status by reading from
 channel 15.
 
 Unfortunately, BASIC 2 has no built-in command for this purpose, so it's
@@ -205,16 +206,16 @@ rather cumbersome:
 40 CLOSE1
 ```
 
-`INPUT` doesn't work in direct mode, so you'll really have to write a short program
-to retrieve and display the disk status.
+`INPUT` doesn't work in direct mode, so you'll really have to write a short
+program to retrieve and display the disk status.
 
-BASIC 4 does it better, it includes the pseudo variables `ds` and `ds$` which it updates
-after disk operations from status channel 15. However, it misses some changes occasionally
-so if you depend on really getting the current disk status you're stuck with the
-old-fashioned way.
+BASIC 4 does it better, it includes the pseudo variables `ds` and `ds$` which
+it updates after disk operations from status channel 15. However, it misses
+some changes occasionally so if you depend on really getting the current disk
+status you're stuck with the old-fashioned way.
 
-Again, the most comfortable way is to use a DOS wedge. Just hit `@` followed by RETURN
-and you'll get always the current disk status.
+Again, the most comfortable way is to use a DOS wedge. Just hit `@` followed
+by RETURN and you'll get always the current disk status.
 
 
 Long File Names
@@ -923,8 +924,17 @@ and the suffix of the configuration file (usually corresponds
 to the short name of the hardware NODISKEMU was compiled for).
 
 
+Pre-built binaries
+------------------
+
+The development sources are compiled for all supported hardware
+variants once a day if there are any changes. These binaries are
+available from http://petsd.net/nightlies.php?lang=en including instructions
+for updating.
+
+
 Compilation notes
-=================
+-----------------
 NODISKEMU requires avr-libc version 1.8.x.
 
 NODISKEMU is set up to be compiled in multiple configurations, controlled by
