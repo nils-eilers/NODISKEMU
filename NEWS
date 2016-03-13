@@ -1,10 +1,12 @@
-	- Several bugfixes for the new IEEE-488 routines
-	- Add support for D80/D82
-	- Enable compilation on BSD systems
-	- Include date and git hash in version number
+        - M2I support removed
+        - Support a LCD display attached directly to the controller
+        - Several bugfixes for the new IEEE-488 routines
+        - Add support for D80/D82
+        - Enable compilation on BSD systems
+        - Include date and git hash in version number
 
 2015-05-22 - fork to NODISKEMU
-	- IEEE-488 routines replaced with new ones rewritten
+        - IEEE-488 routines replaced with new ones rewritten
           from scratch, ported from the emily project
 
 Old NEWS from sd2iec below:
@@ -209,7 +211,7 @@ Old NEWS from sd2iec below:
         - Remove some ancient not-true-anymore statements from README
         - Improve sector read performance
         - Reduce unecessary reads during seeking
- 
+
 2008-02-24 - release 0.6.2
         - Bugfix: Read the correct pins when determining the device
                   address in LarsP and NKC configurations
