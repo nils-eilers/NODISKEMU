@@ -1069,7 +1069,7 @@ static void parse_initialize(void) {
 
 /* --- M-E --- */
 static void handle_memexec(void) {
-#ifdef HAVE_IEC
+#ifdef CONFIG_HAVE_IEC
   uint16_t address;
 
   if (command_length < 5)
@@ -1121,7 +1121,7 @@ static void handle_memexec(void) {
   datacrc = 0xffff;
   previous_loader = detected_loader;
   detected_loader = FL_NONE;
-#endif /* HAVE_IEC */
+#endif /* CONFIG_HAVE_IEC */
 }
 
 /* --- M-R --- */
