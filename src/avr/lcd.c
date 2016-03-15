@@ -38,10 +38,8 @@
 #include "lcd.h"
 #include "timer.h"
 #include "errormsg.h"
+#include "bus.h"
 
-#ifdef CONFIG_HAVE_IEEE
-#include "ieee.h"               // device_address
-#endif
 
 #define LCD_DELAY_US_DATA   46
 #define LCD_DELAY_MS_CLEAR  10

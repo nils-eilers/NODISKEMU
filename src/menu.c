@@ -119,6 +119,9 @@ void lcd_draw_screen(uint16_t screen) {
     break;
 
   case SCRN_STATUS:
+    lcd_locate(16, 0);
+    if (active_bus == IEC)     lcd_puts_P(PSTR(" IEC"));
+    if (active_bus == IEEE488) lcd_puts_P(PSTR("IEEE"));
     lcd_update_device_addr();
     lcd_update_disk_status();
     break;
@@ -126,6 +129,11 @@ void lcd_draw_screen(uint16_t screen) {
   default:
     break;
   }
+}
+
+
+void lcd_refresh(void) {
+  lcd_draw_screen(lcd_current_screen);
 }
 
 
@@ -151,18 +159,18 @@ void handle_lcd(void) {
 }
 
 
-void handle_buttons(void) {
+bool handle_buttons(void) {
   uint8_t buttons = get_key_press(KEY_ANY);
-  if (!buttons) return;
+  if (!buttons) return false;
   if (buttons & KEY_PREV) {
     // If there's an error, PREV clears the disk status
     // If not, enter menu system just as any other key
     if (current_error != ERROR_OK) {
       set_error(ERROR_OK);
-      return;
+      return false;
     }
   }
-  menu();
+  return menu();
 }
 
 
@@ -225,6 +233,17 @@ void menu_ask_store_settings(void) {
     write_configuration();
   }
 }
+
+#ifdef HAVE_DUAL_INTERFACE
+void menu_select_bus(void) {
+  lcd_clear();
+  lcd_puts_P(PSTR("IEC\nIEEE-488"));
+  active_bus = menu_vertical(0, 1);
+  menu_ask_store_settings();
+}
+#else
+static inline void menu_select_bus(void) {}
+#endif
 
 
 void menu_device_number(void) {
@@ -420,9 +439,26 @@ int compare(const void *p1, const void *p2) {
 
 static void rom_menu_browse(uint8_t y) {
   switch (y) {
-    case 0: lcd_puts_P(PSTR("Abort\n")); break;
+    case 0: lcd_puts_P(PSTR("Return to main menu\n")); break;
     case 1: lcd_puts_P(PSTR("Change to parent dir\n")); break;
     default: printf("Internal error: rom_menu_browse(%d)\r\n", y);
+  }
+}
+
+
+static void rom_menu_main(uint8_t y) {
+  switch (y) {
+    case 0: lcd_puts_P(PSTR("Exit menu")); break;
+    case 1: lcd_puts_P(PSTR("Browse files")); break;
+    case 2: lcd_puts_P(PSTR("Change device number")); break;
+    case 3:
+      if (rtc_state == RTC_NOT_FOUND)
+        lcd_printf("Clock not found");
+      else
+        lcd_printf("Set clock");
+      break;
+    case 4: lcd_puts_P(PSTR("Select IEC/IEEE-488")); break;
+    default: break;
   }
 }
 
@@ -690,25 +726,83 @@ cleanup:
   goto reread;
 }
 
+#ifdef HAVE_DUAL_INTERFACE
+#define MAIN_MENU_LAST_ENTRY 4
+#else
+#define MAIN_MENU_LAST_ENTRY 3
+#endif
 
-void menu(void) {
-  uint8_t sel;
+bool menu(void) {
+  uint8_t mp = 0;
+  uint8_t my = 0;
+  uint8_t i;
+  uint8_t old_bus;
+  bool action;
+
+  old_bus = active_bus;
   bus_sleep(true);
 
-  menu_select_status();
+  menu_select_status(); // disable splash screen if still active
+  set_error(ERROR_OK);
   for (;;) {
     set_busy_led(false); set_dirty_led(true);
     lcd_clear();
-    lcd_printf("Exit menu\nBrowse files\nChange device number\n");
-    if (rtc_state == RTC_NOT_FOUND)
-      lcd_printf("Clock not found");
-    else
-      lcd_printf("Set clock");
-    sel = menu_vertical(0,3);
+    for (i = 0; i < LCD_LINES; i++) {
+      lcd_locate(0, i);
+      rom_menu_main(mp - my + i);
+    }
+
+    lcd_cursor(true);
+    for (;;) {
+      action = false;
+      lcd_locate(0, my);
+      //printf("mp: %u   my: %u\r\n", mp, my);
+      //while (!get_key_state(KEY_ANY));
+      if (get_key_autorepeat(KEY_PREV)) {
+        if (mp > 0) {
+          // Move up
+          --mp;
+          if (my > 0) {
+            --my;               // Move within same page
+          } else {
+            my = LCD_LINES - 1; // page up
+            break;
+          }
+        } else {
+          // flip down to last menu entry
+          my = 0;
+          mp = MAIN_MENU_LAST_ENTRY;
+          break;
+        }
+      }
+      if (get_key_autorepeat(KEY_NEXT)) {
+        if (mp < MAIN_MENU_LAST_ENTRY) {
+          ++mp;
+          if (my < (LCD_LINES - 1)) {
+            ++my;               // Move within same page
+          } else {
+            my = 0;             // page down
+            break;
+          }
+        } else {
+          // flip up to first menu entry
+          mp = 0;
+          my = 0;
+          break;
+        }
+      }
+      if (get_key_press(KEY_SEL)) {
+        action = true;
+        break;
+      }
+    }
+    lcd_cursor(false);
+    if (!action) continue;
     lcd_clear();
-    if      (sel == 1) menu_browse_files();
-    else if (sel == 2) menu_device_number();
-    else if (sel == 3) menu_set_clock();
+    if      (mp == 1) menu_browse_files();
+    else if (mp == 2) menu_device_number();
+    else if (mp == 3) menu_set_clock();
+    else if (mp == 4) menu_select_bus();
     else  break;
     if (current_error != ERROR_OK) break;
   }
@@ -716,5 +810,6 @@ void menu(void) {
   bus_sleep(false);
   lcd_draw_screen(SCRN_STATUS);
   update_leds();
+  return old_bus != active_bus;
 }
 

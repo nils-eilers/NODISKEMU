@@ -27,6 +27,7 @@
 
 
 #include <avr/io.h>
+#include "asmconfig.h"
 
 #ifdef CONFIG_HAVE_IEEE
 

@@ -52,6 +52,9 @@
 #include "lcd.h"
 #include "menu.h"
 
+#ifdef HAVE_DUAL_INTERFACE
+  uint8_t active_bus = IEEE488;
+#endif
 
 #if defined(__AVR__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 1))
 int main(void) __attribute__((OS_main));
@@ -72,7 +75,6 @@ int main(void) {
   spi_init(SPI_SPEED_SLOW);
 #endif
   timer_init();
-  bus_interface_init();
   i2c_init();
 
   /* Second part of system initialisation, switches to full speed on ARM */
@@ -88,7 +90,6 @@ int main(void) {
 
   /* Anything that does something which needs the system clock */
   /* should be placed after system_init_late() */
-  bus_init();    // needs delay, inits device address with HW settings
   rtc_init();    // accesses I2C
   disk_init();   // accesses card
   read_configuration(); // restores configuration, may change device address
@@ -123,7 +124,12 @@ int main(void) {
 
   lcd_splashscreen();
 
-  bus_mainloop();
+  for (;;) {
+    bus_interface_init();
+    bus_init();    // needs delay, inits device address with HW settings
+    read_configuration(); // may change device address
+    lcd_refresh();
+    bus_mainloop();
+  }
 
-  while (1);
 }

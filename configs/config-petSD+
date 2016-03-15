@@ -49,7 +49,7 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 CONFIG_BUFFER_COUNT=32
 CONFIG_MAX_PARTITIONS=2
 CONFIG_RTC_PCF8583=y
-CONFIG_HAVE_IEEE=n
+CONFIG_HAVE_IEEE=y
 CONFIG_HAVE_IEC=y
 # A remote LCD with dedicated controller is not supported because
 # the petSD+ lacks an interrupt port pin for it

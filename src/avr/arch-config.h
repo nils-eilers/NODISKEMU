@@ -853,7 +853,6 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define LED_DIRTY_PIN         PD6
 
 
-#  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
@@ -1115,7 +1114,6 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define LED_DIRTY_PIN         PD0
 
 
-#  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
@@ -1273,7 +1271,7 @@ static inline void iec_interrupts_init(void) {
 #endif
 
 #if defined(CONFIG_HAVE_IEC) && defined(CONFIG_HAVE_IEEE)
-#  error Sorry, dual-interface devices must select only one interface at compile time!
+#define HAVE_DUAL_INTERFACE
 #endif
 
 
@@ -1324,7 +1322,7 @@ typedef uint8_t iec_bus_t;
 
 #ifdef IEC_PCMSK
    /* For hardware configurations using PCINT for IEC IRQs */
-#  define set_atn_irq(x) \
+#  define set_iec_atn_irq(x) \
      if (x) { IEC_PCMSK |= _BV(IEC_PIN_ATN); } \
      else { IEC_PCMSK &= (uint8_t)~_BV(IEC_PIN_ATN); }
 #  define set_clock_irq(x) \
@@ -1333,7 +1331,7 @@ typedef uint8_t iec_bus_t;
 #  define HAVE_CLOCK_IRQ
 #else
      /* Hardware ATN interrupt */
-#  define set_atn_irq(x) \
+#  define set_iec_atn_irq(x) \
      if (x) { EIMSK |= _BV(IEC_ATN_INT); } \
      else { EIMSK &= (uint8_t)~_BV(IEC_ATN_INT); }
 
@@ -1446,45 +1444,7 @@ static inline void iec_interface_init(void) {
 #endif
 }
 
-/* weak-aliasing is resolved at link time, so it doesn't work */
-/* for static inline functions - use a conditionally compiled */
-/* wrapper instead                                            */
-#  ifndef CONFIG_HAVE_IEEE
-static inline void bus_interface_init(void) {
-  iec_interface_init();
-}
-#  endif
 #endif /* CONFIG_HAVE_IEC */
-
-
-/* --- IEEE --- */
-#ifdef CONFIG_HAVE_IEEE
-#  ifdef IEEE_PCMSK
-/* IEEE-488 ATN interrupt using PCINT */
-static inline void set_atn_irq(uint8_t x) {
-  if (x)
-    IEEE_PCMSK |= _BV(IEEE_PCINT);
-  else
-    IEEE_PCMSK &= (uint8_t) ~_BV(IEEE_PCINT);
-}
-#  else
-/* Hardware ATN interrupt */
-static inline void set_atn_irq(uint8_t x) {
-  if (x)
-    EIMSK |= _BV(IEEE_ATN_INT);
-  else
-    EIMSK &= (uint8_t) ~_BV(IEEE_ATN_INT);
-}
-#  endif
-
-/* same weak alias problem as in IEC version */
-#  ifndef CONFIG_HAVE_IEC
-static inline void bus_interface_init(void) {
-  ieee_interface_init();
-}
-#  endif
-#endif /* CONFIG_HAVE_IEEE */
-
 
 
 /* The assembler module needs the vector names, */

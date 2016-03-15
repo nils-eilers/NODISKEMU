@@ -51,7 +51,7 @@
 #include "fileops.h"
 #include "filesystem.h"
 #include "led.h"
-#include "ieee.h"
+#include "bus.h"
 #include "fastloader.h"
 #include "errormsg.h"
 #include "ctype.h"
@@ -115,8 +115,6 @@ enum {
 };
 
 
-void    ieee488_Init(void);
-void    ieee488_MainLoop(void);
 uint8_t ieee488_ListenIsActive(void);
 uint8_t ieee488_RxByte(char *c);
 void    ieee488_BusIdle(void);
@@ -584,13 +582,11 @@ void ieee488_BusSleep(bool sleep) {
   }
 }
 
-void bus_sleep(bool sleep) __attribute__((weak, alias("ieee488_BusSleep")));
-
 
 /* Please note that the init-code is spread across two functions:
    ieee488_Init() follows below, but in src/avr/arch-config.h there
-   is ieee_interface_init() also, which is aliased to bus_interface_init()
-   there and called as such from main().
+   is ieee_interface_init() also, which is called by bus_interface_init()
+   from main().
 */
 void ieee488_Init(void) {
   ieee488_ListenActive = ieee488_TalkingDevice = open_sa = 0;
@@ -608,8 +604,6 @@ void ieee488_Init(void) {
   ieee488_BusIdle();
   ieee488_InitAtnInterrupt();
 }
-
-void bus_init(void) __attribute__((weak, alias("ieee488_Init")));
 
 
 uint8_t ieee488_RxByte(char *c) {
@@ -1029,9 +1023,7 @@ void ieee_mainloop(void) {
     // as long as the ATN interrupt stays enabled
     handle_card_changes();
     handle_lcd();
-    handle_buttons();
+    if (handle_buttons()) break; // switch to IEC bus?
   }
 }
 
-
-void bus_mainloop(void) __attribute__ ((weak, alias("ieee_mainloop")));

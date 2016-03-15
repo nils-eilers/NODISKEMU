@@ -555,7 +555,7 @@ static inline __attribute__((always_inline)) void set_srq(unsigned int state) {
 }
 
 /* Enable/disable ATN interrupt */
-static inline __attribute__((always_inline)) void set_atn_irq(uint8_t state) {
+static inline __attribute__((always_inline)) void set_iec_atn_irq(uint8_t state) {
   if (state) {
     IEC_TIMER_ATN->CCR |=   0b111 << (3 * IEC_CAPTURE_ATN);
   } else {

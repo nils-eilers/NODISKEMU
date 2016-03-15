@@ -53,7 +53,7 @@
 #include "system.h"
 #include "timer.h"
 #include "uart.h"
-#include "iec.h"
+#include "bus.h"
 #include "menu.h"
 
 /* ------------------------------------------------------------------------- */
@@ -332,7 +332,7 @@ static uint8_t iec_listen_handler(const uint8_t cmd) {
   while (1) {
     if (iec_data.iecflags & JIFFY_ACTIVE) {
       iec_bus_t flags;
-      set_atn_irq(1);
+      set_iec_atn_irq(1);
       c = jiffy_receive(&flags);
       if (!(flags & IEC_BIT_ATN))
         /* ATN was active at the end of the transfer */
@@ -542,12 +542,11 @@ void iec_init(void) {
   delay_ms(1);
   device_address = device_hw_address();
 }
-void bus_init(void) __attribute__((weak, alias("iec_init")));
 
 
 void iec_sleep(bool sleep) {
   if (sleep) {
-    set_atn_irq(0);
+    set_iec_atn_irq(0);
     set_data(1);
     set_clock(1);
     set_error(ERROR_OK);
@@ -555,30 +554,30 @@ void iec_sleep(bool sleep) {
   } else {
     update_leds();
     iec_data.bus_state = BUS_IDLE;
-    set_atn_irq(1);
+    set_iec_atn_irq(1);
   }
 }
-void bus_sleep(bool sleep) __attribute__((weak, alias("iec_sleep")));
 
 
 void iec_mainloop(void) {
   int16_t cmd = 0; // make gcc happy...
+  bool switch_to_ieee488 = false;
 
   set_error(ERROR_DOSVERSION);
 
   iec_data.bus_state = BUS_IDLE;
 
-  while (1) {
+  do {
     switch (iec_data.bus_state) {
     case BUS_SLEEP:
       handle_lcd();
-      handle_buttons();
+      switch_to_ieee488 = handle_buttons();
       break;
 
     case BUS_IDLE:  // EBFF
       /* Wait for ATN */
       parallel_set_dir(PARALLEL_DIR_IN);
-      set_atn_irq(1);
+      set_iec_atn_irq(1);
       while (IEC_ATN) {
         handle_lcd();
         handle_buttons();
@@ -593,7 +592,7 @@ void iec_mainloop(void) {
       /* Pull data low to say we're here */
       set_clock(1);
       set_data(0);
-      set_atn_irq(0);
+      set_iec_atn_irq(0);
 
       iec_data.device_state = DEVICE_IDLE;
       iec_data.bus_state    = BUS_ATNACTIVE;
@@ -698,7 +697,7 @@ void iec_mainloop(void) {
       break;
 
     case BUS_NOTFORME: // E8FD
-      set_atn_irq(0);
+      set_iec_atn_irq(0);
       set_clock(1);
       set_data(1);
       iec_data.bus_state = BUS_ATNFINISH;
@@ -727,7 +726,7 @@ void iec_mainloop(void) {
       break;
 
     case BUS_ATNPROCESS: // E8D7
-      set_atn_irq(1);
+      set_iec_atn_irq(1);
 
       if (iec_data.device_state == DEVICE_LISTEN) {
         if (iec_listen_handler(cmd))
@@ -746,7 +745,7 @@ void iec_mainloop(void) {
       break;
 
     case BUS_CLEANUP:
-      set_atn_irq(1);
+      set_iec_atn_irq(1);
       // 836B
       set_clock(1);
       set_data(1);
@@ -791,6 +790,5 @@ void iec_mainloop(void) {
       iec_data.bus_state = BUS_IDLE;
       break;
     }
-  }
+  } while (!switch_to_ieee488);
 }
-void bus_mainloop(void) __attribute__ ((weak, alias("iec_mainloop")));

@@ -44,7 +44,7 @@
 #include "fastloader-ll.h"
 #include "fileops.h"
 #include "iec-bus.h"
-#include "iec.h"
+#include "bus.h"
 #include "led.h"
 #include "parser.h"
 #include "timer.h"
@@ -406,7 +406,7 @@ void load_dreamload(UNUSED_PARAMETER) {
   /* disable IRQs while loading the final code, so no jobcodes are read */
   ATOMIC_BLOCK( ATOMIC_FORCEON ) {
     set_clock_irq(0);
-    set_atn_irq(0);
+    set_iec_atn_irq(0);
 
     /* Release clock and data */
     set_clock(1);
@@ -422,7 +422,7 @@ void load_dreamload(UNUSED_PARAMETER) {
     }
 
     if ((type == 0xac) || (type == 0xdc)) {
-      set_atn_irq(1);
+      set_iec_atn_irq(1);
       detected_loader = FL_DREAMLOAD_OLD;
     } else {
       set_clock_irq(1);
@@ -493,7 +493,7 @@ void load_dreamload(UNUSED_PARAMETER) {
 error:
   free_buffer(buf);
   set_clock_irq(0);
-  set_atn_irq(0);
+  set_iec_atn_irq(0);
 }
 #endif
 
@@ -760,7 +760,7 @@ void load_gijoe(UNUSED_PARAMETER) {
 
   set_data(1);
   set_clock(1);
-  set_atn_irq(0);
+  set_iec_atn_irq(0);
 
   /* Wait until the bus has settled */
   delay_ms(10);
@@ -865,7 +865,7 @@ void load_epyxcart(UNUSED_PARAMETER) {
   /* Initial handshake */
   set_data(1);
   set_clock(0);
-  set_atn_irq(0);
+  set_iec_atn_irq(0);
 
   while (IEC_DATA)
     if (!IEC_ATN)
@@ -1746,7 +1746,7 @@ void load_nippon(UNUSED_PARAMETER) {
 
   /* init */
   uart_puts_P(PSTR("NIPPON"));
-  set_atn_irq(0);
+  set_iec_atn_irq(0);
   buf = alloc_system_buffer();
   if (!buf) {
     uart_puts_P(PSTR("BUF ERR")); uart_putcrlf();
