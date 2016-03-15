@@ -31,7 +31,7 @@
 #include "diskio.h"
 #include "fatops.h"
 #include "flags.h"
-#include "iec.h"
+#include "bus.h"
 #include "timer.h"
 #include "ustring.h"
 #include "eeprom-conf.h"
@@ -53,6 +53,7 @@ uint8_t rom_filename[ROM_NAME_LENGTH+1];
  * @drvflags1  : 16 bits of drv mappings, organized as 4 nybbles.
  * @imagedirs  : Disk images-as-directory mode
  * @romname    : M-R rom emulation file name (zero-padded, but not terminated)
+ * @active_bus : IEC or IEEE488
  *
  * This is the data structure for the contents of the EEPROM.
  *
@@ -72,6 +73,9 @@ static EEMEM struct {
   uint16_t drvconfig1;
   uint8_t  imagedirs;
   uint8_t  romname[ROM_NAME_LENGTH];
+#ifdef HAVE_DUAL_INTERFACE
+  uint8_t  active_bus;
+#endif
 } __attribute__((packed)) storedconfig;
 
 /**
@@ -152,6 +156,11 @@ void read_configuration(void) {
   if (size > 29)
     eeprom_read_block(rom_filename, &storedconfig.romname, ROM_NAME_LENGTH);
 
+#ifdef HAVE_DUAL_INTERFACE
+  if (size > 30)
+    active_bus = eeprom_read_byte(&storedconfig.active_bus);
+#endif
+
   /* Prevent problems due to accidental writes */
   eeprom_safety();
 }
@@ -180,6 +189,9 @@ void write_configuration(void) {
   eeprom_write_byte(&storedconfig.imagedirs, image_as_dir);
   memset(rom_filename+ustrlen(rom_filename), 0, sizeof(rom_filename)-ustrlen(rom_filename));
   eeprom_write_block(rom_filename, &storedconfig.romname, ROM_NAME_LENGTH);
+#ifdef HAVE_DUAL_INTERFACE
+  eeprom_write_byte(&storedconfig.active_bus, active_bus);
+#endif
 
   /* Calculate checksum over EEPROM contents */
   checksum = 0;

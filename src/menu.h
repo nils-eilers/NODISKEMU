@@ -27,6 +27,7 @@
 
 
 #pragma once
+#include <stdbool.h>
 #include "config.h"
 
 
@@ -40,10 +41,12 @@ enum {
 
 void lcd_splashscreen(void);
 void lcd_draw_screen(uint16_t screen);
+void lcd_refresh(void);
 void lcd_update_device_addr(void);
 void lcd_update_disk_status(void);
 void handle_lcd(void);
-void menu(void);
+bool handle_buttons(void);
+bool menu(void);
 
 static inline void lcd_bootscreen(void) {
   lcd_draw_screen(SCRN_SPLASH);
@@ -54,9 +57,11 @@ static inline void lcd_bootscreen(void) {
 static inline void lcd_bootscreen(void) {}
 static inline void lcd_splashscreen(void) {}
 static inline void lcd_draw_screen(uint16_t screen) {}
+static inline void lcd_refresh(void) {}
 static inline void lcd_update_device_addr(void) {}
 static inline void handle_lcd(void) {}
+static inline bool handle_buttons(void) { return false; }
 static inline void lcd_update_disk_status(void) {}
-static inline void menu(void) {}
+static inline bool menu(void) { return false; }
 
 #endif

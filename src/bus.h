@@ -29,12 +29,92 @@
 #define BUS_H
 
 #include <stdbool.h>
+#include "config.h"
+#include "iec.h"
+#include "ieee.h"
 
 extern uint8_t device_address;
 
+
+enum { IEC, IEEE488 };
+
+#ifdef HAVE_DUAL_INTERFACE
+extern uint8_t active_bus;
+
+static inline void bus_interface_init(void) {
+  if (active_bus == IEC)
+    iec_interface_init();
+  else
+    ieee_interface_init();
+}
+
+static inline void bus_init(void) {
+  if (active_bus == IEC)
+    iec_init();
+  else
+    ieee488_Init();
+}
+
+static inline void bus_mainloop(void) {
+  if (active_bus == IEC)
+    iec_mainloop();
+  else
+    ieee_mainloop();
+}
+
+static inline void bus_sleep(bool sleep) {
+  if (active_bus == IEC)
+    iec_sleep(sleep);
+  else
+    ieee488_BusSleep(sleep);
+}
+#else
+#ifdef CONFIG_HAVE_IEC
+#define active_bus IEC
+
+static inline void bus_interface_init(void) {
+  iec_interface_init();
+}
+
+static inline void bus_init(void) {
+  iec_init();
+}
+
+static inline void bus_mainloop(void) {
+  iec_mainloop();
+}
+
+static inline void bus_sleep(bool sleep) {
+  iec_sleep(sleep);
+}
+#else
+#ifdef CONFIG_HAVE_IEEE
+#define active_bus IEEE488
+
+static inline void bus_interface_init(void) {
+  ieee_interface_init();
+}
+
+static inline void bus_init(void) {
+  ieee488_Init();
+}
+
+static inline void bus_mainloop(void) {
+  ieee_mainloop();
+}
+
+static inline void bus_sleep(bool sleep) {
+  ieee488_BusSleep(sleep);
+}
+#endif // CONFIG_HAVE_IEEE
+#endif // CONFIG_HAVE_IEC
+#endif // HAVE_DUAL_INTERFACE
+
+#if 0
 void bus_interface_init(void);
 void bus_init(void);
 void bus_sleep(bool sleep);
-void __attribute__((noreturn)) bus_mainloop(void);
+void bus_mainloop(void);
+#endif
 
 #endif

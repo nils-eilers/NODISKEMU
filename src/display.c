@@ -31,7 +31,7 @@
 #include "eeprom-conf.h"
 #include "fatops.h"
 #include "i2c.h"
-#include "iec.h"
+#include "bus.h"
 #include "parser.h"
 #include "progmem.h"
 #include "ustring.h"

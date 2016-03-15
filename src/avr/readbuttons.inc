@@ -90,6 +90,17 @@ L_converted:
         ori     r24, 1			; SELECT
 
 #else
+#if CONFIG_HARDWARE_VARIANT == HW_LARSP
+
+        clr     r24
+        sbis    _SFR_IO_ADDR(PINA), 5 	; skip next if PB3 is high
+        ori     r24, 2			; NEXT
+        sbis    _SFR_IO_ADDR(PINA), 4 	; skip next if PA4 is high
+        ori     r24, 1			; SELECT
+
+#else
+
 #error Missing readbuttons.inc definition for your hardware variant
+#endif
 #endif
 #endif

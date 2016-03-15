@@ -10,5 +10,5 @@ fuses: $(CONFIG)
 
 
 # Manual dependency for the assembler module
-$(OBJDIR)/fastloader-ll.o: include/config.h include/fastloader.h $(OBJDIR)/autoconf.h
+$(OBJDIR)/src/avr/fastloader-ll.o: src/config.h src/fastloader.h $(OBJDIR)/autoconf.h
 

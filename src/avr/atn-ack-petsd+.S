@@ -27,6 +27,9 @@
 
 
 #include <avr/io.h>
+#include "asmconfig.h"
+
+#ifdef CONFIG_HAVE_IEEE
 
 .global INT0_vect
 .extern ieee488_ATN_received
@@ -96,3 +99,6 @@ INT0_vect:
         pop SAVE_SREG
 
         reti
+
+#endif
+

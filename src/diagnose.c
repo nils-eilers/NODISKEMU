@@ -98,17 +98,12 @@ void board_diagnose(void) {
 // Basic diagnose
 void board_diagnose(void) {
 #  if defined(HAVE_SD) && BUTTON_PREV != 0
-    /* card switch diagnostic aid - hold down PREV button to use */
-    if (!(buttons_read() & BUTTON_PREV)) board_diagnose();
-    {
-      while (buttons_read() & BUTTON_NEXT) {
-        set_dirty_led(sdcard_detect());
-#   ifndef SINGLE_LED
-        set_busy_led(sdcard_wp());
-#   endif
-      }
-      reset_key(0xff);
-    }
+     while (!get_key_press(KEY_NEXT)) {
+       set_dirty_led(sdcard_detect());
+#    ifndef SINGLE_LED
+       set_busy_led(sdcard_wp());
+#    endif
+     }
 #  endif
 }
 #endif

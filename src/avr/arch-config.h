@@ -427,16 +427,12 @@ static inline void iec_interrupts_init(void) {
   PCIFR |= _BV(PCIF2);
 }
 
-#  define BUTTON_NEXT           _BV(PA4)
-#  define BUTTON_PREV           _BV(PA5)
-
-static inline rawbutton_t buttons_read(void) {
-  return PINA & (BUTTON_NEXT | BUTTON_PREV);
-}
+#  define BUTTON_NEXT           _BV(PA5)
+#  define BUTTON_SELECT         _BV(PA4)
 
 static inline void buttons_init(void) {
-  DDRA  &= (uint8_t)~(BUTTON_NEXT | BUTTON_PREV);
-  PORTA |= BUTTON_NEXT | BUTTON_PREV;
+  DDRA  &= (uint8_t)~(BUTTON_NEXT | BUTTON_SELECT);
+  PORTA |= BUTTON_NEXT | BUTTON_SELECT;
 }
 
 #  define SOFTI2C_PORT          PORTC
@@ -857,7 +853,6 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define LED_DIRTY_PIN         PD6
 
 
-#  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
@@ -1119,7 +1114,6 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define LED_DIRTY_PIN         PD0
 
 
-#  define HAVE_IEEE
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
@@ -1226,12 +1220,42 @@ static inline void buttons_init(void) {
 static inline void board_init(void) {
   // TODO: rewrite buttons_read() to make this check work in main()
   // Hold PREV button during reset/power on for board diagose
+#ifdef CONFIG_HAVE_IEC
+  IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
+  IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
+#endif
   lcd_init();
   lcd_bootscreen();
   buttons_init();
   uint16_t buttons = ADCW;
   if (buttons > 580 && buttons < 630) board_diagnose();
 }
+
+
+#ifdef CONFIG_HAVE_IEC
+#  define IEC_OUTPUTS_NONINVERTED
+#  define IEC_INPUT             PINC
+#  define IEC_DDR               DDRC
+#  define IEC_PORT              PORTC
+#  define IEC_PIN_ATN           PC2
+#  define IEC_PIN_DATA          PC4
+#  define IEC_PIN_CLOCK         PC5
+#  define IEC_PIN_SRQ           0
+#  define IEC_SEPARATE_OUT
+#  define IEC_OPIN_ATN          0
+#  define IEC_OPIN_DATA         PC6
+#  define IEC_OPIN_CLOCK        PC7
+#  define IEC_OPIN_SRQ          0
+#  define IEC_ATN_INT_VECT      PCINT2_vect
+#  define IEC_PCMSK             PCMSK2
+
+static inline void iec_interrupts_init(void) {
+  PCICR |= _BV(PCIE2);
+  PCIFR |= _BV(PCIF2);
+}
+#endif
+
+
 
 #  endif
 #else
@@ -1247,7 +1271,7 @@ static inline void board_init(void) {
 #endif
 
 #if defined(CONFIG_HAVE_IEC) && defined(CONFIG_HAVE_IEEE)
-#  error Sorry, dual-interface devices must select only one interface at compile time!
+#define HAVE_DUAL_INTERFACE
 #endif
 
 
@@ -1290,13 +1314,15 @@ typedef uint8_t iec_bus_t;
 #  define IEC_DDROUT IEC_DDR
 #endif
 
-/* The AVR asm modules don't support noninverted output lines, */
-/* so this can be staticalle defined for all configurations.   */
+/* The AVR based devices usually invert output lines, */
+/* so this can be the default for most configurations.   */
+#ifndef IEC_OUTPUTS_NONINVERTED
 #define IEC_OUTPUTS_INVERTED
+#endif
 
 #ifdef IEC_PCMSK
    /* For hardware configurations using PCINT for IEC IRQs */
-#  define set_atn_irq(x) \
+#  define set_iec_atn_irq(x) \
      if (x) { IEC_PCMSK |= _BV(IEC_PIN_ATN); } \
      else { IEC_PCMSK &= (uint8_t)~_BV(IEC_PIN_ATN); }
 #  define set_clock_irq(x) \
@@ -1305,7 +1331,7 @@ typedef uint8_t iec_bus_t;
 #  define HAVE_CLOCK_IRQ
 #else
      /* Hardware ATN interrupt */
-#  define set_atn_irq(x) \
+#  define set_iec_atn_irq(x) \
      if (x) { EIMSK |= _BV(IEC_ATN_INT); } \
      else { EIMSK &= (uint8_t)~_BV(IEC_ATN_INT); }
 
@@ -1380,7 +1406,11 @@ static inline void iec_interface_init(void) {
   IEC_PORTIN |= IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA | IEC_BIT_SRQ;
   /* Set up the output port - all lines high */
   IEC_DDROUT |=            IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ;
+#ifdef IEC_OUTPUTS_INVERTED
   IEC_PORT   &= (uint8_t)~(IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
+#else
+  IEC_PORT   |= (IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
+#endif
 #else
   /* Pullups would be nice, but AVR can't switch from */
   /* low output to hi-z input directly                */
@@ -1414,45 +1444,7 @@ static inline void iec_interface_init(void) {
 #endif
 }
 
-/* weak-aliasing is resolved at link time, so it doesn't work */
-/* for static inline functions - use a conditionally compiled */
-/* wrapper instead                                            */
-#  ifndef CONFIG_HAVE_IEEE
-static inline void bus_interface_init(void) {
-  iec_interface_init();
-}
-#  endif
 #endif /* CONFIG_HAVE_IEC */
-
-
-/* --- IEEE --- */
-#ifdef CONFIG_HAVE_IEEE
-#  ifdef IEEE_PCMSK
-/* IEEE-488 ATN interrupt using PCINT */
-static inline void set_atn_irq(uint8_t x) {
-  if (x)
-    IEEE_PCMSK |= _BV(IEEE_PCINT);
-  else
-    IEEE_PCMSK &= (uint8_t) ~_BV(IEEE_PCINT);
-}
-#  else
-/* Hardware ATN interrupt */
-static inline void set_atn_irq(uint8_t x) {
-  if (x)
-    EIMSK |= _BV(IEEE_ATN_INT);
-  else
-    EIMSK &= (uint8_t) ~_BV(IEEE_ATN_INT);
-}
-#  endif
-
-/* same weak alias problem as in IEC version */
-#  ifndef CONFIG_HAVE_IEC
-static inline void bus_interface_init(void) {
-  ieee_interface_init();
-}
-#  endif
-#endif /* CONFIG_HAVE_IEEE */
-
 
 
 /* The assembler module needs the vector names, */
