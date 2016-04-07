@@ -35,7 +35,6 @@
 
 extern uint8_t device_address;
 
-
 enum { IEC, IEEE488 };
 
 #ifdef HAVE_DUAL_INTERFACE
@@ -109,12 +108,5 @@ static inline void bus_sleep(bool sleep) {
 #endif // CONFIG_HAVE_IEEE
 #endif // CONFIG_HAVE_IEC
 #endif // HAVE_DUAL_INTERFACE
-
-#if 0
-void bus_interface_init(void);
-void bus_init(void);
-void bus_sleep(bool sleep);
-void bus_mainloop(void);
-#endif
 
 #endif
