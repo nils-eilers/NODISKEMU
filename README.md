@@ -234,6 +234,25 @@ Unicode characters on disk, but NODISKEMU parses only the low byte
 of each character in the name.
 
 
+Changing the Device Address
+---------------------------
+After power on, the device address gets restored from the EEPROM. If the
+device has jumpers or switches to set the address, it will take this
+setting if a change is detected compared to the last setting during power-on.
+
+There are up to three ways to change the device address:
+
+1. U0 command (see there)
+2. Hardware (jumper or switches)
+3. LCD menu system
+
+Hardware jumpers are only read after power-on, a reset or power
+cycle is required to apply any changes.
+
+If there are conflicting situations (e.g. hardware jumpers set to address 10
+but address 9 stored in EEPROM), the last change or command sets the address.
+
+
 EEPROM file system
 ------------------
 **WARNING**: The EEPROM file system is a newly-implemented file system
@@ -380,7 +399,8 @@ have SD card support. To enable this test mode, hold down the PREV
 button during power-up.
 
 Devices with built-in LCD support (read: petSD+) will show their
-diagnostics on the display.
+diagnostics on the display if the menu system is enabled (see also:
+XM command).
 
 The further notes apply only for devices without built-in LCD support
 (read: old petSD and pet microSD):
@@ -866,6 +886,14 @@ View the current drive configuration.  Example result:
 `03,D:00=04:01=00:02=01,10,01`  The track indicates the
 current device address, while the sector indicates extended
 drive configuration status information.
+
+### XM+ / XM- ###
+Enable/disable the LCD menu system, only available on some devices. If
+disabled, signal lines used for buttons may get used to read the device
+address from DIP switches. This command automatically saves the settings
+into the EEPROM and restarts the device to apply them. The default value
+is enabled (+).
+
 
 ### X ###
 X without any following characters reports the current state

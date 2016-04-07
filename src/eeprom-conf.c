@@ -25,6 +25,7 @@
 
 */
 
+#include <stdio.h>
 #include <string.h>
 #include "config.h"
 #include "arch-eeprom.h"
@@ -54,6 +55,7 @@ uint8_t rom_filename[ROM_NAME_LENGTH+1];
  * @imagedirs  : Disk images-as-directory mode
  * @romname    : M-R rom emulation file name (zero-padded, but not terminated)
  * @active_bus : IEC or IEEE488
+ * @menu_system_enabled : control LCD menu with buttons / buttons set device addr
  *
  * This is the data structure for the contents of the EEPROM.
  *
@@ -73,10 +75,10 @@ static EEMEM struct {
   uint16_t drvconfig1;
   uint8_t  imagedirs;
   uint8_t  romname[ROM_NAME_LENGTH];
-#ifdef HAVE_DUAL_INTERFACE
   uint8_t  active_bus;
-#endif
+  uint8_t  menu_system_enabled;
 } __attribute__((packed)) storedconfig;
+
 
 /**
  * read_configuration - reads configuration from EEPROM
@@ -84,10 +86,16 @@ static EEMEM struct {
  * This function reads the stored configuration values from the EEPROM.
  * If the stored checksum doesn't match the calculated one nothing will
  * be changed.
+ *
+ * Some situations cause (re-)writing the EEPROM:
+ *   - unset size bytes
+ *   - bad CRC
+ *   - device addr jumper changed since last reboot
  */
 void read_configuration(void) {
   uint_fast16_t i,size;
   uint8_t checksum, tmp;
+  bool rewrite_required = false;
 
   /* Set default values */
   globalflags         |= POSTMATCH;            /* Post-* matching enabled */
@@ -106,9 +114,9 @@ void read_configuration(void) {
 
   size = eeprom_read_word(&storedconfig.structsize);
 
-  /* abort if the size bytes are not set */
+  /* write, then abort if the size bytes are not set */
   if (size == 0xffff) {
-    eeprom_safety();
+    write_configuration();
     return;
   }
 
@@ -117,21 +125,38 @@ void read_configuration(void) {
   for (i=2; i<size; i++)
     checksum += eeprom_read_byte((uint8_t *)i);
 
-  /* Abort if the checksum doesn't match */
+  /* Write, Abort if the checksum doesn't match */
   if (checksum != eeprom_read_byte(&storedconfig.checksum)) {
-    eeprom_safety();
     uart_puts_P(PSTR("EEPROM checksum error\r\n"));
+    write_configuration();
     return;
   }
 
   /* Read data from EEPROM */
+
+#ifdef CONFIG_HW_ADDR_OR_BUTTONS
+  if (size > 31)
+    /* Read this first because it affects device_hw_address() */
+    menu_system_enabled = eeprom_read_byte(&storedconfig.menu_system_enabled);
+#endif
+
   tmp = eeprom_read_byte(&storedconfig.global_flags);
   globalflags &= (uint8_t)~(POSTMATCH |
                             EXTENSION_HIDING);
   globalflags |= tmp;
 
-  if (eeprom_read_byte(&storedconfig.hardaddress) == device_hw_address())
-    device_address = eeprom_read_byte(&storedconfig.address);
+  uint8_t current_hw_addr = device_hw_address();
+  uint8_t stored_hw_addr  = eeprom_read_byte(&storedconfig.hardaddress);
+  uint8_t stored_sw_addr  = eeprom_read_byte(&storedconfig.address);
+  if (current_hw_addr != stored_hw_addr) {
+    device_address = current_hw_addr;
+    rewrite_required = true;
+  } else {
+    device_address = stored_sw_addr;
+  }
+  printf("current hw addr: %d\r\n", current_hw_addr);
+  printf("stored  hw addr: %d, stored sw addr: %d\r\n", stored_hw_addr,
+      stored_sw_addr);
 
   file_extension_mode = eeprom_read_byte(&storedconfig.fileexts);
 
@@ -163,6 +188,8 @@ void read_configuration(void) {
 
   /* Prevent problems due to accidental writes */
   eeprom_safety();
+
+  if (rewrite_required) write_configuration();
 }
 
 /**
@@ -189,8 +216,9 @@ void write_configuration(void) {
   eeprom_write_byte(&storedconfig.imagedirs, image_as_dir);
   memset(rom_filename+ustrlen(rom_filename), 0, sizeof(rom_filename)-ustrlen(rom_filename));
   eeprom_write_block(rom_filename, &storedconfig.romname, ROM_NAME_LENGTH);
-#ifdef HAVE_DUAL_INTERFACE
   eeprom_write_byte(&storedconfig.active_bus, active_bus);
+#ifdef CONFIG_HW_ADDR_OR_BUTTONS
+  eeprom_write_byte(&storedconfig.menu_system_enabled, menu_system_enabled);
 #endif
 
   /* Calculate checksum over EEPROM contents */

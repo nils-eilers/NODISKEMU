@@ -51,6 +51,8 @@
 #include "doscmd.h"
 
 
+uint8_t menu_system_enabled = true;
+
 #ifndef CONFIG_DIR_BUFFERS
 #define CONFIG_DIR_BUFFERS 2
 #endif
@@ -160,6 +162,7 @@ void handle_lcd(void) {
 
 
 bool handle_buttons(void) {
+  if (!menu_system_enabled) return false;
   uint8_t buttons = get_key_press(KEY_ANY);
   if (!buttons) return false;
   if (buttons & KEY_PREV) {

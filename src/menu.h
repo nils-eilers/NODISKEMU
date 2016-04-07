@@ -39,6 +39,8 @@ enum {
 
 #ifdef CONFIG_ONBOARD_DISPLAY
 
+extern uint8_t menu_system_enabled;
+
 void lcd_splashscreen(void);
 void lcd_draw_screen(uint16_t screen);
 void lcd_refresh(void);
@@ -53,6 +55,8 @@ static inline void lcd_bootscreen(void) {
 }
 
 #else
+
+#define menu_system_enabled (0)
 
 static inline void lcd_bootscreen(void) {}
 static inline void lcd_splashscreen(void) {}

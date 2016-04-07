@@ -1970,6 +1970,25 @@ static void parse_xcommand(void) {
     }
     break;
 
+#ifdef CONFIG_HW_ADDR_OR_BUTTONS
+  case 'M':
+    /* Enable or disable LCD menu system, used to switch
+       between buttons for menu usage and DIP switches
+       to set the device address */
+    str = command_buffer+2;
+    if (*str == '+') {
+      menu_system_enabled = true;
+    } else if (*str == '-') {
+      menu_system_enabled = false;
+    } else {
+      set_error(ERROR_SYNTAX_UNKNOWN);
+      break;
+    }
+    write_configuration();
+    system_reset();
+    break;
+#endif
+
   case 'W':
     /* Write configuration */
     write_configuration();

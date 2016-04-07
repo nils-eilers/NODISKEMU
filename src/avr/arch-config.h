@@ -1076,19 +1076,6 @@ static inline uint8_t sdcard_wp(void) {
   return (PIND & _BV(PD6));
 }
 
-static inline uint8_t device_hw_address(void) {
-  /* TODO: read configuration from EEPROM to determine whether or not
-           the buttons are in fact DIP switches to set the device address
-  */
-  return 8;
-}
-static inline void device_hw_address_init(void) {
-  /* TODO: read configuration from EEPROM to determine whether or not
-           the buttons are in fact DIP switches to set the device address
-  */
-  return;
-}
-
 
 // The busy-LED and the UART's TxD share the same port pin, so light the
 // LED only when debug messages are de-selected:
@@ -1187,6 +1174,27 @@ static inline void buttons_init(void) {
 }
 
 
+#include "eeprom-conf.h"
+#include "menu.h"
+#include "timer.h"
+#include <stdio.h>
+
+static inline void device_hw_address_init(void) {
+  // left intentionally blank
+}
+
+static inline uint8_t device_hw_address(void) {
+  uint8_t addr = 8;
+  if (!menu_system_enabled) {
+    delay_ms(500); // allow debouncing
+    if (get_key_state(KEY_SEL))  addr += 1;
+    if (get_key_state(KEY_NEXT)) addr += 2;
+    printf("dhw:%d\r\n", addr);
+  }
+  return addr;
+}
+
+
 #  define SOFTI2C_PORT          PORTC
 #  define SOFTI2C_PIN           PINC
 #  define SOFTI2C_DDR           DDRC
@@ -1213,22 +1221,15 @@ static inline void buttons_init(void) {
 
 #  ifdef CONFIG_ONBOARD_DISPLAY
 #    define HAVE_BOARD_INIT
-#    include <avr/pgmspace.h>
-#    include "lcd.h"
-#    include "menu.h"
-#    include "diagnose.h"
+#include "lcd.h"
 static inline void board_init(void) {
-  // TODO: rewrite buttons_read() to make this check work in main()
-  // Hold PREV button during reset/power on for board diagose
+  lcd_init();
+  lcd_bootscreen();
+  buttons_init();
 #ifdef CONFIG_HAVE_IEC
   IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
   IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
 #endif
-  lcd_init();
-  lcd_bootscreen();
-  buttons_init();
-  uint16_t buttons = ADCW;
-  if (buttons > 580 && buttons < 630) board_diagnose();
 }
 
 

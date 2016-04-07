@@ -97,12 +97,6 @@ int main(void) {
   filesystem_init(0);
   // FIXME: change_init();
 
-  /* Unit number may depend on hardware and stored settings */
-  /* so present it here at last */
-  uart_putc('#');
-  uart_puthex(device_address);
-  uart_putcrlf();
-
 #ifdef CONFIG_REMOTE_DISPLAY
   /* at this point all buffers should be free, */
   /* so just use the data area of the first to build the string */
@@ -117,19 +111,28 @@ int main(void) {
 
   set_busy_led(0);
 
-#if defined(HAVE_SD) && BUTTON_PREV != 0
+#if defined(HAVE_SD)
   /* card switch diagnostic aid - hold down PREV button to use */
-  if (!(buttons_read() & BUTTON_PREV)) board_diagnose();
+  if (menu_system_enabled && get_key_press(KEY_PREV))
+    board_diagnose();
 #endif
 
-  lcd_splashscreen();
+  if (menu_system_enabled)
+    lcd_splashscreen();
 
   for (;;) {
     bus_interface_init();
     bus_init();    // needs delay, inits device address with HW settings
     read_configuration(); // may change device address
-    lcd_refresh();
+    if (menu_system_enabled)
+      lcd_refresh();
+    else {
+      lcd_clear();
+      lcd_printf("#%d", device_address);
+    }
+    /* Unit number may depend on hardware and stored settings */
+    /* so present it here at last */
+    printf("#%02d\r\n", device_address);
     bus_mainloop();
   }
-
 }
