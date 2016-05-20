@@ -398,6 +398,7 @@ clean:
 	$(Q)$(REMOVE) $(OBJDIR)/make.inc
 	$(Q)$(REMOVE) $(OBJDIR)/asmconfig.h
 	$(Q)$(REMOVE) $(OBJDIR)/*.bin
+	$(Q)$(REMOVE) *.bin
 	$(Q)$(REMOVE) $(LST)
 	$(Q)$(REMOVE) $(CSRC:.c=.s)
 	$(Q)$(REMOVE) $(CSRC:.c=.d)
