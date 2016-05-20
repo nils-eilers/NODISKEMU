@@ -35,6 +35,12 @@
 #endif
 
 #include "autoconf.h"
+
+/* Default values */
+#ifndef CONFIG_DEFAULT_ADDR
+#define CONFIG_DEFAULT_ADDR 11
+#endif
+
 #include "arch-config.h"
 
 /* Disable COMMAND_CHANNEL_DUMP if UART_DEBUG is disabled */

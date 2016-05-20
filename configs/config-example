@@ -196,3 +196,7 @@ CONFIG_DISPLAY_BUFFER_SIZE=40
 # disable SD support
 # (the build system assumes that everything uses SD unless you enable this)
 #CONFIG_NO_SD=y
+
+# Default device address 11 doesn't conflict with internal drives
+# configured as 8 as seen on the CBM 8296D
+CONFIG_DEFAULT_ADDR=11

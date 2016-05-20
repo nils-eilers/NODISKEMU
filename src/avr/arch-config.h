@@ -493,7 +493,7 @@ static inline uint8_t sdcard_wp(void) {
 
 static inline uint8_t device_hw_address(void) {
   /* No device jumpers on uIEC */
-  return 10;
+  return CONFIG_DEFAULT_ADDR;
 }
 
 static inline void device_hw_address_init(void) {
@@ -736,7 +736,7 @@ static inline uint8_t sdcard_wp(void) {
 
 static inline uint8_t device_hw_address(void) {
   /* No device jumpers on uIEC */
-  return 10;
+  return CONFIG_DEFAULT_ADDR;
 }
 
 static inline void device_hw_address_init(void) {
@@ -830,7 +830,7 @@ static inline uint8_t sdcard_wp(void) {
 
 static inline uint8_t device_hw_address(void) {
   /* No device jumpers on petSD */
-  return 8;
+  return CONFIG_DEFAULT_ADDR;
 }
 static inline void device_hw_address_init(void) {
   return;
@@ -950,7 +950,7 @@ static inline uint8_t sdcard_wp(void) {
 
 static inline uint8_t device_hw_address(void) {
   /* No device jumpers on XS-1541 */
-  return 8;
+  return CONFIG_DEFAULT_ADDR;
 }
 
 static inline void device_hw_address_init(void) {
@@ -1174,6 +1174,7 @@ static inline void buttons_init(void) {
 }
 
 
+#include "config.h"
 #include "eeprom-conf.h"
 #include "menu.h"
 #include "timer.h"
@@ -1184,7 +1185,7 @@ static inline void device_hw_address_init(void) {
 }
 
 static inline uint8_t device_hw_address(void) {
-  uint8_t addr = 8;
+  uint8_t addr = CONFIG_DEFAULT_ADDR;
   if (!menu_system_enabled) {
     delay_ms(500); // allow debouncing
     if (get_key_state(KEY_SEL))  addr += 1;
