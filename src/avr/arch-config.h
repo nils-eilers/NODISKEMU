@@ -1223,6 +1223,8 @@ static inline uint8_t device_hw_address(void) {
 #  ifdef CONFIG_ONBOARD_DISPLAY
 #    define HAVE_BOARD_INIT
 #include "lcd.h"
+#include "diagnose.h"
+
 static inline void board_init(void) {
   lcd_init();
   lcd_bootscreen();
@@ -1231,6 +1233,8 @@ static inline void board_init(void) {
   IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
   IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
 #endif
+  uint16_t buttons = ADCW;
+  if (buttons > 580 && buttons < 630) board_diagnose();
 }
 
 
