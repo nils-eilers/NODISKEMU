@@ -1185,9 +1185,12 @@ static inline void device_hw_address_init(void) {
 }
 
 static inline uint8_t device_hw_address(void) {
-  uint8_t addr = CONFIG_DEFAULT_ADDR;
-  if (!menu_system_enabled) {
+  uint8_t addr;
+  if (menu_system_enabled) {
+    addr = CONFIG_DEFAULT_ADDR;
+  } else {
     delay_ms(500); // allow debouncing
+    addr = 8;
     if (get_key_state(KEY_SEL))  addr += 1;
     if (get_key_state(KEY_NEXT)) addr += 2;
     printf("dhw:%d\r\n", addr);
