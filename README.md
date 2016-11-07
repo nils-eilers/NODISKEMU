@@ -244,7 +244,7 @@ special characters. These forbidden characters are:
         " * , / \ : = ? @
 
 
-Furthermore, neither space nor the dot ('.') are not allowed as first
+Furthermore, neither space nor the full stop ('.') are not allowed as first
 or last character of a filename. If a filename contains any illegal
 characters, the creation of X00 files is forced even if XE mode 0 is set.
 
