@@ -236,12 +236,8 @@ void pet2asc(uint8_t *buf) {
  * file name. Returns true if it is, false if not.
  */
 static bool is_valid_fat_char(const uint8_t c) {
-  if (isalnum(c) || c == '!' ||
-      (c >= '#' && c <= ')') ||
-      c == '-' || c == '.')
-    return true;
-  else
-    return false;
+  if (c < 32 || c > 126) return false;
+  return (strchr("\"*,/\\:=?@", c) == NULL ? true : false);
 }
 
 /**

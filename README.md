@@ -234,6 +234,21 @@ Unicode characters on disk, but NODISKEMU parses only the low byte
 of each character in the name.
 
 
+Valid FAT Filenames
+-------------------
+Valid characters for filenames on the FAT filesystem have an ASCII code
+greater or equal 32 (space) and less or equal 126 ('~'). In general,
+no control codes are allowed, only 7 bit ASCII characters minus some
+special characters. These forbidden characters are:
+
+        " * , / \ : = ? @
+
+
+Furthermore, neither space nor the dot ('.') are not allowed as first
+or last character of a filename. If a filename contains any illegal
+characters, the creation of X00 files is forced even if XE mode 0 is set.
+
+
 Changing the Device Address
 ---------------------------
 After power on, the device address gets restored from the EEPROM. If the
