@@ -136,11 +136,6 @@ ifdef LFUSE
 endif
 
 
-# Uncomment the following if you want avrdude's erase cycle counter.
-# Note that this counter needs to be initialized first using -Yn,
-# see avrdude manual.
-#AVRDUDE_ERASE_COUNTER = -y
-
 # Uncomment the following if you do /not/ wish a verification to be
 # performed after programming the device.
 #AVRDUDE_NO_VERIFY = -V
@@ -153,7 +148,6 @@ endif
 AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY)
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
-AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
 
 #---------------- Architecture variables ----------------
 ARCH_CFLAGS  = -mmcu=$(MCU) -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -mcall-prologues
