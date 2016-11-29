@@ -297,7 +297,7 @@ static inline void ieee488_DataTalk(void) {
 }
 #else
 #ifdef IEEE_DATA_READ
-#include "MCP23S17.h"
+#include "mcp23s17.h"
 
 static inline void ieee488_DataListen(void) {
   mcp23s17_Write(IEEE_DDR_DATA, 0xFF);  // data lines as input
@@ -346,7 +346,7 @@ static inline void ieee488_SetDC(bool x) {
 
 #else
 #ifdef IEEE_DC_MCP23S17
-#include "MCP23S17.h"
+#include "mcp23s17.h"
 static inline void ieee488_InitDC(void) {
   // intentionally left blank
   // DC is initialized by mcp23s17_Init()

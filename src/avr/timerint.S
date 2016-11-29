@@ -94,7 +94,7 @@ TIMER1_COMPA_vect:
 
 L_noerror:
 
-
+#ifdef HAVE_BUTTONS
 ; Debounce buttons
 ; Device depended code in readbuttons.inc loads current button state to r24
 ; Bit 0: button released, Bit 1: button pressed
@@ -145,6 +145,7 @@ L_no_repeat:
         or      r24, r27                ; for a longer while
         sts     key_rpt, r24            ; flags are reset by C functions
 L_key_done:
+#endif
 
 ; Restore registers
 L_quit:

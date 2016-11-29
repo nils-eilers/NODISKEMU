@@ -1,0 +1,61 @@
+# This may not look like it, but it's a -*- makefile -*-
+#
+# NODISKEMU - SD/MMC to IEEE-488 interface/controller
+# Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+#
+# NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
+#
+#  Inspired by MMC2IEC by Lars Pontoppidan et al.
+#
+#  FAT filesystem access based on code from ChaN, see tff.c|h.
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License only.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#  config-petSD-duo: NODISKEMU configuration for Nils Eilers' petSD-duo
+#
+#
+# This file is included in the main NODISKEMU Makefile and also parsed
+# into autoconf.h.
+
+CONFIG_ARCH=avr
+CONFIG_HARDWARE_NAME=petSD-duo
+CONFIG_HARDWARE_VARIANT=11
+CONFIG_MCU=atmega1284p
+CONFIG_LINKER_RELAX=y
+CONFIG_MCU_FREQ=18432000
+CONFIG_UART_DEBUG=y
+CONFIG_UART_BAUDRATE=115200
+CONFIG_UART_BUF_SHIFT=8
+CONFIG_COMMAND_CHANNEL_DUMP=y
+CONFIG_SD_AUTO_RETRIES=10
+CONFIG_SD_DATACRC=y
+CONFIG_ERROR_BUFFER_SIZE=100
+CONFIG_COMMAND_BUFFER_SIZE=120
+CONFIG_BUFFER_COUNT=32
+CONFIG_MAX_PARTITIONS=2
+CONFIG_RTC_DS3231=y
+CONFIG_HAVE_IEEE=y
+# TODO: Add proper IEC port mappings
+# TODO: Can the code cope with IEC lines spread randomly across all ports?
+CONFIG_HAVE_IEC=n
+CONFIG_REMOTE_DISPLAY=n
+CONFIG_GRAPHIC_DISPLAY=y
+CONFIG_P00CACHE=y
+CONFIG_P00CACHE_SIZE=4000
+CONFIG_HAVE_EEPROMFS=y
+# 2048 words boot section, Brown-out detection level at Vcc=4.3V
+CONFIG_EFUSE=0xFC
+CONFIG_HFUSE=0xD2
+CONFIG_LFUSE=0xF7
+CONFIG_DEBUG_MSGS_TO_LCD=y

@@ -28,6 +28,9 @@
 #ifndef ARCH_CONFIG_H
 #define ARCH_CONFIG_H
 
+/* default for all devices: buttons attaches directly to the controller */
+#define HAVE_BUTTONS
+
 #define HW_EXAMPLE       1
 #define HW_SHADOWOLF1    2
 #define HW_LARSP         3
@@ -37,9 +40,11 @@
 #define HW_PETSD         8
 #define HW_XS1541        9
 #define HW_PETSDPLUS    10
+#define HW_PETSDDUO     11
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdbool.h>
 /* Include avrcompat.h to get the PA0..PD7 macros on 1284P */
 #include "avrcompat.h"
 
@@ -1232,17 +1237,197 @@ static inline void board_init(void) {
   lcd_init();
   lcd_bootscreen();
   buttons_init();
-#ifdef CONFIG_HAVE_IEC
+#    ifdef CONFIG_HAVE_IEC
   IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
   IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
-#endif
+#    endif
   uint16_t buttons = ADCW;
   if (buttons > 580 && buttons < 630) board_diagnose();
+}
+#  endif
+
+#  ifdef CONFIG_HAVE_IEC
+#    define IEC_OUTPUTS_NONINVERTED
+#    define IEC_INPUT             PINC
+#    define IEC_DDR               DDRC
+#    define IEC_PORT              PORTC
+#    define IEC_PIN_ATN           PC2
+#    define IEC_PIN_DATA          PC4
+#    define IEC_PIN_CLOCK         PC5
+#    define IEC_PIN_SRQ           0
+#    define IEC_SEPARATE_OUT
+#    define IEC_OPIN_ATN          0
+#    define IEC_OPIN_DATA         PC6
+#    define IEC_OPIN_CLOCK        PC7
+#    define IEC_OPIN_SRQ          0
+#    define IEC_ATN_INT_VECT      PCINT2_vect
+#    define IEC_PCMSK             PCMSK2
+
+static inline void iec_interrupts_init(void) {
+  PCICR |= _BV(PCIE2);
+  PCIFR |= _BV(PCIF2);
+}
+#  endif
+
+
+
+#elif CONFIG_HARDWARE_VARIANT == HW_PETSDDUO
+
+/* ---------- Hardware configuration: petSD-duo --------- */
+#  define HAVE_SD
+#  define HAVE_BOARD_INIT
+#  undef HAVE_BUTTONS
+
+#  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
+#  define SD_SUPPLY_VOLTAGE (1L<<21)
+
+/* 250 kHz slow, 2 MHz fast */
+#  define SPI_DIVISOR_SLOW 32
+#  define SPI_DIVISOR_FAST 4
+
+static inline void sdcard_interface_init(void) {
+  DDRB   &= ~_BV(PB0);            /* card detect */
+  PORTB  |=  _BV(PB0);
+  PCMSK3 |=  _BV(PCINT8);         /* card change interrupt */
+  PCICR  |=  _BV(PCIE1);
+  PCIFR  |=  _BV(PCIF1);
+
+  // TODO: WP over MCP23S17
+  //  DDRD   &= ~_BV(PD6);            /* write protect  */
+  //  PORTD  |=  _BV(PD6);
+}
+
+static inline uint8_t sdcard_detect(void) {
+  return (!(PINB & _BV(PB0)));
+}
+
+static inline uint8_t sdcard_wp(void) {
+  // TODO return (PIND & _BV(PD6));
+  return 0;
+}
+
+static inline void leds_init(void) {
+  DDRD |= _BV(PD5) | _BV(PD6);
+}
+
+static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
+  if (state)
+    PORTD |= _BV(PD6);
+  else
+    PORTD &= ~_BV(PD6);
+}
+
+#  define LED_DIRTY_PORT        PORTD
+#  define LED_DIRTY_INPUT       PIND
+#  define LED_DIRTY_PIN         PD5
+
+
+#  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
+#  define IEEE_ATN_INT0
+
+#  define HAVE_7516X            /* Device uses 75160/75161 bus drivers */
+#  define IEEE_PORT_TE          PORTC   /* TE = TEC (TE for control lines) */
+#  define IEEE_DDR_TE           DDRC
+#  define IEEE_PIN_TE           PC3
+#  define IEEE_PORT_TED         PORTB   /* TED: Talk Enable for Data lines  */
+#  define IEEE_DDR_TED          DDRB
+#  define IEEE_PIN_TED          PB1
+#  define IEEE_INPUT_ATN        PIND    /* ATN */
+#  define IEEE_PORT_ATN         PORTD
+#  define IEEE_DDR_ATN          DDRD
+#  define IEEE_PIN_ATN          PD2
+#  define IEEE_INPUT_NDAC       PINC    /* NDAC */
+#  define IEEE_PORT_NDAC        PORTC
+#  define IEEE_DDR_NDAC         DDRC
+#  define IEEE_PIN_NDAC         PC6
+#  define IEEE_INPUT_NRFD       PINC    /* NRFD */
+#  define IEEE_PORT_NRFD        PORTC
+#  define IEEE_DDR_NRFD         DDRC
+#  define IEEE_PIN_NRFD         PC7
+#  define IEEE_INPUT_DAV        PINC    /* DAV */
+#  define IEEE_PORT_DAV         PORTC
+#  define IEEE_DDR_DAV          DDRC
+#  define IEEE_PIN_DAV          PC5
+#  define IEEE_INPUT_EOI        PINC    /* EOI */
+#  define IEEE_PORT_EOI         PORTC
+#  define IEEE_DDR_EOI          DDRC
+#  define IEEE_PIN_EOI          PC4
+#  define IEEE_INPUT_IFC        PINA    /* IFC */
+#  define IEEE_PORT_IFC         PORTA
+#  define IEEE_DDR_IFC          DDRA
+#  define IEEE_PIN_IFC          PA7
+#  define IEEE_DATA_READ        GPIOA   /* data lines and DC attached to */
+#  define IEEE_DATA_WRITE       OLATA   /* MCP23S17 port expander */
+#  define IEEE_DDR_DATA         IODIRA
+#  define IEEE_DC_MCP23S17      GPB7
+
+#  define IEEE_BIT_TE           _BV(IEEE_PIN_TE)
+#  define IEEE_BIT_IFC          _BV(IEEE_PIN_IFC)
+
+static inline void ieee_interface_init(void) {
+  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
+  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
+  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
+  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
+  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
+  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
+}
+
+
+static inline void buttons_init(void) {
+  // left intentionally blank
+}
+
+
+static inline void device_hw_address_init(void) {
+  // left intentionally blank
+}
+
+
+static inline uint8_t device_hw_address(void) {
+  return CONFIG_DEFAULT_ADDR;
+}
+
+
+static inline void spi_select_mcp23s17(bool selected)
+{
+  if (selected) PORTC &= ~_BV(PC2);
+  else          PORTC |=  _BV(PC2);
+}
+
+
+static inline void spi_select_ram(bool selected)
+{
+  if (selected) PORTA &= ~_BV(PA4);
+  else          PORTA |=  _BV(PA4);
+}
+
+
+// I2C address display controller
+#  define SLAVE_ADDR            0x8A
+
+#  define SOFTI2C_PORT          PORTC
+#  define SOFTI2C_PIN           PINC
+#  define SOFTI2C_DDR           DDRC
+#  define SOFTI2C_BIT_SCL       PC0
+#  define SOFTI2C_BIT_SDA       PC1
+#  define SOFTI2C_DELAY         6
+
+#include <util/delay.h>
+
+static inline void board_init(void) {
+  PORTC |= _BV(PC2);    // de-select port expander
+  DDRC  |= _BV(PC2);    // PECS as output
+
+  PORTA |= _BV(PA4);    // de-select RAM
+  DDRA  |= _BV(PA4);    // RAMCS as output
+
+  _delay_ms(500);       // Ensure that slave controller is ready
 }
 
 
 #ifdef CONFIG_HAVE_IEC
-#  define IEC_OUTPUTS_NONINVERTED
+// FIXME: these IEC definitions are just a copied placeholder
 #  define IEC_INPUT             PINC
 #  define IEC_DDR               DDRC
 #  define IEC_PORT              PORTC
@@ -1266,7 +1451,7 @@ static inline void iec_interrupts_init(void) {
 
 
 
-#  endif
+
 #else
 #  error "CONFIG_HARDWARE_VARIANT is unset or set to an unknown value."
 #endif

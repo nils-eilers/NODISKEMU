@@ -83,6 +83,12 @@ nochip:
 	@exit 1
 endif
 
+ifeq ($(CONFIG_HARDWARE_VARIANT),11)
+# Just guess the device
+# BOOTLOADER_DEVICE = /dev/cu.usbserial-00303424
+BOOTLOADER_DEVICE = $(wildcard /dev/cu.usbserial-*)
+endif
+
 #---------------- External Memory Options ----------------
 
 # 64 KB of external RAM, starting after internal RAM (ATmega128!),

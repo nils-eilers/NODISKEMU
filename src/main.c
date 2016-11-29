@@ -111,7 +111,7 @@ int main(void) {
 
   set_busy_led(0);
 
-#if defined(HAVE_SD)
+#if (defined(HAVE_SD) && defined(HAVE_BUTTONS))
   /* card switch diagnostic aid - hold down PREV button to use */
   if (menu_system_enabled && get_key_press(KEY_PREV))
     board_diagnose();

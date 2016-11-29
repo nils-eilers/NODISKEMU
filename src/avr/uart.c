@@ -33,6 +33,10 @@
 #include "avrcompat.h"
 #include "uart.h"
 
+#ifdef CONFIG_DEBUG_MSGS_TO_LCD
+#include "i2c.h"
+#endif
+
 // uint8_t txbuf[1 << CONFIG_UART_BUF_SHIFT];
 // FIXME: use CONFIG_UART_BUF_SHIFT in interrupt routine
 uint8_t txbuf[1 << 8];
@@ -50,6 +54,11 @@ void uart_putc(char c) {
   txbuf[write_idx] = c;
   write_idx = t;
   UCSRB |= _BV(UDRIE);
+
+#ifdef CONFIG_DEBUG_MSGS_TO_LCD
+  // FIXME: works only for the petSD-duo but not with petSD+
+  i2c_write_register(SLAVE_ADDR, 1, c);
+#endif
 }
 
 void uart_puthex(uint8_t num) {
