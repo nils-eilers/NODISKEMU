@@ -27,8 +27,6 @@
 
 #pragma once
 
-#include "channel.h"
-
 extern bool RemoteMode;
 
 
@@ -67,6 +65,17 @@ enum CONF_commands
    CONF_SNIFF
 };
 
+// file access modes
+enum
+{
+   DOS_OPEN_READ,
+   DOS_OPEN_WRITE,
+   DOS_OPEN_APPEND,
+   DOS_OPEN_MODIFY,
+   DOS_OPEN_RELATIVE,
+   DOS_OPEN_DIRECT
+};
+
 
 void spsp_SendEscEot(void);
 void spsp_Check(void);
@@ -78,7 +87,7 @@ void spsp_ListenLoop(uint8_t action, uint8_t sa);
 uint8_t spsp_OpenFile(uint8_t sa, char *filename);
 void spsp_SendCommand(char *command, uint8_t len);
 void spsp_Advance(uint8_t device, uint8_t sa);
-void spsp_Message(char *message);
+void spsp_Message(const char *message);
 void spsp_LoadBuffer(struct Buffer *buf);
 void spsp_UserCommand(char *command);
 void spsp_BlockCommand(char *command, uint8_t len);

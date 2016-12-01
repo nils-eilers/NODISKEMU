@@ -4,7 +4,7 @@
 ASMSRC = avr/crc7asm.S avr/timerint.S
 
 ifeq ($(CONFIG_UART_DEBUG),y)
-  ASMSRC += avr/uartint.S
+  ASMSRC += avr/uartint-tx.S
 endif
 
 ifeq ($(CONFIG_HAVE_IEC),y)
@@ -21,6 +21,14 @@ endif
 
 ifeq ($(CONFIG_HARDWARE_VARIANT),10)
   ASMSRC += avr/atn-ack-petsd+.S
+endif
+
+ifeq ($(CONFIG_HARDWARE_VARIANT),11)
+  ASMSRC += avr/atn-ack-petsd-duo.S
+endif
+
+ifeq ($(CONFIG_SPSP),y)
+  ASMSRC += avr/uartint-rx.S
 endif
 
 ifdef NEED_I2C

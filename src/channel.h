@@ -26,7 +26,11 @@
  */
 
 #pragma once
-#include "defaults.h"
+#include "config.h"
+
+#ifndef CONFIG_MAX_BUFFERS
+#define CONFIG_MAX_BUFFERS 4
+#endif
 
 #define COMMAND_CHANNEL 15
 #define STATUS_CHANNEL  15

@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "defaults.h"
+#include "config.h"
 
 extern uint8_t MyDevNumbers[CONFIG_MAX_DEVICES];
 

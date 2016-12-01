@@ -101,21 +101,6 @@ static uint8_t open_sa;
 static bool    ieee488_IFCreceived;
 
 
-// ieee488_RxByte return values:
-enum {
-  RX_DATA,                              // byte received, EOI not set
-  RX_EOI,                               // byte received, EOI set
-  RX_ATN,                               // aborted by ATN
-  RX_IFC                                // aborted by IFC
-};
-
-// listen_loop actions:
-enum {
-  LL_RECEIVE,                           // received data or command byte
-  LL_OPEN,                              // received character for OPEN Filename
-};
-
-
 uint8_t ieee488_ListenIsActive(void);
 uint8_t ieee488_RxByte(char *c);
 void    ieee488_BusIdle(void);
@@ -1018,6 +1003,11 @@ void handle_card_changes(void) {
 #endif
 }
 
+
+uint8_t ieee488_ListenIsActive(void) {
+  // FIXME: this version supports only a single device number
+  return ieee488_ListenActive;
+}
 
 void ieee_mainloop(void) {
   ieee488_InitIFC();

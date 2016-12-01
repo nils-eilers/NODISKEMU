@@ -29,9 +29,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "defaults.h"
+#include "config.h"
 #include "devnumbers.h"
-#include "devicenumber.h" // devicenumber_ReadHardwareAddress()
 
 uint8_t MyDevNumbers[CONFIG_MAX_DEVICES];
 
@@ -110,7 +109,7 @@ devnumbers_Init(bool restore)
    if (restore)
    {
       //TODO: get devnumber from EEPROM/switches
-      devnumbers_Add(CONFIG_DEFAULT_DEVICE_NUMBER);
+      devnumbers_Add(CONFIG_DEFAULT_ADDR);
    }
    else
       memset(MyDevNumbers, 0, CONFIG_MAX_DEVICES);
