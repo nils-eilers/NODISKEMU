@@ -34,7 +34,7 @@
 #include "config.h"
 #include "i2c.h"
 #include "progmem.h"
-#include "uart.h"
+#include "debug.h"
 #include "ustring.h"
 #include "utils.h"
 #include "time.h"
@@ -128,20 +128,20 @@ void dsrtc_init(void) {
 
   rtc_state = RTC_NOT_FOUND;
 
-  uart_puts_P(PSTR("DS3231 "));
+  debug_puts_P(PSTR("DS3231 "));
   tmp = i2c_read_register(RTC_ADDR, REG_CTLSTATUS);
   if (tmp < 0) {
-    uart_puts_P(PSTR("not found"));
+    debug_puts_P(PSTR("not found"));
   } else {
     if (tmp & STATUS_OSF) {
       rtc_state = RTC_INVALID;
-      uart_puts_P(PSTR("invalid"));
+      debug_puts_P(PSTR("invalid"));
     } else {
       rtc_state = RTC_OK;
-      uart_puts_P(PSTR("ok"));
+      debug_puts_P(PSTR("ok"));
     }
   }
-  uart_putcrlf();
+  debug_putcrlf();
 }
 void rtc_init(void) __attribute__ ((weak, alias("dsrtc_init")));
 
@@ -151,20 +151,20 @@ void dsrtc_init(void) {
   int16_t tmp;
 
   rtc_state = RTC_NOT_FOUND;
-  uart_puts_P(PSTR("DS1307 "));
+  debug_puts_P(PSTR("DS1307 "));
   tmp = i2c_read_register(RTC_ADDR, REG_SECOND);
   if (tmp < 0) {
-    uart_puts_P(PSTR("not found"));
+    debug_puts_P(PSTR("not found"));
   } else {
     if (tmp & STATUS_OSF) {
       rtc_state = RTC_INVALID;
-      uart_puts_P(PSTR("invalid"));
+      debug_puts_P(PSTR("invalid"));
     } else {
       rtc_state = RTC_OK;
-      uart_puts_P(PSTR("ok"));
+      debug_puts_P(PSTR("ok"));
     }
   }
-  uart_putcrlf();
+  debug_putcrlf();
 }
 void rtc_init(void) __attribute__ ((weak, alias("dsrtc_init")));
 #endif

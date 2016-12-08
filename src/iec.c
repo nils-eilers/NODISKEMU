@@ -52,7 +52,7 @@
 #include "led.h"
 #include "system.h"
 #include "timer.h"
-#include "uart.h"
+#include "debug.h"
 #include "bus.h"
 #include "menu.h"
 
@@ -144,7 +144,7 @@ static int16_t _iec_getc(void) {
     delay_us(73);                       // E9F5-E9F8, delay calculated from all
     set_data(1);                        //   instructions between IO accesses
 
-    uart_putc('E');
+    debug_putc('E');
 
     do {
       if (iec_check_atn())                             // E9FD
@@ -317,14 +317,14 @@ static uint8_t iec_listen_handler(const uint8_t cmd) {
   int16_t c;
   buffer_t *buf;
 
-  uart_putc('L');
+  debug_putc('L');
 
   buf = find_buffer(cmd & 0x0f);
 
   /* Abort if there is no buffer or it's not open for writing */
   /* and it isn't an OPEN command                             */
   if ((buf == NULL || !buf->write) && (cmd & 0xf0) != 0xf0) {
-    uart_putc('c');
+    debug_putc('c');
     iec_data.bus_state = BUS_CLEANUP;
     return 1;
   }
@@ -393,7 +393,7 @@ static uint8_t iec_listen_handler(const uint8_t cmd) {
 static uint8_t iec_talk_handler(uint8_t cmd) {
   buffer_t *buf;
 
-  uart_putc('T');
+  debug_putc('T');
 
   buf = find_buffer(cmd & 0x0f);
   if (buf == NULL)
@@ -466,7 +466,7 @@ static uint8_t iec_talk_handler(uint8_t cmd) {
             set_clock(0);
           }
           if (res) {
-            uart_putc('Q');
+            debug_putc('Q');
             return 1;
           }
         } else {
@@ -477,7 +477,7 @@ static uint8_t iec_talk_handler(uint8_t cmd) {
             res = iec_putc(buf->data[buf->position], 0);
 
           if (res) {
-            uart_putc('V');
+            debug_putc('V');
             return 1;
           }
         }
@@ -619,13 +619,13 @@ void iec_mainloop(void) {
 
       if (cmd < 0) {
         /* iec_check_atn changed our state */
-        uart_putc('C');
+        debug_putc('C');
         break;
       }
 
-      uart_putc('A');
-      uart_puthex(cmd);
-      uart_putcrlf();
+      debug_putc('A');
+      debug_puthex(cmd);
+      debug_putcrlf();
 
       if (cmd == 0x3f) { /* Unlisten */
         if (iec_data.device_state == DEVICE_LISTEN)

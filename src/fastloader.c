@@ -51,6 +51,7 @@
 #include "ustring.h"
 #include "wrapops.h"
 #include "fastloader.h"
+#include "debug.h"
 
 #define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
 
@@ -114,7 +115,7 @@ void load_turbodisk(UNUSED_PARAMETER) {
 #endif
 
   set_clock(0);
-  uart_flush();
+  debug_flush();
 
   /* Copy filename to beginning of buffer */
   len = command_buffer[9];
@@ -459,10 +460,10 @@ void load_dreamload(UNUSED_PARAMETER) {
     set_busy_led(1);
 
     /* Output the track/sector for debugging purposes */
-    uart_puthex(fl_track);
-    uart_putc('/');
-    uart_puthex(fl_sector);
-    uart_putcrlf();
+    debug_puthex(fl_track);
+    debug_putc('/');
+    debug_puthex(fl_sector);
+    debug_putcrlf();
 
     if (fl_track == 0) {
       // check special commands first
@@ -775,7 +776,7 @@ void load_gijoe(UNUSED_PARAMETER) {
         return;
 
     set_clock(1);
-    uart_flush();
+    debug_flush();
 
     /* First byte is ignored */
     if (gijoe_read_byte() < 0)
@@ -793,7 +794,7 @@ void load_gijoe(UNUSED_PARAMETER) {
 
     /* Open the file */
     file_open(0);
-    uart_flush();
+    debug_flush();
     buf = find_buffer(0);
     if (!buf) {
       set_clock(1);
@@ -860,7 +861,7 @@ void load_epyxcart(UNUSED_PARAMETER) {
   uint8_t checksum = 0;
   int16_t b,i;
 
-  uart_flush(); // Pending output can mess up our timing
+  debug_flush(); // Pending output can mess up our timing
 
   /* Initial handshake */
   set_data(1);
@@ -1075,22 +1076,22 @@ static void geos_transmit_status(void) {
 
 /* GEOS READ operation */
 static void geos_read_sector(uint8_t track, uint8_t sector, buffer_t *buf) {
-  uart_putc('R');
-  uart_puthex(track);
-  uart_putc('/');
-  uart_puthex(sector);
-  uart_putcrlf();
+  debug_putc('R');
+  debug_puthex(track);
+  debug_putc('/');
+  debug_puthex(sector);
+  debug_putcrlf();
 
   read_sector(buf, current_part, track, sector);
 }
 
 /* GEOS WRITE operation */
 static void geos_write_sector_41(uint8_t track, uint8_t sector, buffer_t *buf) {
-  uart_putc('W');
-  uart_puthex(track);
-  uart_putc('/');
-  uart_puthex(sector);
-  uart_putcrlf();
+  debug_putc('W');
+  debug_puthex(track);
+  debug_putc('/');
+  debug_puthex(sector);
+  debug_putcrlf();
 
   /* Provide "unwritten data present" feedback */
   mark_buffer_dirty(buf);
@@ -1107,11 +1108,11 @@ static void geos_write_sector_41(uint8_t track, uint8_t sector, buffer_t *buf) {
 
 /* GEOS WRITE_71 operation */
 static void geos_write_sector_71(uint8_t track, uint8_t sector, buffer_t *buf) {
-  uart_putc('W');
-  uart_puthex(track);
-  uart_putc('/');
-  uart_puthex(sector);
-  uart_putcrlf();
+  debug_putc('W');
+  debug_puthex(track);
+  debug_putc('/');
+  debug_puthex(sector);
+  debug_putcrlf();
 
   /* Provide "unwritten data present" feedback */
   mark_buffer_dirty(buf);
@@ -1143,7 +1144,7 @@ void load_geos(UNUSED_PARAMETER) {
   cmddata = cmdbuf->data;
 
   /* Initial handshake */
-  uart_flush();
+  debug_flush();
   delay_ms(1);
   set_data(0);
   while (IEC_CLOCK) ;
@@ -1154,7 +1155,7 @@ void load_geos(UNUSED_PARAMETER) {
     geos_receive_lenblock(cmddata);
     set_busy_led(1);
 
-    //uart_trace(cmddata, 0, 4);
+    //debug_trace(cmddata, 0, 4);
 
     cmd = cmddata[0] | (cmddata[1] << 8);
 
@@ -1201,8 +1202,8 @@ void load_geos(UNUSED_PARAMETER) {
     case 0x0439: // 1541 stage 3 set address
     case 0x04a5: // 1571 stage 3 set address
       // Note: identical in stage 2, address 0428, probably unused
-      device_address = cmddata[2] & 0x1f;
-      display_address(device_address);
+      MyDevNumbers[0] = cmddata[2] & 0x1f;
+      display_address(MyDevNumbers[0]);
       break;
 
     case 0x049b: // 1581 initialize
@@ -1234,8 +1235,8 @@ void load_geos(UNUSED_PARAMETER) {
       break;
 
     default:
-      uart_puts_P(PSTR("unknown:\r\n"));
-      uart_trace(cmddata, 0, 4);
+      debug_puts_P(PSTR("unknown:\r\n"));
+      debug_trace(cmddata, 0, 4);
       return;
     }
   }
@@ -1310,7 +1311,7 @@ void load_geos_s1(uint8_t version) {
   }
 
   /* Initial handshake */
-  uart_flush();
+  debug_flush();
   delay_ms(1);
   set_data(0);
   while (IEC_CLOCK) ;
@@ -1467,11 +1468,11 @@ static void wheels_check_diskchange(void) {
 
 /* Wheels WRITE operation (0306) */
 static void wheels_write_sector(uint8_t track, uint8_t sector, buffer_t *buf) {
-  uart_putc('W');
-  uart_puthex(track);
-  uart_putc('/');
-  uart_puthex(sector);
-  uart_putcrlf();
+  debug_putc('W');
+  debug_puthex(track);
+  debug_putc('/');
+  debug_puthex(sector);
+  debug_putcrlf();
 
   /* Provide "unwritten data present" feedback */
   mark_buffer_dirty(buf);
@@ -1491,11 +1492,11 @@ static void wheels_write_sector(uint8_t track, uint8_t sector, buffer_t *buf) {
 
 /* Wheels READ operation (0309) */
 static void wheels_read_sector(uint8_t track, uint8_t sector, buffer_t *buf, uint16_t bytes) {
-  uart_putc('R');
-  uart_puthex(track);
-  uart_putc('/');
-  uart_puthex(sector);
-  uart_putcrlf();
+  debug_putc('R');
+  debug_puthex(track);
+  debug_putc('/');
+  debug_puthex(sector);
+  debug_putcrlf();
 
   read_sector(buf, current_part, track, sector);
   wheels_transmit_datablock(buf->data, bytes);
@@ -1541,7 +1542,7 @@ static void wheels_set_current_part_dir(void) {
 void load_wheels_s1(const uint8_t version) {
   buffer_t *buf;
 
-  uart_flush();
+  debug_flush();
   delay_ms(2);
   while (IEC_CLOCK) ;
   set_data(0);
@@ -1597,7 +1598,7 @@ void load_wheels_s2(UNUSED_PARAMETER) {
     return;
 
   /* Initial handshake */
-  uart_flush();
+  debug_flush();
   delay_ms(1);
   while (IEC_CLOCK) ;
   set_data(0);
@@ -1615,7 +1616,7 @@ void load_wheels_s2(UNUSED_PARAMETER) {
 
     wheels_receive_datablock(&cmdbuffer, 4);
     set_busy_led(1);
-    //uart_trace(&cmdbuffer, 0, 4);
+    //debug_trace(&cmdbuffer, 0, 4);
 
     switch (cmdbuffer.address & 0xff) {
     case 0x03: // QUIT
@@ -1656,8 +1657,8 @@ void load_wheels_s2(UNUSED_PARAMETER) {
       break;
 
     default:
-      uart_puts_P(PSTR("unknown:\r\n"));
-      uart_trace(&cmdbuffer, 0, 4);
+      debug_puts_P(PSTR("unknown:\r\n"));
+      debug_trace(&cmdbuffer, 0, 4);
       return;
     }
 
@@ -1745,11 +1746,11 @@ void load_nippon(UNUSED_PARAMETER) {
   buffer_t *buf;
 
   /* init */
-  uart_puts_P(PSTR("NIPPON"));
+  debug_puts_P(PSTR("NIPPON"));
   set_iec_atn_irq(0);
   buf = alloc_system_buffer();
   if (!buf) {
-    uart_puts_P(PSTR("BUF ERR")); uart_putcrlf();
+    debug_puts_P(PSTR("BUF ERR")); debug_putcrlf();
     return;
   }
 
@@ -1763,7 +1764,7 @@ void load_nippon(UNUSED_PARAMETER) {
     set_data(1);
     set_clock(1);
     set_busy_led(0);
-    uart_putcrlf(); uart_putc('L'); // idle loop entered
+    debug_putcrlf(); debug_putc('L'); // idle loop entered
 
     /* wait for IEC master or human master to command us something */
     while(IEC_ATN && !(i = check_keys())) ;
@@ -1778,20 +1779,20 @@ void load_nippon(UNUSED_PARAMETER) {
     while(!IEC_ATN) ;
     if (! nippon_read_byte(&t))
       continue;
-    uart_putc('T');
-    uart_puthex(t);
+    debug_putc('T');
+    debug_puthex(t);
     if (t & 128)
       break;
 
     if (! nippon_read_byte(&s))
       continue;
-    uart_putc('S');
-    uart_puthex(s & 0x7f);
+    debug_putc('S');
+    debug_puthex(s & 0x7f);
 
     if (s & 128) {
       /* read sector */
       s &= 0x7f;
-      uart_putc('R');
+      debug_putc('R');
       read_sector(buf, current_part, t, s);
       i = 0;
       do {
@@ -1802,7 +1803,7 @@ void load_nippon(UNUSED_PARAMETER) {
     }
     else {
       /* write sector */
-      uart_putc('W');
+      debug_putc('W');
       i = 0;
       do {
         if (! (j = nippon_read_byte(&(buf->data[i]))))
@@ -1818,7 +1819,7 @@ void load_nippon(UNUSED_PARAMETER) {
   /* exit */
 
   free_buffer(buf);
-  uart_puts_P(PSTR("NEXT")); uart_putcrlf();
+  debug_puts_P(PSTR("NEXT")); debug_putcrlf();
 }
 #endif
 
@@ -1968,7 +1969,7 @@ static int16_t _dolphin_getc(void) {
     delay_us(57);
     set_data(1);
 
-    uart_putc('E');
+    debug_putc('E');
     iec_data.iecflags |= EOI_RECVD;
 
     /* wait until CLOCK is low - A849 */
@@ -2063,7 +2064,7 @@ void load_dolphin(void) {
   parallel_clear_rxflag();
   delay_us(100); // experimental delay
   parallel_send_handshake();
-  uart_flush();
+  debug_flush();
   delay_us(100); // experimental delay
 
   /* every sector except the last */
@@ -2130,7 +2131,7 @@ void save_dolphin(void) {
   set_data(0);
   parallel_clear_rxflag();
   parallel_send_handshake();
-  uart_flush();
+  debug_flush();
 
   /* receive data */
   do {

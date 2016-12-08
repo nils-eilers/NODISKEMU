@@ -43,7 +43,7 @@
 #include "rtc.h"
 #include "ustring.h"
 #include "doscmd.h"
-#include "uart.h"
+#include "debug.h"
 #include "dirent.h"
 #include "parser.h"     // current_part
 #include "wrapops.h"
@@ -517,9 +517,9 @@ start:
 
   path.part = current_part;
   path.dir  = partition[path.part].current_dir;
-  uart_trace(&path.dir, 0, sizeof(dir_t));
-  uart_putcrlf();
-  uart_flush();
+  debug_trace(&path.dir, 0, sizeof(dir_t));
+  debug_putcrlf();
+  debug_flush();
   if (opendir(&buf->pvt.dir.dh, &path)) return;
 
   for (;;) {
@@ -571,9 +571,9 @@ start:
   for (uint16_t i = 0; i < entries; i++) {
     printf("%3u: ", i);
     if (ep[i]->flags & E_DIR)
-      uart_puts_P(PSTR(" DIR "));
+      debug_puts_P(PSTR(" DIR "));
     else if (ep[i]->flags & E_IMAGE)
-      uart_puts_P(PSTR(" IMG "));
+      debug_puts_P(PSTR(" IMG "));
     else
       printf("%4u ", ep[i]->filesize);
     uint8_t filename[16 + 1];
@@ -581,9 +581,9 @@ start:
     filename[16] = '\0';
     pet2asc(filename);
     printf("%s\r\n", filename);
-    uart_flush();
+    debug_flush();
   }
-  uart_putcrlf();
+  debug_putcrlf();
 
 #define DIRNAV_OFFSET   2
 #define NAV_ABORT       0
@@ -599,10 +599,10 @@ start:
   action = false;
 
   for (i=0; i < MAX_LASTPOS; i++) {
-    if (pos_stack == i) uart_putc('>');
+    if (pos_stack == i) debug_putc('>');
     printf("%d ", stack_mp[i]);
   }
-  uart_putcrlf();
+  debug_putcrlf();
 
   for (;;) {
     lcd_clear();
@@ -638,7 +638,7 @@ start:
               while ((mp - my) >= DIRNAV_OFFSET) {
                 --my;
                 // TODO: is this really necessary?
-                uart_puts_P(PSTR("my fixed\r\n"));
+                debug_puts_P(PSTR("my fixed\r\n"));
               }
             }
             break;
@@ -672,7 +672,7 @@ start:
     if (!action) continue;
     if (mp == NAV_ABORT) goto cleanup;
     if (mp == NAV_PARENT) {
-      uart_puts_P(PSTR("CD_\r\n"));
+      debug_puts_P(PSTR("CD_\r\n"));
       ustrcpy_P(command_buffer, PSTR("CD_"));
       command_length = 3;
       parse_doscommand();

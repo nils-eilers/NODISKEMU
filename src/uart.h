@@ -34,11 +34,8 @@
 
 void uart_init(void);
 void uart_putc(char c);
-void uart_puthex(uint8_t num);
-void uart_trace(void *ptr, uint16_t start, uint16_t len);
+void uart_puts_P(const char *s);
 void uart_flush(void);
-void uart_puts_P(const char *text);
-void uart_putcrlf(void);
 
 /* non-blocking, returns '\0' if no character is available */
 char uart_getc(void);
@@ -51,6 +48,7 @@ bool uart_rxbuf_empty(void);
 #endif
 
 #ifdef __AVR__
+#  include <stdio.h>
 #  define printf(str,...) printf_P(PSTR(str), ##__VA_ARGS__)
 #endif
 

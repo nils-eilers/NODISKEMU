@@ -35,7 +35,7 @@
 #include "diskio.h"
 #include "spi.h"
 #include "timer.h"
-#include "uart.h"
+#include "debug.h"
 #include "sdcard.h"
 
 #ifdef CONFIG_TWINSD
@@ -278,7 +278,7 @@ static uint8_t send_command(const uint8_t  card,
 
     /* check for CRC error */
     if (res & STATUS_CRC_ERROR) {
-      uart_putc('x');
+      debug_putc('x');
       deselect_card();
       errors++;
       continue;
@@ -576,7 +576,7 @@ DRESULT sd_read(BYTE drv, BYTE *buffer, DWORD sector, BYTE count) {
 
       /* check CRC */
       if (recvcrc != crc) {
-        uart_putc('X');
+        debug_putc('X');
         deselect_card();
         errors++;
         continue;
@@ -673,7 +673,7 @@ DRESULT sd_write(BYTE drv, const BYTE *buffer, DWORD sector, BYTE count) {
 
       /* retry on error */
       if ((res & 0x0f) != 0x05) {
-        uart_putc('X');
+        debug_putc('X');
         deselect_card();
         errors++;
         continue;

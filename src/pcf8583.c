@@ -34,7 +34,7 @@
 #include "config.h"
 #include "i2c.h"
 #include "progmem.h"
-#include "uart.h"
+#include "debug.h"
 #include "ustring.h"
 #include "utils.h"
 #include "time.h"
@@ -128,25 +128,25 @@ void pcf8583_init(void) {
   uint8_t tmp[4];
 
   rtc_state = RTC_NOT_FOUND;
-  uart_puts_P(PSTR("RTC "));
+  debug_puts_P(PSTR("RTC "));
   if (i2c_write_register(PCF8583_ADDR, REG_CONTROL, CTL_START_CLOCK) ||
       i2c_read_registers(PCF8583_ADDR, REG_YEAR1, 4, tmp)) {
-    uart_puts_P(PSTR("not found"));
+    debug_puts_P(PSTR("not found"));
   } else {
     if (tmp[0] == (tmp[2] ^ 0xff) &&
         tmp[1] == (tmp[3] ^ 0xff)) {
       rtc_state = RTC_OK;
-      uart_puts_P(PSTR("ok"));
+      debug_puts_P(PSTR("ok"));
 
       /* Dummy RTC read to update the year if required */
       struct tm time;
       read_rtc(&time);
     } else {
       rtc_state = RTC_INVALID;
-      uart_puts_P(PSTR("invalid"));
+      debug_puts_P(PSTR("invalid"));
     }
   }
 
-  uart_putcrlf();
+  debug_putcrlf();
 }
 void rtc_init(void) __attribute__ ((weak, alias("pcf8583_init")));

@@ -48,7 +48,7 @@
 #include "ff.h"
 #include "parser.h"
 #include "progmem.h"
-#include "uart.h"
+#include "debug.h"
 #include "ustring.h"
 #include "utils.h"
 #include "wrapops.h"
@@ -320,7 +320,7 @@ static uint8_t pdir_refill(buffer_t* buf) {
 static uint8_t dir_refill(buffer_t *buf) {
   cbmdirent_t dent;
 
-  uart_putc('+');
+  debug_putc('+');
 
   buf->position = 0;
 
@@ -844,7 +844,7 @@ void file_open(uint8_t secondary) {
   /* Clear the remainder of the command buffer, simplifies parsing */
   memset(command_buffer+command_length, 0, sizeof(command_buffer)-command_length);
 
-  uart_trace(command_buffer,0,command_length);
+  debug_trace(command_buffer,0,command_length);
 
   /* Direct access? */
   if (command_buffer[0] == '#') {

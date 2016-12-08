@@ -50,7 +50,7 @@
 #include "system.h"
 #include "time.h"
 #include "rtc.h"
-#include "uart.h"
+#include "debug.h"
 #include "ustring.h"
 #include "utils.h"
 #include "wrapops.h"
@@ -1077,13 +1077,13 @@ static void handle_memexec(void) {
 
 
   if (detected_loader == FL_NONE) {
-    uart_puts_P(PSTR("M-E at "));
-    uart_puthex(command_buffer[4]);
-    uart_puthex(command_buffer[3]);
-    uart_puts_P(PSTR(", CRC "));
-    uart_puthex(datacrc >> 8);
-    uart_puthex(datacrc & 0xff);
-    uart_putcrlf();
+    debug_puts_P(PSTR("M-E at "));
+    debug_puthex(command_buffer[4]);
+    debug_puthex(command_buffer[3]);
+    debug_puts_P(PSTR(", CRC "));
+    debug_puthex(datacrc >> 8);
+    debug_puthex(datacrc & 0xff);
+    debug_putcrlf();
   }
 
   if (detected_loader == FL_NONE)
@@ -1325,10 +1325,10 @@ static void handle_memwrite(void) {
 #endif
 
   if (detected_loader == FL_NONE) {
-    uart_puts_P(PSTR("M-W CRC result: "));
-    uart_puthex(datacrc >> 8);
-    uart_puthex(datacrc & 0xff);
-    uart_putcrlf();
+    debug_puts_P(PSTR("M-W CRC result: "));
+    debug_puthex(datacrc >> 8);
+    debug_puthex(datacrc & 0xff);
+    debug_putcrlf();
   }
 }
 #else
@@ -2085,11 +2085,11 @@ void parse_doscommand(void) {
   /* Debugging aid: Dump the whole command via serial */
   if (detected_loader == FL_NONE) {
     /* Dump only if no loader was detected because it may ruin the timing */
-    uart_trace(command_buffer,0,command_length);
+    debug_trace(command_buffer,0,command_length);
   }
 #  else
-     uart_flush(); uart_putcrlf();
-     uart_trace(command_buffer,0,command_length);
+     debug_flush(); debug_putcrlf();
+     debug_trace(command_buffer,0,command_length);
 #  endif
 #endif
 

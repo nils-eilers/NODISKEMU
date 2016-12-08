@@ -45,7 +45,7 @@
 #include "spi.h"
 #include "system.h"
 #include "timer.h"
-#include "uart.h"
+#include "debug.h"
 #include "ustring.h"
 #include "utils.h"
 #include "diagnose.h"
@@ -82,7 +82,7 @@ int main(void) {
   enable_interrupts();
 
   /* Prompt software name and version string */
-  uart_puts_P(PSTR("\r\nNODISKEMU " VERSION "\r\n"));
+  debug_puts_P(PSTR("\r\nNODISKEMU " VERSION "\r\n"));
 
   /* Internal-only initialisation, called here because it's faster */
   buffers_init();

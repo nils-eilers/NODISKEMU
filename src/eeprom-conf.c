@@ -36,7 +36,7 @@
 #include "timer.h"
 #include "ustring.h"
 #include "eeprom-conf.h"
-#include "uart.h"
+#include "debug.h"
 
 uint8_t rom_filename[ROM_NAME_LENGTH+1];
 
@@ -127,7 +127,7 @@ void read_configuration(void) {
 
   /* Write, Abort if the checksum doesn't match */
   if (checksum != eeprom_read_byte(&storedconfig.checksum)) {
-    uart_puts_P(PSTR("EEPROM checksum error\r\n"));
+    debug_puts_P(PSTR("EEPROM checksum error\r\n"));
     write_configuration();
     return;
   }
