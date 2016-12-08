@@ -51,6 +51,7 @@
 #include "diagnose.h"
 #include "lcd.h"
 #include "menu.h"
+#include "devnumbers.h"
 
 #ifdef HAVE_DUAL_INTERFACE
   uint8_t active_bus = IEEE488;
@@ -92,6 +93,7 @@ int main(void) {
   /* should be placed after system_init_late() */
   rtc_init();    // accesses I2C
   disk_init();   // accesses card
+  devnumbers_init();
   read_configuration(); // restores configuration, may change device address
 
   filesystem_init(0);
@@ -104,7 +106,7 @@ int main(void) {
   ustrcpy_P(strbuf, versionstr);
   ustrcpy_P(strbuf+ustrlen(strbuf), longverstr);
   if (display_init(ustrlen(strbuf), strbuf)) {
-    display_address(device_address);
+    display_address(MyDevNumbers[0]);
     display_current_part(0);
   }
 #endif
@@ -128,11 +130,11 @@ int main(void) {
       lcd_refresh();
     else {
       lcd_clear();
-      lcd_printf("#%d", device_address);
+      lcd_printf("#%d", MyDevNumbers[0]);
     }
     /* Unit number may depend on hardware and stored settings */
     /* so present it here at last */
-    printf("#%02d\r\n", device_address);
+    printf("#%02d\r\n", MyDevNumbers[0]);
     bus_mainloop();
   }
 }

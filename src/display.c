@@ -37,8 +37,8 @@
 #include "ustring.h"
 #include "utils.h"
 #include "display.h"
-
 #include "uart.h"
+#include "devnumbers.h"
 
 /* All menu entries are converted from PETSCII on the display side */
 static const PROGMEM char systemmenu[] = {
@@ -122,7 +122,7 @@ static void menu_chaddr(void) {
     displaybuffer[1] = '0' + i%10;
     display_menu_add(displaybuffer);
   }
-  display_menu_show(device_address-4);
+  display_menu_show(MyDevNumbers[0] - 4);
 }
 
 void display_service(void) {
@@ -169,9 +169,9 @@ void display_service(void) {
     /* New address selected */
     uint8_t sel = i2c_read_register(DISPLAY_I2C_ADDR, DISPLAY_MENU_GETSELECTION);
 
-    device_address = sel+4;
+    MyDevNumbers[0] = sel+4;
     menustate = MENU_NONE;
-    display_address(device_address);
+    display_address(MyDevNumbers[0]);
   } else if (menustate == MENU_CHDIR) {
     /* New directory selected */
     uint8_t sel = i2c_read_register(DISPLAY_I2C_ADDR, DISPLAY_MENU_GETSELECTION);

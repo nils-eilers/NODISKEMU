@@ -37,6 +37,7 @@
 #include "ustring.h"
 #include "eeprom-conf.h"
 #include "debug.h"
+#include "devnumbers.h"
 
 uint8_t rom_filename[ROM_NAME_LENGTH+1];
 
@@ -96,6 +97,7 @@ void read_configuration(void) {
   uint_fast16_t i,size;
   uint8_t checksum, tmp;
   bool rewrite_required = false;
+  uint8_t device_address;
 
   /* Set default values */
   globalflags         |= POSTMATCH;            /* Post-* matching enabled */
@@ -157,6 +159,7 @@ void read_configuration(void) {
   printf("current hw addr: %d\r\n", current_hw_addr);
   printf("stored  hw addr: %d, stored sw addr: %d\r\n", stored_hw_addr,
       stored_sw_addr);
+  devnumbers_Add(device_address);
 
   file_extension_mode = eeprom_read_byte(&storedconfig.fileexts);
 
@@ -206,7 +209,7 @@ void write_configuration(void) {
   eeprom_write_byte(&storedconfig.global_flags,
                     globalflags & (POSTMATCH |
                                    EXTENSION_HIDING));
-  eeprom_write_byte(&storedconfig.address, device_address);
+  eeprom_write_byte(&storedconfig.address, MyDevNumbers[0]);
   eeprom_write_byte(&storedconfig.hardaddress, device_hw_address());
   eeprom_write_byte(&storedconfig.fileexts, file_extension_mode);
 #ifdef NEED_DISKMUX

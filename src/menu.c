@@ -49,6 +49,7 @@
 #include "wrapops.h"
 #include "fatops.h"     // pet2ascn()
 #include "doscmd.h"
+#include "devnumbers.h"
 
 
 uint8_t menu_system_enabled = true;
@@ -84,7 +85,7 @@ static inline uint8_t min(uint8_t a, uint8_t b) {
 void lcd_update_device_addr(void) {
   if (lcd_current_screen == SCRN_STATUS) {
     lcd_home();
-    lcd_printf("Device ID: #%d ", device_address);
+    lcd_printf("Device ID: #%d ", MyDevNumbers[0]);
   }
 }
 
@@ -250,9 +251,9 @@ static inline void menu_select_bus(void) {}
 
 
 void menu_device_number(void) {
-  lcd_printf("Change device number\nfrom %02d to:", device_address);
+  lcd_printf("Change device number\nfrom %02d to:", MyDevNumbers[0]);
   lcd_locate(12, 1);
-  device_address = menu_edit_value(device_address, 8, 30);
+  MyDevNumbers[0] = menu_edit_value(MyDevNumbers[0], 8, 30);
   menu_ask_store_settings();
 }
 

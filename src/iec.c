@@ -55,13 +55,11 @@
 #include "debug.h"
 #include "bus.h"
 #include "menu.h"
+#include "devnumbers.h"
 
 /* ------------------------------------------------------------------------- */
 /*  Global variables                                                         */
 /* ------------------------------------------------------------------------- */
-
-/* Current device address */
-uint8_t device_address;
 
 iec_data_t iec_data;
 
@@ -165,7 +163,7 @@ static int16_t _iec_getc(void) {
 
         /* If there is a delay before the last bit, the controller uses JiffyDOS */
         if (!(iec_data.iecflags & JIFFY_ACTIVE) && has_timed_out()) {
-          if ((val>>1) < 0x60 && ((val>>1) & 0x1f) == device_address) {
+          if ((val>>1) < 0x60 && ((val>>1) & 0x1f) == MyDevNumbers[0]) {
             /* If it's for us, notify controller that we support Jiffy too */
             set_data(0);
             delay_us(101); // nlq says 405us, but the code shows only 101
@@ -536,11 +534,6 @@ void iec_init(void) {
 
   /* Prepare IEC interrupts */
   iec_interrupts_init();
-
-  /* Read the hardware-set device address */
-  device_hw_address_init();
-  delay_ms(1);
-  device_address = device_hw_address();
 }
 
 
@@ -635,10 +628,10 @@ void iec_mainloop(void) {
         if (iec_data.device_state == DEVICE_TALK)
           iec_data.device_state = DEVICE_IDLE;
         iec_data.bus_state = BUS_ATNFINISH;
-      } else if (cmd == 0x40+device_address) { /* Talk */
+      } else if (cmd == 0x40+MyDevNumbers[0]) { /* Talk */
         iec_data.device_state = DEVICE_TALK;
         iec_data.bus_state = BUS_FORME;
-      } else if (cmd == 0x20+device_address) { /* Listen */
+      } else if (cmd == 0x20+MyDevNumbers[0]) { /* Listen */
         iec_data.device_state = DEVICE_LISTEN;
         iec_data.bus_state = BUS_FORME;
       } else if ((cmd & 0x60) == 0x60) {

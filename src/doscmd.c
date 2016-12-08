@@ -56,6 +56,7 @@
 #include "wrapops.h"
 #include "doscmd.h"
 #include "menu.h"
+#include "devnumbers.h"
 
 #define CURSOR_RIGHT 0x1d
 
@@ -1236,8 +1237,8 @@ static void handle_memwrite(void) {
 
   if (address == 119) {
     /* Change device address, 1541 style */
-    device_address = command_buffer[6] & 0x1f;
-    display_address(device_address);
+    MyDevNumbers[0] = command_buffer[6] & 0x1f;
+    display_address(MyDevNumbers[0]);
     return;
   }
 
@@ -1502,7 +1503,7 @@ static void parse_rename(void) {
   if (first_match(&oldpath, oldname, FLAG_HIDDEN, &dent))
     return;
 
-  rename(&oldpath, &dent, newname);
+  file_rename(&oldpath, &dent, newname);
 }
 
 
@@ -1857,8 +1858,8 @@ static void parse_user(void) {
     if ((command_buffer[2] & 0x1f) == 0x1e &&
         command_buffer[3] >= 4 &&
         command_buffer[3] <= 30) {
-      device_address = command_buffer[3];
-      display_address(device_address);
+      MyDevNumbers[0] = command_buffer[3];
+      display_address(MyDevNumbers[0]);
       lcd_update_device_addr();
       break;
     }
@@ -1899,7 +1900,7 @@ static void parse_xcommand(void) {
           globalflags |= EXTENSION_HIDING;
       }
     }
-    set_error_ts(ERROR_STATUS,device_address,0);
+    set_error_ts(ERROR_STATUS,MyDevNumbers[0],0);
     break;
 
   case 'D':
@@ -1907,7 +1908,7 @@ static void parse_xcommand(void) {
 #ifdef NEED_DISKMUX
     str = command_buffer+2;
     if(*str == '?') {
-      set_error_ts(ERROR_STATUS,device_address,1);
+      set_error_ts(ERROR_STATUS,MyDevNumbers[0],1);
       break;
     }
     num = parse_number(&str);
@@ -1992,7 +1993,7 @@ static void parse_xcommand(void) {
   case 'W':
     /* Write configuration */
     write_configuration();
-    set_error_ts(ERROR_STATUS,device_address,0);
+    set_error_ts(ERROR_STATUS,MyDevNumbers[0],0);
     break;
 
   case 'R':
@@ -2026,7 +2027,7 @@ static void parse_xcommand(void) {
       else
         globalflags &= (uint8_t)~POSTMATCH;
 
-      set_error_ts(ERROR_STATUS,device_address,0);
+      set_error_ts(ERROR_STATUS,MyDevNumbers[0],0);
     }
     break;
 
@@ -2059,7 +2060,7 @@ static void parse_xcommand(void) {
       set_error(ERROR_SYNTAX_UNKNOWN);
     else
       /* plain X by itself, show the extended status */
-      set_error_ts(ERROR_STATUS, device_address, 0);
+      set_error_ts(ERROR_STATUS, MyDevNumbers[0], 0);
 
     break;
   }

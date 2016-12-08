@@ -53,7 +53,7 @@ SRC  = buffers.c fatops.c fileops.c main.c errormsg.c
 SRC += doscmd.c ff.c d64ops.c diagnose.c
 SRC += eeprom-conf.c parser.c utils.c led.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
-SRC += $(CONFIG_ARCH)/system.c
+SRC += $(CONFIG_ARCH)/system.c devnumbers.c debug.c
 
 ifneq ($(CONFIG_NO_SD),y)
   SRC += sdcard.c
@@ -148,8 +148,9 @@ endif
 
 # Serial PET/Server Protocol
 ifeq ($(CONFIG_SPSP),y)
+  SRC += $(CONFIG_ARCH)/uart.c
   SRC += spsp.c
-  SRC += devnumbers.c
+  SRC += channel.c
 endif
 
 # Slave AVR with graphic LCD display

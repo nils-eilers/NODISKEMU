@@ -27,7 +27,8 @@
 
 #pragma once
 
-extern bool RemoteMode;
+#include "config.h"
+#include "channel.h" // struct Buffer
 
 
 enum SPSP_CMD_fields
@@ -76,6 +77,8 @@ enum
    DOS_OPEN_DIRECT
 };
 
+#ifdef CONFIG_SPSP
+extern bool RemoteMode;
 
 void spsp_SendEscEot(void);
 void spsp_Check(void);
@@ -96,4 +99,15 @@ void spsp_GetBlock(struct Buffer *buf, uint8_t device, uint8_t drive, uint8_t t,
 void spsp_PutBlock(struct Buffer *buf, uint8_t device, uint8_t drive, uint8_t t, uint8_t s);
 void spsp_GetRecord(struct Buffer *buf);
 void spsp_PutRecord(struct Buffer *buf);
+#else
+#define RemoteMode 0
 
+static inline uint8_t spsp_OpenFile(uint8_t sa, char *filename) { return 0; }
+static inline void spsp_ListenLoop(uint8_t action, uint8_t sa) {}
+static inline void spsp_UserCommand(char *command) {}
+static inline void spsp_BlockCommand(char *command, uint8_t len) {}
+static inline void spsp_PositionCommand(char *command, uint8_t len) {}
+static inline void spsp_SendCommand(char *command, uint8_t len) {}
+static inline void spsp_GetRecord(struct Buffer *buf) {}
+static inline void spsp_LoadBuffer(struct Buffer *buf) {}
+#endif

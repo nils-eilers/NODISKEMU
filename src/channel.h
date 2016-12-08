@@ -47,19 +47,15 @@ struct Buffer
    bool     SendEoi;            // send Data[EoiPosition] with EOI
    bool     LoadRequired;       // call load() before next access
    uint8_t  EoiPosition;
-   uint8_t  Data[BUF_LEN];
+
+   // uint8_t  Data[BUF_LEN];
+   // FIXME: just to make it compile and not crash because of too much much RAM usage
+   uint8_t  *Data;
+
    void     (*Load)(struct Buffer *self);
 };
 
 extern struct Buffer Buffers[CONFIG_MAX_BUFFERS];
-
-// Get next character but do not advance pointers because
-// transmission to CBM may get interrupted by ATN
-int channel_Get(uint8_t AddressedDevice, uint8_t sa);
-
-// Confirm transmission: advance buffer pointers
-void channel_Got(uint8_t device, uint8_t sa);
-void channel_Put(char c, uint8_t AddressedDevice, uint8_t sa);
 
 void channel_Open(char *s, uint8_t AddressedDevice, uint8_t sa);
 void channel_Close(uint8_t AddressedDevice, uint8_t sa);

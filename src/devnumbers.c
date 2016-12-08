@@ -31,32 +31,28 @@
 
 #include "config.h"
 #include "devnumbers.h"
+#include "spsp.h"
+#include "timer.h"
 
 uint8_t MyDevNumbers[CONFIG_MAX_DEVICES];
 
-bool
-devnumbers_Add(uint8_t DevNumber)
-{
-   for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
-      if (MyDevNumbers[i] == 0)
-      {
-         MyDevNumbers[i] = DevNumber;
-         return false;
-      }
-   return true;
+bool devnumbers_Add(uint8_t DevNumber) {
+  for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
+    if (MyDevNumbers[i] == 0) {
+      MyDevNumbers[i] = DevNumber;
+      return false;
+    }
+  return true;
 }
 
 
-bool
-devnumbers_Remove(uint8_t DevNumber)
-{
-   for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
-      if (MyDevNumbers[i] == DevNumber)
-      {
-         MyDevNumbers[i] = 0;
-         return false;
-      }
-   return true;
+bool devnumbers_Remove(uint8_t DevNumber) {
+  for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
+    if (MyDevNumbers[i] == DevNumber) {
+      MyDevNumbers[i] = 0;
+      return false;
+    }
+  return true;
 }
 
 
@@ -75,42 +71,36 @@ devnumbers_Remove(uint8_t DevNumber)
    negative device addresses does not search the table but passes the
    converted given index:
 
-      devnumbers_Idx(-1) returns 0
-      devnumbers_Idx(-2) returns 1
-      devnumbers_Idx(-3) returns 2
-      ...
+   devnumbers_Idx(-1) returns 0
+   devnumbers_Idx(-2) returns 1
+   devnumbers_Idx(-3) returns 2
+   ...
  */
 
-int8_t
-devnumbers_Idx(int8_t AddressedDevice)
-{
-   if (AddressedDevice < 0)
-      return -AddressedDevice - 1;
-   for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
-      if (MyDevNumbers[i] == AddressedDevice)
-         return i;
-   return -1;
+int8_t devnumbers_Idx(int8_t AddressedDevice) {
+  if (AddressedDevice < 0)
+    return -AddressedDevice - 1;
+  for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
+    if (MyDevNumbers[i] == AddressedDevice)
+      return i;
+  return -1;
 }
 
 
-bool
-devnumbers_MyDevNumber(uint8_t AddressedDevice)
-{
-   if (devnumbers_Idx(AddressedDevice) < 0)
-      return false;
-   else
-      return true;
+bool devnumbers_MyDevNumber(uint8_t AddressedDevice) {
+  if (devnumbers_Idx(AddressedDevice) < 0)
+    return false;
+  else
+    return true;
 }
 
 
-void
-devnumbers_Init(bool restore)
-{
-   if (restore)
-   {
-      //TODO: get devnumber from EEPROM/switches
-      devnumbers_Add(CONFIG_DEFAULT_ADDR);
-   }
-   else
-      memset(MyDevNumbers, 0, CONFIG_MAX_DEVICES);
+void devnumbers_init(void) {
+  memset(MyDevNumbers, 0, CONFIG_MAX_DEVICES);
+  if (RemoteMode) return;
+
+  /* Read the hardware-set device address */
+  device_hw_address_init();
+  delay_ms(1);
+  MyDevNumbers[0] = device_hw_address();
 }

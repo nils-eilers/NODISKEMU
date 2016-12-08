@@ -29,6 +29,10 @@
 
 #include "config.h"
 
+#ifndef CONFIG_MAX_DEVICES
+#define CONFIG_MAX_DEVICES 1
+#endif
+
 extern uint8_t MyDevNumbers[CONFIG_MAX_DEVICES];
 
 bool   devnumbers_Add(uint8_t device_number);
@@ -39,6 +43,6 @@ bool   devnumbers_Remove(uint8_t device_number);
 
 int8_t devnumbers_Idx(int8_t AddressedDevice);
 bool   devnumbers_MyDevNumber(uint8_t AddressedDevice);
-void   devnumbers_Init(bool restore);
+void   devnumbers_init(void);
 
 

@@ -61,12 +61,14 @@
 #include "timer.h"
 #include "menu.h"
 #include "eeprom-conf.h"
+#include "channel.h"
+#include "spsp.h"
+#include "devnumbers.h"
 
 // -------------------------------------------------------------------------
 //  Global variables
 // -------------------------------------------------------------------------
 
-uint8_t device_address = CONFIG_DEFAULT_ADDR;  // Current device address
 volatile bool ieee488_TE75160;          // direction set for data lines
 volatile bool ieee488_TE75161;          // direction set for ctrl lines
 volatile bool ieee488_ATN_received;     // ATN interrupt sets this to true
@@ -92,11 +94,15 @@ volatile bool ieee488_ATN_received;     // ATN interrupt sets this to true
 #define IEEE_CLOSE       0xE0
 #define IEEE_OPEN        0xF0
 
+#ifndef CONFIG_OPEN_MAX
+#define CONFIG_OPEN_MAX  40
+#endif
 
-static uint8_t ieee488_ListenActive;     // device number
+static uint8_t ieee488_ListenActive[CONFIG_MAX_DEVICES];     // device number
 static uint8_t ieee488_TalkingDevice;    // device number if we are talker
 static bool    command_received;
 static bool    open_active;
+static uint8_t access_mode;              // READ, WRITE, APPEND, MODIFY, RELATIVE
 static uint8_t open_sa;
 static bool    ieee488_IFCreceived;
 
@@ -575,10 +581,10 @@ void ieee488_BusSleep(bool sleep) {
    from main().
 */
 void ieee488_Init(void) {
-  ieee488_ListenActive = ieee488_TalkingDevice = open_sa = 0;
+  ieee488_TalkingDevice = open_sa = 0;
+  memset(ieee488_ListenActive, 0, CONFIG_MAX_DEVICES);
   command_received = open_active = false;
   device_hw_address_init();
-  device_address = device_hw_address();
   ieee488_InitDC();
   ieee488_SetDC(DC_DEVICE);
 #ifdef HAVE_7516X
@@ -647,6 +653,44 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
   char    c;
   uint8_t BusSignals;
   buffer_t *buf;
+  char filename[CONFIG_OPEN_MAX + 1];
+  uint8_t res;
+
+  if (RemoteMode) {
+    memset(filename, 0, CONFIG_OPEN_MAX + 1);
+    uint8_t i = 0;
+    if (action == LL_OPEN && sa != COMMAND_CHANNEL) {
+      while (i < CONFIG_OPEN_MAX) {
+        res = ieee488_RxByte(&c);
+        if (res == RX_ATN) break;
+        filename[i++] = c;
+        if (res == RX_EOI) break;
+      }
+      access_mode = DOS_OPEN_MODIFY;
+      if (filename[0] == '#')
+        channel_OpenDirectBuffer(ieee488_ListenIsActive(), sa, filename);
+      else
+        access_mode = spsp_OpenFile(sa, filename);
+    } else if (sa == COMMAND_CHANNEL) {
+      while (i < CONFIG_OPEN_MAX) {
+        res = ieee488_RxByte(&c);
+        if (res == RX_ATN) break;
+        filename[i++] = c;
+        if (res == RX_EOI) break;
+      }
+      if (filename[0] == 'U')
+        spsp_UserCommand(filename);
+      else if (filename[0] == 'B')
+        spsp_BlockCommand(filename, i);
+      else if (filename[0] == 'P')
+        spsp_PositionCommand(filename, i);
+      else
+        spsp_SendCommand(filename, i);
+    } else {
+      spsp_ListenLoop(action, sa);
+    }
+    return;
+  }
 
   buf = find_buffer(sa);
   // Abort if there is no buffer or it's not open for writing
@@ -834,6 +878,25 @@ void ieee488_Unlisten(void) {
   debug_puts_P(PSTR("ULN\r\n"));
   ieee488_BusIdle();
 
+  if (open_active && RemoteMode) {
+    open_active = false;
+    // opening multiple files on a number of devices at the same
+    // time seems insane but possible in theory
+    if (access_mode != DOS_OPEN_WRITE) {
+      for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++)
+        if (ieee488_ListenActive[i] && open_sa < 15) {
+          struct Buffer *buf = channel_BufferSearchOrAllocate(ieee488_ListenActive[i], open_sa);
+          buf->Mode = access_mode;
+          if (access_mode == DOS_OPEN_RELATIVE) {
+            buf->rec = 1;         // preload 1st. record
+            spsp_GetRecord(buf);
+          } else spsp_LoadBuffer(buf);
+        }
+    }
+    memset(ieee488_ListenActive, 0, CONFIG_MAX_DEVICES);
+    return;
+  }
+
   // If we received a command or a file name to open, process it now
   if (command_received) {
     parse_doscommand();
@@ -841,7 +904,8 @@ void ieee488_Unlisten(void) {
     datacrc = 0xffff;                   // filename in command buffer
     file_open(open_sa);
   }
-  ieee488_ListenActive = command_received = open_active = false;
+  command_received = open_active = false;
+  memset(ieee488_ListenActive, 0, CONFIG_MAX_DEVICES);
   command_length = 0;
 }
 
@@ -859,11 +923,10 @@ void ieee488_ProcessIFC(void) {
   free_multiple_buffers(FMB_USER_CLEAN);
   ieee488_Init();
   read_configuration();
-  lcd_clear();
-  lcd_puts_P(PSTR("IFC: interface clear"));
+  lcd_ifc(true);
   set_error(ERROR_DOSVERSION);
   while(!ieee488_IFC());
-  lcd_draw_screen(SCRN_STATUS);
+  lcd_ifc(false);
 }
 
 
@@ -899,7 +962,7 @@ void handle_ieee488(void) {
           ieee488_CheckIFC())             // interface clear?
       {
          // Bus Idle if we're neither listener nor talker
-         if (!ieee488_ListenActive && (ieee488_TalkingDevice == 0)) {
+         if (!ieee488_ListenIsActive() && (ieee488_TalkingDevice == 0)) {
            ieee488_BusIdle();
          }
          return;
@@ -931,24 +994,24 @@ void handle_ieee488(void) {
     else if (cmd == IEEE_UNTALK)          // UNTALK
       ieee488_Untalk();
     else if (cmd3 == IEEE_LISTEN) {       // LISTEN
-      if (Device == device_address) {
-        uart_puts_P(PSTR("LSN\r\n"));
-        ieee488_ListenActive = Device;
+      if (devnumbers_MyDevNumber(Device)) {
+        debug_puts_P(PSTR("LSN\r\n"));
+        ieee488_ListenActive[devnumbers_Idx(Device)] = Device;
         // Override talk state because we can't be
         // listener and talker at the same time
         ieee488_TalkingDevice = 0;
       }
     } else if (cmd3 == IEEE_TALK) {       // TALK
-      if (Device == device_address) {
-        uart_puts_P(PSTR("TLK\r\n"));
+      if (devnumbers_MyDevNumber(Device)) {
+        debug_puts_P(PSTR("TLK\r\n"));
         ieee488_TalkingDevice = Device;
         // Override listen state because we can't be
         // listener and talker at the same time
-        ieee488_ListenActive = false;
+        memset(ieee488_ListenActive, 0, CONFIG_MAX_DEVICES);
       }
     } else if (cmd4 == IEEE_SECONDARY) {  // DATA
       while (!ieee488_ATN());             // Wait for ATN high
-      if (ieee488_ListenActive) {
+      if (ieee488_ListenIsActive()) {
         printf("DTA L %d\r\n", sa);
         ieee488_ListenLoop(LL_RECEIVE, sa);
       } else if (ieee488_TalkingDevice) {
@@ -956,7 +1019,15 @@ void handle_ieee488(void) {
         ieee488_TalkLoop(sa);
       }
     } else if (cmd4 == IEEE_CLOSE) {      // CLOSE
-      if (ieee488_ListenActive) {
+      if (RemoteMode) {
+        for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++) {
+          if (ieee488_ListenActive[i])
+            channel_Close(ieee488_ListenActive[i], sa);
+        }
+        return;
+      }
+
+      if (ieee488_ListenIsActive()) {
         printf("CLO %d\r\n", sa);
         if (sa == 15) {
           free_multiple_buffers(FMB_USER_CLEAN);
@@ -973,7 +1044,7 @@ void handle_ieee488(void) {
     } else if (cmd4 == IEEE_OPEN) {       // OPEN
       while (!ieee488_ATN())              // Wait for ATN high
         if (ieee488_CheckIFC()) return;
-      if (ieee488_ListenActive) {
+      if (ieee488_ListenIsActive()) {
         printf("OPN %d\r\n", sa);
         open_active = true;
         open_sa = sa;
@@ -1005,9 +1076,12 @@ void handle_card_changes(void) {
 
 
 uint8_t ieee488_ListenIsActive(void) {
-  // FIXME: this version supports only a single device number
-  return ieee488_ListenActive;
+  for (uint8_t i = 0; i < CONFIG_MAX_DEVICES; i++) {
+    if (ieee488_ListenActive[i] > 0) return ieee488_ListenActive[i];
+  }
+  return 0;
 }
+
 
 void ieee_mainloop(void) {
   ieee488_InitIFC();
