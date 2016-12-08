@@ -77,7 +77,7 @@ typedef struct fileops_s {
   int8_t   (*readdir)(dh_t *dh, cbmdirent_t *dent);
   void     (*mkdir)(path_t *path, uint8_t *dirname);
   uint8_t  (*chdir)(path_t *path, cbmdirent_t *dent);
-  void     (*rename)(path_t *path, cbmdirent_t *oldname, uint8_t *newname);
+  void     (*file_rename)(path_t *path, cbmdirent_t *oldname, uint8_t *newname);
 } fileops_t;
 
 /* Helper-Define to avoid lots of typedefs */
@@ -104,6 +104,6 @@ typedef struct fileops_s {
 #define readdir(dh,dent) ((pgmcall(partition[(dh)->part].fop->readdir))(dh,dent))
 #define mkdir(path,dir) ((pgmcall(partition[(path)->part].fop->mkdir))(path,dir))
 #define chdir(path,dent) ((pgmcall(partition[(path)->part].fop->chdir))(path,dent))
-#define rename(path,old,new) ((pgmcall(partition[(path)->part].fop->rename))(path,old,new))
+#define file_rename(path,old,new) ((pgmcall(partition[(path)->part].fop->file_rename))(path,old,new))
 
 #endif
