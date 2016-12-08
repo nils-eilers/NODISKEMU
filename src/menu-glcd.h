@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Nils Eilers. All rights reserved.
+ * Copyright (c) 2016 Nils Eilers. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,66 +25,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #pragma once
-#include <stdbool.h>
+#include <stdio.h>
 #include "config.h"
-#include "lcd.h"
-#include "progmem.h"
 
 
-enum {
-  SCRN_SPLASH = 1,      // Software version info, hardware name
-  SCRN_STATUS           // Disk status, device number, clock
-};
+#define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
 
+void lcd_clear(void);
+void lcd_printf_P(const char *fmt, ...);
+void lcd_putc(char c);
 
-#ifdef CONFIG_ONBOARD_DISPLAY
-
-extern uint8_t menu_system_enabled;                     // Text LCD display
-
-void lcd_splashscreen(void);
-void lcd_draw_screen(uint16_t screen);
-void lcd_refresh(void);
-void lcd_update_device_addr(void);
-void lcd_update_disk_status(void);
-void handle_lcd(void);
-bool handle_buttons(void);
-bool menu(void);
-
-static inline void lcd_bootscreen(void) {
-  lcd_draw_screen(SCRN_SPLASH);
-}
-
-static inline void lcd_ifc(bool ifc) {
-  if (ifc) {
-    lcd_clear();
-    lcd_puts_P(PSTR("IFC: interface clear"));
-  } else {
-    lcd_draw_screen(SCRN_STATUS);
-  }
-}
-
-static inline void menu_init(void) {}
-
-#elif defined(CONFIG_GRAPHIC_DISPLAY)
-                                                        // Graphic LCD display
-#  define menu_system_enabled (1)
-#  include "menu-glcd.h"
-
-#else
-
-#define menu_system_enabled (0)
-                                                        // No display
-static inline void lcd_bootscreen(void) {}
-static inline void lcd_splashscreen(void) {}
-static inline void lcd_draw_screen(uint16_t screen) {}
+// TODO: implement these functions
 static inline void lcd_refresh(void) {}
 static inline void lcd_update_device_addr(void) {}
+static inline void lcd_update_disk_status(void) {}
+static inline void lcd_ifc(bool ifc) {}
 static inline void handle_lcd(void) {}
 static inline bool handle_buttons(void) { return false; }
-static inline void lcd_update_disk_status(void) {}
-static inline bool menu(void) { return false; }
-static inline void lcd_ifc(bool ifc) {}
+static inline void lcd_splashscreen(void) {}
 
-#endif

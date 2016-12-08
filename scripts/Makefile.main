@@ -156,6 +156,7 @@ endif
 # Slave AVR with graphic LCD display
 ifeq ($(CONFIG_GRAPHIC_DISPLAY),y)
   NEED_I2C := y
+  SRC += menu-glcd.c
 endif
 
 # Optimization level, can be [0, 1, 2, 3, s].
