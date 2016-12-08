@@ -138,7 +138,7 @@ void spsp_Connect(void) {
 
   // TODO: close any open files left open from stand-alone mode
   // TODO: display remote symbol on LCD
-  devnumbers_Init(false);      // clear assigned device numbers
+  devnumbers_init();           // clear assigned device numbers
   led_state = 0;               // turn off all LEDs
   set_busy_led(0);
   set_dirty_led(0);
@@ -618,7 +618,7 @@ void spsp_BlockCommand(char *command, uint8_t Len) {
   set_error(ERROR_OK);
 }
 
-void spsp_PositionCommand(uint8_t *command, uint8_t Len) {
+void spsp_PositionCommand(char *command, uint8_t Len) {
   uint16_t record;
   uint8_t  device;
   uint8_t  channel;

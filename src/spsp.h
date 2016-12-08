@@ -94,7 +94,7 @@ void spsp_Message(const char *message);
 void spsp_LoadBuffer(struct Buffer *buf);
 void spsp_UserCommand(char *command);
 void spsp_BlockCommand(char *command, uint8_t len);
-void spsp_PositionCommand(uint8_t *command, uint8_t len);
+void spsp_PositionCommand(char *command, uint8_t len);
 void spsp_GetBlock(struct Buffer *buf, uint8_t device, uint8_t drive, uint8_t t, uint8_t s);
 void spsp_PutBlock(struct Buffer *buf, uint8_t device, uint8_t drive, uint8_t t, uint8_t s);
 void spsp_GetRecord(struct Buffer *buf);
