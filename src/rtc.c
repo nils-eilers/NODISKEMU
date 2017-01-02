@@ -64,7 +64,7 @@ typedef enum { RTC_NONE, RTC_SOFTWARE, RTC_PCF8583,
 static rtc_type_t current_rtc = RTC_NONE;
 
 void rtc_init(void) {
-#if defined(CONFIG_RTC_DS3231) || defined(CONFIG_RTC_DS1307)
+#ifdef CONFIG_RTC_DSRTC
   dsrtc_init();
   if (rtc_state != RTC_NOT_FOUND) {
     current_rtc = RTC_DSRTC;
@@ -101,7 +101,7 @@ void rtc_init(void) {
 void read_rtc(struct tm *time) {
   switch (current_rtc) {
 
-#if defined(CONFIG_RTC_DS3231) || defined(CONFIG_RTC_DS1307)
+#ifdef CONFIG_RTC_DSRTC
   case RTC_DSRTC:
     dsrtc_read(time);
     break;
@@ -134,7 +134,7 @@ void read_rtc(struct tm *time) {
 void set_rtc(struct tm *time) {
   switch (current_rtc) {
 
-#if defined(CONFIG_RTC_DS3231) || defined(CONFIG_RTC_DS1307)
+#ifdef CONFIG_RTC_DSRTC
   case RTC_DSRTC:
     dsrtc_set(time);
     break;
