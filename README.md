@@ -980,43 +980,17 @@ variants once a day if there are any changes. These binaries are
 available from http://petsd.net/nightlies.php?lang=en including instructions
 for updating.
 
-
 Compilation notes
 -----------------
-NODISKEMU requires avr-libc version 1.8.x.
-
-NODISKEMU is set up to be compiled in multiple configurations, controlled by
-configuration files. By default the Makefile looks for a file named
-'config', but you can override it by providing the name on the make
-command line with "make CONFIG=filename[,filename...]", e.g.:
-
-        make CONFIG=configs/config-petSD+
-
-The AVRDUDE settings use the Atmel ISP mkII programmer as default.
-If you're using another programmer, you'd have to change the settings
-in `scripts/avr/variables.mk`, section *Programming Options (avrdude)*.
-
-To initially set or fix your fuses (required only once), run the Makefile's
-fuses target, e.g.:
-
-        make CONFIG=configs/config-petSD+ fuses
-
-To program your firmware, run the Makefile's program target, e.g.:
-
-        make CONFIG=configs/config-petSD+ program
-
-An example configuration file named "config-example" is provided with
-the source code, as well as abridged files corresponding to the
-release binaries. If you want to compile NODISKEMU for a custom hardware
-you may have to edit arch-config.h too to change the port definitions.
-
+Instructions on how to compile this project were split out of this
+document and moved to `doc/COMPILE.txt`.
 
 Copyright
 ---------
 
 Copyright (C) 2007-2016  Ingo Korb <ingo@akana.de>
 
-Copyright (C) 2015-2016 Nils Eilers <nils.eilers@gmx.de>
+Copyright (C) 2015-2017 Nils Eilers <nils.eilers@gmx.de>
 
 NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 

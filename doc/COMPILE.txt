@@ -1,0 +1,158 @@
+How To Compile NODISKEMU
+========================
+
+Requirements
+------------
+
+If you try to compile on MS-Windows, be warned: WinAVR was last
+updated in 2010 so it's hopelessly outdated and will throw a lot
+of errors. This won't work without a couple of changes by somebody
+who actually knows what he does, so it's only for the very brave.
+
+Instead, Unix-like operating systems such as Linux or macOS are
+better suited to compile NODISKEMU. Please note that the version numbers
+listed here do not state exact requirements but are nothing more than the
+minimal versions tested here at the time of writing this.
+
+avr-libc	    >= version 1.8.x
+gcc-avr		    >= version 4.7.2
+GNU make	    >= version 3.81, gmake on *BSD
+
+To program the firmware with an ISP programmer:
+avrdude		    >= version 6.3
+
+To upload the firmware with a bootloader onto the petSD-duo:
+petSD-duo-updater   >= version 2.1 (Nov 29 2016)
+screen		    >= version 4.00.03
+
+
+Compilation
+-----------
+
+NODISKEMU is set up to be compiled in multiple configurations, controlled
+by configuration files. By default the Makefile looks for a file named
+'config', but you can override it by providing the name on the make
+command line with "make CONFIG=filename[,filename...]", e.g.:
+
+        make CONFIG=configs/config-petSD+
+
+An example configuration file named "config-example" is provided with
+the source code, as well as abridged files corresponding to the
+release binaries. If you want to compile NODISKEMU for a custom hardware
+you may have to edit arch-config.h too to change the port definitions.
+
+
+Setting fuses
+-------------
+The so called fuses control some settings of the AVR microcontroller,
+such as for example which kind of clock source is attached to the
+controller or if it should enable or disable the JTAG debug port.
+
+These are only set once and there is no need to touch them ever again.
+
+To set the fuses, you'll need an ISP-programmer and the AVRDUDE software.
+
+If you're in need of a reliable tool, try to get a Atmel AVRISP mkII.
+It's a shame that Atmel doesn't offer them any longer, so you're up to
+either buy a used one or get a clone from China. Atmel themselves offers
+only the much more capable (and expensive) AVR JTAGICE mkII programmer
+which is of no extra use here because the hardware supported by
+NODISKEMU uses the JTAG lines for other purposes. So don't buy that.
+
+The AVRDUDE settings in all provided scripts use the Atmel AVRISP
+mkII programmer as default. If you're using another programmer, you have
+to change the settings in `scripts/avr/variables.mk`,
+section *Programming Options (avrdude)*.
+
+
+To initially set or fix your fuses (required only once), run the Makefile's
+fuses target, e.g.:
+
+        make CONFIG=configs/config-petSD+ fuses
+
+
+ISP programming
+---------------
+
+Do not program a device that will leave your home directly with the
+firmware, or otherwise very bad things will happen. (* insert random
+cursing here *) This process is only meant for debug / develop purposes
+and nothing else! Do not restrain a user to any firmware version with
+random bugs until doomsday when field-upgrading is as easy as sh*t.
+
+Dave Stevenson provides detailed instructions along with a couple of
+screenshots: http://primrosebank.net/computers/pet/projects/pet_petsd_fw.htm
+
+So these instructions provided below are for developers only:
+
+To program the firmware with an ISP-programmer, run the Makefile's program
+target, e.g.:
+
+        make CONFIG=configs/config-petSD+ program
+
+
+
+Uploading firmware onto the petSD-duo
+-------------------------------------
+
+The petSD-duo comes with a bootloader that enables upgrading the
+firmware of both the master and the slave controller over USB without
+the need of a special programmer. To upload the firmware for the
+master AVR just once, run:
+
+	make CONFIG=configs/config-petSD-duo load
+
+But if you're debugging or developing with the petSD-duo, you'll
+probably prefer to run automated debug / upload cycles by running
+the ´autoload' target instead of the `load' target:
+
+The same device node (e.g. /dev/cu.usbserial-00303424)
+is used to output debug message and to upload firmware updates
+onto the petSD-duo. So to being able to upload the firmware,
+you have to quit the terminal program first and vice versa.
+This process is kind of cumbersome and this make target should
+ease the whole thing somewhat.
+
+To enter the debug / upload infinite loop:
+
+	make CONFIG=configs/config-petSD-duo autoload
+
+You will see a reminder for a short while that explains how to
+quit the debug messages (by pressing [Ctrl-a] followed by [d]),
+then the debug messages will appear.
+
+After pressing [Ctrl-a], then [d], a menu will appear asking you
+if you want to leave the loop [Ctrl-c] or upload the firmware [ENTER]
+that you created meanwhile in another shell window.
+
+If you press [ENTER], the firmware will be uploaded and another
+[ENTER] pressing is required so that you’ll be able to read the
+output of the firmware uploader.
+
+After having pressed [ENTER], you'll be shown the debug messages again
+and the whole cycle will continue as long as you press [Ctrl-c].
+
+
+Reading debug output
+--------------------
+
+Though not required, a terminal program such as minicom or screen
+will come in handy to read debug output sent over the serial line.
+On macOS, screen is installed by default. It is also available for
+most Linux systems. Change the values presented here for your needs.
+The baud rate must match the value CONFIG_UART_BAUDRATE given in the
+device's config-file:
+
+	screen /dev/YOUR-DEVICE-NODE 115200
+
+Press [Ctrl-a], then [k] to exit. You will be asked if you really
+want to kill this window. Press [y] to proceed.
+
+Please note that debug output is disabled by default because it could
+have an impact on some timings and therefore break some stuff. To enable
+debug output, edit the configuration file of the device:
+
+	CONFIG_UART_DEBUG=y
+
+
+
