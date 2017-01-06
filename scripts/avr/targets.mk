@@ -4,10 +4,27 @@
 program: bin hex eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)  $(AVRDUDE_WRITE_EEPROM)
 
-# bootloader firmware update
+# bootloader firmware update for petSD-duo
 ifeq ($(CONFIG_HARDWARE_VARIANT),11)
 load: hex
 	update-petSD-duo -d $(BOOTLOADER_DEVICE) -P mast -p $(TARGET).hex -b 230400
+
+autoload: hex
+	clear ; \
+	printf "\n\tPress [Ctrl-a] [d] to detach" ; \
+	sleep 3 ; \
+	while true ; \
+	do \
+   	   screen $(BOOTLOADER_DEVICE) 115200; \
+	   kill `lsof | grep /dev/cu.usbserial-00303424 | awk '{print $$2}'` ; \
+	   clear ; \
+	   printf "Press\n\n\tCtrl-C to abort and return to shell prompt\n\n\tENTER to upload firmware" ; \
+	   read ; \
+	   update-petSD-duo -d $(BOOTLOADER_DEVICE) -P mast -p $(TARGET).hex -b 230400 ; \
+	   clear ; \
+	   printf "Press\n\n\tCtrl-C to abort and return to shell prompt\n\n\tENTER to show debug messages" ; \
+	   read ; \
+	done
 endif
 
 # Set fuses of the device
