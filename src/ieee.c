@@ -581,6 +581,10 @@ void ieee488_BusSleep(bool sleep) {
    from main().
 */
 void ieee488_Init(void) {
+#ifdef IEEE_DC_MCP23S17
+  IEEE_DDR_TED |= _BV(IEEE_PIN_TED);           // TED as output
+  mcp23s17_Init();
+#endif
   ieee488_TalkingDevice = open_sa = 0;
   memset(ieee488_ListenActive, 0, CONFIG_MAX_DEVICES);
   command_received = open_active = false;
