@@ -55,6 +55,10 @@ static inline void debug_flush(void) {}
 // Debug output to both UART and LCD
 #if defined(CONFIG_UART_DEBUG) && defined(CONFIG_DEBUG_MSGS_TO_LCD)
 static inline void debug_putc(char c) {
+  if (c == '\n') {
+    uart_putc('\r');
+    lcd_putc('\r');
+  }
   uart_putc(c);
   lcd_putc(c);
 }
@@ -62,11 +66,23 @@ static inline void debug_putc(char c) {
 
 // Debug output to UART only
 #if defined(CONFIG_UART_DEBUG) && !defined(CONFIG_DEBUG_MSGS_TO_LCD)
-static inline void debug_putc(char c) { uart_putc(c); }
+static inline void debug_putc(char c) {
+  if (c == '\n') uart_putc('\r');
+  uart_putc(c);
+}
 #endif
 
 // Debug output to LCD only
 #if !defined(CONFIG_UART_DEBUG) && defined(CONFIG_DEBUG_MSGS_TO_LCD)
-static inline void debug_putc(char c) { lcd_putc(c); }
+static inline void debug_putc(char c) {
+  if (c == '\n') lcd_putc('\r');
+  lcd_putc(c);
+}
 #endif
+
+// No debug output
+#if !defined(CONFIG_UART_DEBUG) && !defined(CONFIG_DEBUG_MSGS_TO_LCD)
+static inline void debug_putc(char c) {}
+#endif
+
 
