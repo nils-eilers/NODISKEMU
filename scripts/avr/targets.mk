@@ -21,8 +21,7 @@ autoload: hex
 	   printf "Press\n\n\tCtrl-C to abort and return to shell prompt\n\n\tENTER to upload firmware" ; \
 	   read ; \
 	   update-petSD-duo -d $(BOOTLOADER_DEVICE) -P mast -p $(TARGET).hex -b 230400 ; \
-	   clear ; \
-	   printf "Press\n\n\tCtrl-C to abort and return to shell prompt\n\n\tENTER to show debug messages" ; \
+	   printf "\n\n\nPress\n\n\tCtrl-C to abort and return to shell prompt\n\n\tENTER to show debug messages" ; \
 	   read ; \
 	done
 endif
