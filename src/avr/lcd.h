@@ -32,7 +32,7 @@
 
 #define lcd_printf(fmt, ...) lcd_printf_P(PSTR(fmt), ##__VA_ARGS__)
 
-#ifdef CONFIG_ONBOARD_DISPLAY
+#if defined(CONFIG_ONBOARD_DISPLAY) || defined(CONFIG_GRAPHIC_DISPLAY)
 
 extern uint8_t lcd_x; // 0..LCD_COLS-1
 extern uint8_t lcd_y; // 0..LCD_LINES-1
