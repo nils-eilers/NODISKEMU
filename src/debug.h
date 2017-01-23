@@ -39,6 +39,7 @@
 static inline void debug_putc(char c);
 static inline void debug_flush(void);
 
+void debug_init(void);
 void debug_puts_P(const char *text);
 void debug_putcrlf(void);
 void debug_puthex(uint8_t num);

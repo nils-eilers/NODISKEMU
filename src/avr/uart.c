@@ -53,12 +53,6 @@ void uart_putc(char c) {
   UCSRB |= _BV(UDRIE);
 }
 
-static int ioputc(char c, FILE *stream) {
-  if (c == '\n') uart_putc('\r');
-  uart_putc(c);
-  return 0;
-}
-
 void uart_flush(void) {
   while (read_idx != write_idx) ;
 }
@@ -124,8 +118,6 @@ void uart_puts_P(const char *s) {
 }
 
 
-FILE uart_stdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
-
 void uart_init(void) {
   /* Configure serial port */
 
@@ -139,8 +131,6 @@ void uart_init(void) {
 #else
   UCSRC = _BV(UCSZ1) | _BV(UCSZ0);
 #endif
-
-  stdout = &uart_stdout;
 
   read_idx  = 0;
   write_idx = 0;
@@ -156,5 +146,3 @@ void uart_init(void) {
   stdin  = &uart_stdin;
 #endif
 }
-
-

@@ -77,6 +77,7 @@ int main(void) {
 #endif
   timer_init();
   i2c_init();
+  debug_init();
 
   /* Second part of system initialisation, switches to full speed on ARM */
   system_init_late();

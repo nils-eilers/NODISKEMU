@@ -25,11 +25,24 @@
 
 */
 
+#include <stdio.h>
 
 #include "config.h"
 #include "debug.h"
 #include "progmem.h"
 
+static int debug_putchar(char c, FILE *stream);
+static FILE debug_stream = FDEV_SETUP_STREAM(debug_putchar, NULL,
+      _FDEV_SETUP_WRITE);
+
+void debug_init(void) {
+  stdout = &debug_stream;
+}
+
+static int debug_putchar(char c, FILE *stream) {
+  debug_putc(c);
+  return 0;
+}
 
 void debug_puthex(uint8_t num) {
   uint8_t tmp;
