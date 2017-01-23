@@ -85,12 +85,6 @@ ifeq ($(CONFIG_REMOTE_DISPLAY),y)
   NEED_I2C := y
 endif
 
-ifeq ($(CONFIG_DEBUG_MSGS_TO_LCD),y)
-  ifneq ($(CONFIG_UART_DEBUG),y)
-    $(error LCD debug output requires CONFIG_UART_DEBUG enabled as well)
-  endif
-endif
-
 ifeq ($(CONFIG_P00CACHE),y)
   SRC += p00cache.c
 endif

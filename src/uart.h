@@ -28,7 +28,7 @@
 #ifndef UART_H
 #define UART_H
 
-#ifdef CONFIG_UART_DEBUG
+#if defined(CONFIG_UART_DEBUG) || defined(CONFIG_SPSP)
 
 #include "progmem.h"
 
