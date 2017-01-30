@@ -32,6 +32,8 @@
    debug_putc() and debug_flush() so the former is used for distribution.
 */
 
+#pragma once
+
 #include "config.h"
 #include "uart.h"
 #include "lcd.h"
