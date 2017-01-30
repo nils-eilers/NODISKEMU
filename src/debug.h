@@ -34,7 +34,9 @@
 
 #pragma once
 
+#include <stdio.h>
 #include "config.h"
+#include "progmem.h"
 #include "uart.h"
 #include "lcd.h"
 

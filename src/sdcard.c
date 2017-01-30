@@ -37,6 +37,7 @@
 #include "timer.h"
 #include "debug.h"
 #include "sdcard.h"
+#include "debug.h"
 
 #ifdef CONFIG_TWINSD
 #  define MAX_CARDS 2
@@ -352,12 +353,19 @@ DSTATUS sd_initialize(BYTE drv) {
   uint8_t  i,res;
   tick_t   timeout;
 
-  if (drv >= MAX_CARDS)
+  printf("sd_init(%d): ", drv);
+  debug_flush();
+
+  if (drv >= MAX_CARDS) {
+    printf("%d >= MAX_CARDS\r\n", drv);
     return STA_NOINIT | STA_NODISK;
+  }
 
   /* skip initialisation if the card is not present */
-  if (sd_status(drv) & STA_NODISK)
+  if (sd_status(drv) & STA_NODISK) {
+    debug_puts_P(PSTR("no card\r\n"));
     return sd_status(drv);
+  }
 
 #ifdef SPI_LATE_INIT
   /* JLB: Should be in sd_init, but some uIEC versions have
@@ -398,15 +406,19 @@ DSTATUS sd_initialize(BYTE drv) {
   /* switch card to idle state */
   res = send_command(drv, GO_IDLE_STATE, 0);
   deselect_card();
-  if (res & 0x80)
+  if (res & 0x80) {
+    debug_puts_P(PSTR("idle failed\r\n"));
     return STA_NOINIT;
+  }
 
   /* attempt initialisation again if it failed */
   if (res != 1) {
     if (--tries)
       goto retry;
-    else
+    else {
+      debug_puts_P(PSTR("idle failed again\r\n"));
       return STA_NOINIT;
+    }
   }
 
   /* send interface conditions (required for SDHC) */
@@ -416,9 +428,11 @@ DSTATUS sd_initialize(BYTE drv) {
     spi_rx_block(&parameter, 4);
     parameter = swap_word(parameter);
     deselect_card();
-    if (((parameter >> 8) & 0x0f) != 0b0001)
+    if (((parameter >> 8) & 0x0f) != 0b0001) {
       /* the card did not accept the voltage specs */
+      debug_puts_P(PSTR("voltage specs refused\r\n"));
       return STA_NOINIT | STA_NODISK;
+    }
 
     /* do not check pattern echo because IIRC */
     /* some MMC cards would fail here */
@@ -469,23 +483,31 @@ DSTATUS sd_initialize(BYTE drv) {
     deselect_card();
   } while (res != 0 && time_before(getticks(), timeout));
 
-  if (res != 0)
+  if (res != 0) {
+    debug_puts_P(PSTR("no MMC\r\n"));
     return STA_NOINIT;
+  }
 
   /* enable CRC checks */
   res = send_command(drv, CRC_ON_OFF, 1);
   deselect_card();
-  if (res > 1)
+  if (res > 1) {
+    debug_puts_P(PSTR("CRC failed\r\n"));
     return STA_NOINIT | STA_NODISK;
+  }
 
   /* set block size to 512 */
   res = send_command(drv, SET_BLOCKLEN, 512);
   deselect_card();
-  if (res != 0)
+  if (res != 0) {
+    debug_puts_P(PSTR("blocksize failed\r\n"));
     return STA_NOINIT;
+  }
 
   spi_set_speed(SPI_SPEED_FAST);
   disk_state = DISK_OK;
+
+  debug_puts_P(PSTR("OK\r\n"));
 
   return sd_status(drv);
 }
