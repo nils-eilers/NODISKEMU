@@ -296,37 +296,7 @@ static inline void ieee488_DataTalk(void) {
   ieee488_TE75160 = TE_TALK;
 }
 #else
-#ifdef IEEE_DATA_READ
-#include "MCP23S17.h"
-
-static inline void ieee488_DataListen(void) {
-  mcp23s17_Write(IEEE_DDR_DATA, 0xFF);  // data lines as input
-  IEEE_PORT_TED &= ~_BV(IEEE_PIN_TED);  // TED=0 (listen)
-  ieee488_TE75160 = TE_LISTEN;
-}
-
-
-static inline void ieee488_DataTalk(void) {
-  IEEE_PORT_TED |= _BV(IEEE_PIN_TED);   // TED=1 (talk)
-  mcp23s17_Write(IEEE_DDR_DATA, 0x00);  // data lines as output
-  ieee488_TE75160 = TE_TALK;
-}
-
-
-static inline uint8_t ieee488_Data(void) {
-  // MCP23S17 configured for inverted polarity input (IPOL),
-  // so no need to invert here
-  return mcp23s17_Read(IEEE_DATA_READ);
-}
-
-
-static inline void ieee488_SetData(uint8_t data) {
-  mcp23s17_Write(IEEE_DATA_WRITE, ~data);
-}
-
-#else
 #error ieee488 data functions undefined
-#endif
 #endif
 #endif
 
@@ -345,21 +315,6 @@ static inline void ieee488_SetDC(bool x) {
 }
 
 #else
-#ifdef IEEE_DC_MCP23S17
-#include "MCP23S17.h"
-static inline void ieee488_InitDC(void) {
-  // intentionally left blank
-  // DC is initialized by mcp23s17_Init()
-}
-
-
-static inline void ieee488_SetDC(bool x) {
-  if (x)
-    mcp23s17_SetBit(IEEE_DC_MCP23S17);
-  else
-    mcp23s17_ClearBit(IEEE_DC_MCP23S17);
-}
-#else
 #ifndef IEEE_PORT_DC
 static inline void ieee488_InitDC(void) {
    // intentionally left blank
@@ -371,7 +326,6 @@ static inline void ieee488_SetDC(bool x) {
 #else
 #error ieee488_SetDC() / ieee488_InitDC undefined
 #endif // #ifndef IEEE_PORT_DC
-#endif // #ifdef IEEE_DC_MCP23S17
 #endif // #ifdef IEEE_PORT_DC
 
 
