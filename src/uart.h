@@ -33,22 +33,13 @@
 #include "progmem.h"
 
 void uart_init(void);
+unsigned char uart_getc(void);
 void uart_putc(char c);
 void uart_puthex(uint8_t num);
 void uart_trace(void *ptr, uint16_t start, uint16_t len);
 void uart_flush(void);
 void uart_puts_P(const char *text);
 void uart_putcrlf(void);
-
-/* non-blocking, returns '\0' if no character is available */
-char uart_getc(void);
-
-/* blocking, waits until character is available */
-char uart_getch(void);
-
-#ifdef CONFIG_SPSP
-bool uart_rxbuf_empty(void);
-#endif
 
 #ifdef __AVR__
 #  define printf(str,...) printf_P(PSTR(str), ##__VA_ARGS__)
@@ -64,7 +55,6 @@ bool uart_rxbuf_empty(void);
 #define uart_puts_P(x) do {} while(0)
 #define uart_putcrlf() do {} while(0)
 #define uart_trace(a,b,c) do {} while(0)
-#define uart_rxbuf_empty() do {} while(0)
 
 #endif
 

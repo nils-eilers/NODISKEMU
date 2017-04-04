@@ -25,27 +25,12 @@
 
 */
 
-#pragma once
-
-// ieee488_RxByte return values:
-enum {
-  RX_DATA,              // byte received, EOI not set
-  RX_EOI,               // byte received, EOI set
-  RX_ATN,               // aborted by ATN
-  RX_IFC                // aborted by IFC
-};
-
-// listen_loop actions:
-enum {
-  LL_SNIFFONLY,         // ignore third party's data, for sniffing only
-  LL_RECEIVE,           // received data or command byte
-  LL_OPEN,              // received character for OPEN Filename
-};
+#ifndef IEEE_H
+#define IEEE_H
 
 
-// function prototypes:
 void ieee488_Init(void);
 void ieee488_BusSleep(bool sleep);
-uint8_t ieee488_ListenIsActive(void);
-uint8_t ieee488_RxByte(char *c);
 void ieee_mainloop(void);
+
+#endif

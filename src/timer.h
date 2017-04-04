@@ -77,7 +77,7 @@ static inline tick_t getticks(void) {
 void timer_init(void);
 
 
-#ifdef HAVE_BUTTONS
+
 // Bit masks for the keys
 #define KEY_SEL     (1<<0)
 #define KEY_NEXT    (1<<1)
@@ -107,5 +107,4 @@ uint8_t get_key_short(uint8_t key_mask);
 uint8_t get_key_long(uint8_t key_mask);
 
 
-#endif
 #endif

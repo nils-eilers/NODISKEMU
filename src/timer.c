@@ -37,7 +37,7 @@
 // System tick counter
 volatile tick_t ticks;
 
-#ifdef HAVE_BUTTONS
+
 // Shared with assembly interrupt routine:
 volatile uint8_t key_state;     // debounced key state: bit = 1: key pressed
 volatile uint8_t key_press;     // key press detect
@@ -99,6 +99,4 @@ uint8_t get_key_short(uint8_t key_mask) {
 uint8_t get_key_long(uint8_t key_mask) {
   return get_key_press(get_key_rpt(key_mask));
 }
-
-#endif // HAVE_BUTTONS
 

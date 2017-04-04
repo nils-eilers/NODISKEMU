@@ -4,7 +4,7 @@
 ASMSRC = avr/crc7asm.S avr/timerint.S
 
 ifeq ($(CONFIG_UART_DEBUG),y)
-  ASMSRC += avr/uartint-tx.S
+  ASMSRC += avr/uartint.S
 endif
 
 ifeq ($(CONFIG_HAVE_IEC),y)
@@ -21,14 +21,6 @@ endif
 
 ifeq ($(CONFIG_HARDWARE_VARIANT),10)
   ASMSRC += avr/atn-ack-petsd+.S
-endif
-
-ifeq ($(CONFIG_HARDWARE_VARIANT),11)
-  ASMSRC += avr/atn-ack-petsd-duo.S
-endif
-
-ifeq ($(CONFIG_SPSP),y)
-  ASMSRC += avr/uartint-rx.S
 endif
 
 ifdef NEED_I2C
@@ -89,12 +81,6 @@ nochip:
 	@echo
 	@echo 'Please edit the Makefile.'
 	@exit 1
-endif
-
-ifeq ($(CONFIG_HARDWARE_VARIANT),11)
-# Just guess the device
-# BOOTLOADER_DEVICE = /dev/cu.usbserial-00303424
-BOOTLOADER_DEVICE = $(wildcard /dev/cu.usbserial-*)
 endif
 
 #---------------- External Memory Options ----------------

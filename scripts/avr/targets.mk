@@ -4,12 +4,6 @@
 program: bin hex eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)  $(AVRDUDE_WRITE_EEPROM)
 
-# bootloader firmware update
-ifeq ($(CONFIG_HARDWARE_VARIANT),11)
-load: hex
-	update-petSD-duo -d $(BOOTLOADER_DEVICE) -P mast -p $(TARGET).hex -b 230400
-endif
-
 # Set fuses of the device
 fuses: $(CONFIG)
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSES)

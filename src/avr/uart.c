@@ -1,6 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
    Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
-   Copyright (C) 2016 Nils Eilers <nils.eilers@gmx.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -34,10 +33,6 @@
 #include "avrcompat.h"
 #include "uart.h"
 
-#ifdef CONFIG_DEBUG_MSGS_TO_LCD
-#include "i2c.h"
-#endif
-
 // uint8_t txbuf[1 << CONFIG_UART_BUF_SHIFT];
 // FIXME: use CONFIG_UART_BUF_SHIFT in interrupt routine
 uint8_t txbuf[1 << 8];
@@ -55,11 +50,6 @@ void uart_putc(char c) {
   txbuf[write_idx] = c;
   write_idx = t;
   UCSRB |= _BV(UDRIE);
-
-#ifdef CONFIG_DEBUG_MSGS_TO_LCD
-  // FIXME: works only for the petSD-duo but not with petSD+
-  i2c_write_register(SLAVE_ADDR, 1, c);
-#endif
 }
 
 void uart_puthex(uint8_t num) {
@@ -124,6 +114,11 @@ static int ioputc(char c, FILE *stream) {
   return 0;
 }
 
+uint8_t uart_getc(void) {
+  loop_until_bit_is_set(UCSRA,RXC);
+  return UDR;
+}
+
 void uart_flush(void) {
   while (read_idx != write_idx) ;
 }
@@ -140,68 +135,6 @@ void uart_putcrlf(void) {
   uart_putc(13);
   uart_putc(10);
 }
-
-
-#ifdef CONFIG_SPSP
-
-#ifndef CONFIG_UART_RX_BUFFER_SIZE
-#define CONFIG_UART_RX_BUFFER_SIZE 128
-#endif
-
-#define RX_BUFFER_SIZE_MASK (CONFIG_UART_RX_BUFFER_SIZE - 1)
-#if (CONFIG_UART_RX_BUFFER_SIZE & RX_BUFFER_SIZE_MASK)
-#error RX buffer size is not a power of 2
-#endif
-
-#define RX_BUFFER_NEXT(p) ((p + 1) & RX_BUFFER_SIZE_MASK)
-
-// receive ring buffer
-volatile char     uart_rxbuf[CONFIG_UART_RX_BUFFER_SIZE];
-#if (CONFIG_UART_RX_BUFFER_SIZE < 256)
-volatile uint8_t  uart_rx_wp;
-volatile uint8_t  uart_rx_rp;
-#else
-volatile uint16_t uart_rx_wp;
-volatile uint16_t uart_rx_rp;
-#endif
-volatile uint8_t  rx_buffer_overflows;
-
-
-bool
-uart_rxbuf_empty(void)
-{
-   return uart_rx_rp == uart_rx_wp;
-}
-
-
-char
-uart_getc(void)
-{
-   if (uart_rxbuf_empty())
-      return 0;
-   char c = uart_rxbuf[uart_rx_rp];
-   uart_rx_rp = RX_BUFFER_NEXT(uart_rx_rp);
-   return c;
-}
-
-
-char
-uart_getch(void)
-{
-   while (uart_rxbuf_empty());
-   return uart_getc();
-}
-
-
-static int
-uart_getchar(FILE *stream)
-{
-   while (uart_rxbuf_empty());
-   return uart_getc();
-}
-
-#endif
-
 
 static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
@@ -223,17 +156,4 @@ void uart_init(void) {
 
   read_idx  = 0;
   write_idx = 0;
-
-#ifdef CONFIG_SPSP
-  uart_rx_rp = uart_rx_wp = 0;         // reset rx ring buffer
-  rx_buffer_overflows = 0;
-  UCSR0B |= _BV(RXEN0) | _BV(TXEN0);   // enable receiver and transmitter
-  UCSR0B |= _BV(RXCIE0);               // enable RX complete interrupt
-
-   static FILE uart_stdin =
-       FDEV_SETUP_STREAM(NULL, uart_getchar, _FDEV_SETUP_READ);
-   stdin  = &uart_stdin;
-#endif
 }
-
-

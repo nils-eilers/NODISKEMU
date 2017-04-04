@@ -85,12 +85,6 @@ ifeq ($(CONFIG_REMOTE_DISPLAY),y)
   NEED_I2C := y
 endif
 
-ifeq ($(CONFIG_DEBUG_MSGS_TO_LCD),y)
-  ifneq ($(CONFIG_UART_DEBUG),y)
-    $(error LCD debug output requires CONFIG_UART_DEBUG enabled as well)
-  endif
-endif
-
 ifeq ($(CONFIG_P00CACHE),y)
   SRC += p00cache.c
 endif
@@ -139,22 +133,6 @@ endif
 # If it is not available, the then unused ETINT pin is used for IFC
 ifeq ($(CONFIG_HARDWARE_VARIANT),8)
   SRC += enc28j60.c
-endif
-
-# petSD-duo uses a MCP23S17 port expander
-ifeq ($(CONFIG_HARDWARE_VARIANT),11)
-  SRC += mcp23s17.c
-endif
-
-# Serial PET/Server Protocol
-ifeq ($(CONFIG_SPSP),y)
-  SRC += spsp.c
-  SRC += devnumbers.c
-endif
-
-# Slave AVR with graphic LCD display
-ifeq ($(CONFIG_GRAPHIC_DISPLAY),y)
-  NEED_I2C := y
 endif
 
 # Optimization level, can be [0, 1, 2, 3, s].
@@ -435,5 +413,5 @@ clean:
 # Listing of phony targets.
 .PHONY : all sizebefore sizeafter gccversion \
 build elf hex eep lss sym coff extcoff \
-clean clean_list program load debug gdb-config doxygen
+clean clean_list program debug gdb-config doxygen
 
