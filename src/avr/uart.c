@@ -145,12 +145,7 @@ void uart_init(void) {
   UBRRL = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
 
   UCSRB = _BV(TXEN);
-  // I really don't like random #ifdefs in the code =(
-#if defined __AVR_ATmega32__
-  UCSRC = _BV(URSEL) | _BV(UCSZ1) | _BV(UCSZ0);
-#else
   UCSRC = _BV(UCSZ1) | _BV(UCSZ0);
-#endif
 
   stdout = &mystdout;
 
