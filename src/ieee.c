@@ -382,101 +382,7 @@ void ieee488_CtrlPortsTalk(void) {
 }
 
 #else /* ifdef HAVE_7516X */
-#ifdef HAVE_IEEE_POOR_MENS_VARIANT
-
-// -----------------------------------------------------------------------
-//  Poor men's variant without IEEE bus drivers
-// -----------------------------------------------------------------------
-static inline uint8_t ieee488_Data(void) {
-  return ~IEEE_D_PIN;
-}
-
-
-static inline void ieee488_SetData(uint8_t data) {
-  // Pull lines low by outputting zero
-  // pull lines high by defining them as input and enabling the pull-up
-  IEEE_D_DDR  = data;
-  IEEE_D_PORT = ~data;
-}
-
-
-static inline void ieee488_DataListen(void) {
-  IEEE_D_DDR  = 0x00;                           // data lines as input
-  IEEE_D_PORT = 0xFF;                           // enable pull-ups
-  ieee488_TE75160 = TE_LISTEN;
-}
-
-
-static inline void ieee488_DataTalk(void) {
-  IEEE_D_DDR  = 0x00;                           // data lines as input
-  IEEE_D_PORT = 0xFF;                           // enable pull-ups
-  ieee488_TE75160 = TE_TALK;
-}
-
-
-void ieee488_CtrlPortsListen(void) {
-  ieee488_SetEOI(1);
-  ieee488_SetDAV(1);
-  ieee488_SetNDAC(1);
-  ieee488_SetNRFD(1);
-  ieee488_TE75161 = TE_LISTEN;
-}
-
-
-void ieee488_CtrlPortsTalk(void) {
-  ieee488_SetEOI(1);
-  ieee488_SetDAV(1);
-  ieee488_SetNDAC(1);
-  ieee488_SetNRFD(1);
-  ieee488_TE75161 = TE_TALK;
-}
-
-
-static inline void ieee488_SetNDAC(bool x) {
-  if(x) {                                       // Set NDAC high
-    IEEE_DDR_NDAC &= ~_BV(IEEE_PIN_NDAC);       // NDAC as input
-    IEEE_PORT_NDAC |= _BV(IEEE_PIN_NDAC);       // Enable pull-up
-  } else {                                      // Set NDAC low
-    IEEE_PORT_NDAC &= ~_BV(IEEE_PIN_NDAC);      // NDAC low
-    IEEE_DDR_NDAC |= _BV(IEEE_PIN_NDAC);        // NDAC as output
-  }
-}
-
-static inline void ieee488_SetNRFD(bool x) {
-  if(x) {                                       // Set NRFD high
-    IEEE_DDR_NRFD &= ~_BV(IEEE_PIN_NRFD);       // NRFD as input
-    IEEE_PORT_NRFD |= _BV(IEEE_PIN_NRFD);       // Enable pull-up
-  } else {                                      // Set NRFD low
-    IEEE_PORT_NRFD &= ~_BV(IEEE_PIN_NRFD);      // NRFD low
-    IEEE_DDR_NRFD |= _BV(IEEE_PIN_NRFD);        // NRFD as output
-  }
-}
-
-static inline void ieee488_SetDAV(bool x) {
-  if(x) {                                       // Set DAV high
-    IEEE_DDR_DAV &= ~_BV(IEEE_PIN_DAV);         // DAV as input
-    IEEE_PORT_DAV |= _BV(IEEE_PIN_DAV);         // Enable pull-up
-  } else {                                      // Set DAV low
-    IEEE_PORT_DAV &= ~_BV(IEEE_PIN_DAV);        // DAV low
-    IEEE_DDR_DAV |= _BV(IEEE_PIN_DAV);          // DAV as output
-  }
-}
-
-static inline void ieee488_SetTE(bool x) {
-  // left intentionally blank
-}
-
-static inline void ieee488_InitDC(void) {
-  // left intentionally blank
-}
-
-static inline void ieee488_SetDC(bool x) {
-  // left intentionally blank
-}
-
-#else
 #error No IEEE-488 low level routines defined
-#endif
 #endif
 
 #ifdef IEEE_ATN_INT0                    // ATN via INT0 interrupt
@@ -499,15 +405,7 @@ static inline void ieee488_InitAtnInterrupt(void) {
   ieee488_EnableAtnInterrupt();
 }
 #else
-#ifdef IEEE_PCMSK
-static inline void ieee488_InitAtnInterrupt(void) {
-  PCIFR |= _BV(PCIF3);                  // clear interrupt flag
-  IEEE_PCMSK |= _BV(IEEE_PCINT);        // enable ATN in pin change enable mask
-  PCICR |= _BV(PCIE3);                  // enable pin change interrupt 3 (PCINT31..24)
-}
-#else
 #error No interrupt definition for ATN
-#endif
 #endif
 
 
@@ -550,9 +448,7 @@ void ieee488_Init(void) {
   device_address = device_hw_address();
   ieee488_InitDC();
   ieee488_SetDC(DC_DEVICE);
-#ifdef HAVE_7516X
   IEEE_DDR_TE  |= _BV(IEEE_PIN_TE);             // TE  as output
-#endif
   IEEE_DDR_ATN &= ~_BV(IEEE_PIN_ATN);           // ATN as input
   ieee488_DataListen();
   ieee488_CtrlPortsListen();

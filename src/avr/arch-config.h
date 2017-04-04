@@ -28,6 +28,7 @@
 #ifndef ARCH_CONFIG_H
 #define ARCH_CONFIG_H
 
+/* No enum used here to make these definitions visible for assembler code */
 #define HW_EXAMPLE       1
 #define HW_SHADOWOLF1    2
 #define HW_LARSP         3
@@ -35,8 +36,7 @@
 #define HW_SHADOWOLF2    5
 #define HW_UIECV3        7
 #define HW_PETSD         8
-#define HW_XS1541        9
-#define HW_PETSDPLUS    10
+#define HW_PETSDPLUS     9
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -925,128 +925,6 @@ static inline void board_init(void) {
   PORTC |= _BV(PC4);       /* Disable  ENC28J60 */
 }
 
-
-#elif CONFIG_HARDWARE_VARIANT == HW_XS1541
-/* ---------- Hardware configuration: XS-1541 ---------- */
-#  define HAVE_SD
-#  define SD_SUPPLY_VOLTAGE     (1L<<18)
-
-/* 230 kHz slow, 1.8432 2MHz fast */
-#  define SPI_DIVISOR_SLOW 64
-#  define SPI_DIVISOR_FAST 8
-
-static inline void sdcard_interface_init(void) {
-  /* No card detect switch, no write protect switch... nothing */
-  return;
-}
-
-static inline uint8_t sdcard_detect(void) {
-  return 1; /* assume it's always there */
-}
-
-static inline uint8_t sdcard_wp(void) {
-  return 0;
-}
-
-static inline uint8_t device_hw_address(void) {
-  /* No device jumpers on XS-1541 */
-  return CONFIG_DEFAULT_ADDR;
-}
-
-static inline void device_hw_address_init(void) {
-  return;
-}
-
-static inline void leds_init(void) {
-  DDRC |= _BV(PC0);  /* busy LED onboard */
-  DDRB |= _BV(PB0);  /* dirty LED extern */
-}
-
-static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
-  if (state)
-    PORTC |= _BV(PC0);
-  else
-    PORTC &= ~_BV(PC0);
-}
-
-#  define LED_DIRTY_PORT        PORTB
-#  define LED_DIRTY_INPUT       PINB
-#  define LED_DIRTY_PIN         PB0
-
-
-// dual-interface device, currently only as a compile-time option
-#ifdef CONFIG_HAVE_IEC
-#  define IEC_INPUT             PORTD
-#  define IEC_DDR               DDRD
-#  define IEC_PORT              PORTD
-#  define IEC_PIN_ATN           PD2
-#  define IEC_PIN_DATA          PD4
-#  define IEC_PIN_CLOCK         PD7
-#  define IEC_PIN_SRQ           PD5
-#  define IEC_ATN_INT_VECT      PCINT3_vect
-#  define IEC_PCMSK             PCMSK3
-
-static inline void iec_interrupts_init(void) {
-  PCICR |= _BV(PCIE3);
-  PCIFR |= _BV(PCIF3);
-}
-#endif // CONFIG_HAVE_IEC
-
-#ifdef CONFIG_HAVE_IEEE
-#  define HAVE_IEEE_POOR_MENS_VARIANT
-#  define IEEE_ATN_INT          PCINT3
-#  define IEEE_PCMSK            PCMSK3
-#  define IEEE_PCINT            PCINT27
-#  define IEEE_ATN_INT_VECT     PCINT3_vect
-
-#  define IEEE_INPUT_ATN        PIND    /* ATN */
-#  define IEEE_PORT_ATN         PORTD
-#  define IEEE_DDR_ATN          DDRD
-#  define IEEE_PIN_ATN          PD3
-#  define IEEE_INPUT_NDAC       PINC    /* NDAC */
-#  define IEEE_PORT_NDAC        PORTC
-#  define IEEE_DDR_NDAC         DDRC
-#  define IEEE_PIN_NDAC         PC4
-#  define IEEE_INPUT_NRFD       PINC    /* NRFD */
-#  define IEEE_PORT_NRFD        PORTC
-#  define IEEE_DDR_NRFD         DDRC
-#  define IEEE_PIN_NRFD         PC5
-#  define IEEE_INPUT_DAV        PINC    /* DAV */
-#  define IEEE_PORT_DAV         PORTC
-#  define IEEE_DDR_DAV          DDRC
-#  define IEEE_PIN_DAV          PC6
-#  define IEEE_INPUT_EOI        PINC    /* EOI */
-#  define IEEE_PORT_EOI         PORTC
-#  define IEEE_DDR_EOI          DDRC
-#  define IEEE_PIN_EOI          PC7
-#  define IEEE_INPUT_IFC        PINC    /* IFC */
-#  define IEEE_PORT_IFC         PORTC
-#  define IEEE_DDR_IFC          DDRC
-#  define IEEE_PIN_IFC          PC2
-#  define IEEE_D_PIN            PINA    /* Data */
-#  define IEEE_D_PORT           PORTA
-#  define IEEE_D_DDR            DDRA
-#
-static inline void ieee_interface_init(void) {
-  IEEE_DDR_IFC  &=  ~_BV(IEEE_PIN_IFC);         // Define IFC as input
-  IEEE_PORT_IFC |=   _BV(IEEE_PIN_IFC);         // enable pull-up for IFC
-  IEEE_DDR_ATN  &=  ~_BV(IEEE_PIN_ATN);         // ATN as input
-  IEEE_PORT_ATN |=   _BV(IEEE_PIN_ATN);         // enable ATN pullup
-}
-
-#endif // CONFIG_HAVE_IEEE
-
-#  define BUTTON_NEXT           _BV(PB1)
-#  define BUTTON_PREV           _BV(PB2)
-
-static inline rawbutton_t buttons_read(void) {
-  return (PINB & (BUTTON_NEXT | BUTTON_PREV));
-}
-
-static inline void buttons_init(void) {
-  DDRB &= (uint8_t) ~ (BUTTON_NEXT | BUTTON_PREV);
-  PORTB |= BUTTON_NEXT | BUTTON_PREV;
-}
 
 #elif CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
 /* ---------- Hardware configuration: petSD+ --------- */

@@ -16,10 +16,6 @@ ifeq ($(CONFIG_HARDWARE_VARIANT),8)
 endif
 
 ifeq ($(CONFIG_HARDWARE_VARIANT),9)
-  ASMSRC += avr/atn-ack-xs1541.S
-endif
-
-ifeq ($(CONFIG_HARDWARE_VARIANT),10)
   ASMSRC += avr/atn-ack-petsd+.S
 endif
 
