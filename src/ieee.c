@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Nils Eilers. All rights reserved.
+ * Copyright (c) 2015, 2017 Nils Eilers. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,10 +66,10 @@
 //  Global variables
 // -------------------------------------------------------------------------
 
-uint8_t device_address = CONFIG_DEFAULT_ADDR;  // Current device address
-volatile bool ieee488_TE75160;          // direction set for data lines
-volatile bool ieee488_TE75161;          // direction set for ctrl lines
-volatile bool ieee488_ATN_received;     // ATN interrupt sets this to true
+uint8_t device_address = CONFIG_DEFAULT_ADDR;   // Current device address
+volatile bool ieee488_TE75160;                  // direction set for data lines
+volatile bool ieee488_TE75161;                  // direction set for ctrl lines
+volatile bool ieee488_ATN_received;             // ATN interrupt sets this to true
 
 
 #define PRESERVE_CURRENT_DIRECTORY      1
@@ -128,6 +128,24 @@ static inline void ieee488_SetNDAC(bool x);
 static inline void ieee488_SetNRFD(bool x);
 
 
+/* --------------------------------------------------------------------------------------
+   IFC handling
+
+   There are three different cases:
+
+   1) the IFC line is completely ignored for devices where it is not
+      attached to the controller
+   2) the IFC line is monitored and used to reset things
+   3) Special case for the old petSD: the controller is short of availabe
+      input lines so we check first if the ENC28J60 ethernet controller is
+      available. If not, we use a signal line for IFC that would have been
+      used for the ethernet controller otherwise. If the ethernet
+      controller is available, IFC is ignored
+*/
+
+
+// Special case for old petSD:
+
 #ifdef SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
 #include "enc28j60.h"
 
@@ -168,6 +186,9 @@ bool ieee488_CheckIFC(void) {
   return true;
 }
 #else
+
+// IFC available and attached to the controller:
+
 #ifdef IEEE_INPUT_IFC
 static inline void ieee488_InitIFC(void) {
   IEEE_DDR_IFC &= ~_BV(IEEE_PIN_IFC);           // IFC as input
@@ -185,6 +206,9 @@ static inline bool ieee488_CheckIFC(void) {
   return true;
 }
 #else
+
+// IFC not attached, ignored:
+
 static inline void ieee488_InitIFC(void) {}
 
 static inline uint8_t ieee488_IFC(void) {
@@ -198,31 +222,13 @@ static inline bool ieee488_CheckIFC(void) {
 #endif // #ifdef IEEE_INPUT_IFC
 #endif // #ifdef SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
 
+// --------------------------------------------------------------------------------------
 
-
-static inline uint8_t ieee488_ATN(void) {
-  return IEEE_INPUT_ATN & _BV(IEEE_PIN_ATN);
-}
-
-
-static inline uint8_t ieee488_NDAC(void) {
-  return IEEE_INPUT_NDAC & _BV(IEEE_PIN_NDAC);
-}
-
-
-static inline uint8_t ieee488_NRFD(void) {
-  return IEEE_INPUT_NRFD & _BV(IEEE_PIN_NRFD);
-}
-
-
-static inline uint8_t ieee488_DAV(void) {
-  return IEEE_INPUT_DAV & _BV(IEEE_PIN_DAV);
-}
-
-
-static inline uint8_t ieee488_EOI(void) {
-  return IEEE_INPUT_EOI & _BV(IEEE_PIN_EOI);
-}
+static inline uint8_t ieee488_ATN(void)  { return IEEE_INPUT_ATN  & _BV(IEEE_PIN_ATN);  }
+static inline uint8_t ieee488_NDAC(void) { return IEEE_INPUT_NDAC & _BV(IEEE_PIN_NDAC); }
+static inline uint8_t ieee488_NRFD(void) { return IEEE_INPUT_NRFD & _BV(IEEE_PIN_NRFD); }
+static inline uint8_t ieee488_DAV(void)  { return IEEE_INPUT_DAV  & _BV(IEEE_PIN_DAV);  }
+static inline uint8_t ieee488_EOI(void)  { return IEEE_INPUT_EOI  & _BV(IEEE_PIN_EOI);  }
 
 static inline void ieee488_SetEOI(bool x) {
   // bus driver changes flow direction of EOI from transmit
@@ -237,11 +243,24 @@ static inline void ieee488_SetEOI(bool x) {
 }
 
 
-#ifdef HAVE_7516X
-// Device with 75160/75161 bus drivers
+/* --------------------------------------------------------------------------------------
+   IEEE-488 bus data lines
+
+   The data lines should attach 1:1 to a port of the controller.
+
+   Unfortunately, this is not possible on the petSD+ because pin D7 is used
+   as analog input.
+
+   Either way, IEEE_D_DDR is always defined. If IEEE_PIN_D7 is defined, D7
+   is used for the analog input and handled separetely.
+*/
+
+static inline uint8_t ieee488_Data(void);
+static inline void ieee488_SetData(uint8_t data);
+static inline void ieee488_DataListen(void);
+static inline void ieee488_DataTalk(void);
 
 #ifdef IEEE_PIN_D7
-
 static inline void ieee488_SetData(uint8_t data) {
   IEEE_D_PORT &= 0b10000000;
   IEEE_D_PORT |= (~data) & 0b01111111;
@@ -273,15 +292,8 @@ static inline void ieee488_DataTalk(void) {
   ieee488_TE75160 = TE_TALK;
 }
 #else
-#ifdef IEEE_D_DDR
-static inline uint8_t ieee488_Data(void) {
-  return ~IEEE_D_PIN;
-}
-
-
-static inline void ieee488_SetData(uint8_t data) {
-  IEEE_D_PORT = ~data;
-}
+static inline uint8_t ieee488_Data(void)            { return ~IEEE_D_PIN;  }
+static inline void    ieee488_SetData(uint8_t data) { IEEE_D_PORT = ~data; }
 
 
 static inline void ieee488_DataListen(void) {
@@ -295,11 +307,16 @@ static inline void ieee488_DataTalk(void) {
   IEEE_D_DDR  = 0xFF;                   // data lines as output
   ieee488_TE75160 = TE_TALK;
 }
-#else
-#error ieee488 data functions undefined
-#endif
-#endif
+#endif // #ifdef IEEE_PIN_D7
 
+/* --------------------------------------------------------------------------------------
+   DC (direction control) is an input of the IEEE-488 bus drivers that is
+   set dependent on whether the unit is a bus master or a device.
+
+   DC is attached to the controller on the old petSD but not on the newer
+   petSD+ where it is tied to a static level because any petSD is always
+   a device only but never a bus master.
+*/
 
 #ifdef IEEE_PORT_DC
 static inline void ieee488_InitDC(void) {
@@ -315,19 +332,11 @@ static inline void ieee488_SetDC(bool x) {
 }
 
 #else
-#ifndef IEEE_PORT_DC
-static inline void ieee488_InitDC(void) {
-   // intentionally left blank
-}
+static inline void ieee488_InitDC(void)  {}
+static inline void ieee488_SetDC(bool x) {}
+#endif
 
-static inline void ieee488_SetDC(bool x) {
-   // intentionally left blank
-}
-#else
-#error ieee488_SetDC() / ieee488_InitDC undefined
-#endif // #ifndef IEEE_PORT_DC
-#endif // #ifdef IEEE_PORT_DC
-
+// --------------------------------------------------------------------------------------
 
 static inline void ieee488_SetNDAC(bool x) {
   if (x)
@@ -381,11 +390,7 @@ void ieee488_CtrlPortsTalk(void) {
   ieee488_TE75161 = TE_TALK;
 }
 
-#else /* ifdef HAVE_7516X */
-#error No IEEE-488 low level routines defined
-#endif
-
-#ifdef IEEE_ATN_INT0                    // ATN via INT0 interrupt
+// ATN via INT0 interrupt
 static inline void ieee488_EnableAtnInterrupt(void) {
   EIMSK |= _BV(INT0);
 }
@@ -404,9 +409,6 @@ static inline void ieee488_InitAtnInterrupt(void) {
   EICRA |=  _BV(ISC01);
   ieee488_EnableAtnInterrupt();
 }
-#else
-#error No interrupt definition for ATN
-#endif
 
 
 // TE=0: listen mode, TE=1: talk mode
