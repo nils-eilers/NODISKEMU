@@ -38,6 +38,9 @@ extern uint8_t device_address;
 
 enum { IEC, IEEE488 };
 
+void iec_interface_init(void);
+void ieee_interface_init(void);
+
 #ifdef HAVE_DUAL_INTERFACE
 extern uint8_t active_bus;
 
@@ -60,6 +63,7 @@ static inline void bus_init(void) {
 #include <avr/power.h>
 #include "uart.h"
 #include "timer.h"
+#include "spi.h"
 
 static inline void set_clock_prescaler(uint8_t bus) {
   uart_flush();
@@ -67,6 +71,7 @@ static inline void set_clock_prescaler(uint8_t bus) {
   else                   clock_prescale_set(clock_div_1);    // Set clock to        16 MHz
   timer_init();
   uart_init();
+  spi_set_speed(SPI_SPEED_FAST);
 }
 #else
 static inline void set_clock_prescaler(uint8_t bus) {}
