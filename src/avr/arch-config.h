@@ -929,6 +929,7 @@ static inline void board_init(void) {
 #elif CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
 /* ---------- Hardware configuration: petSD+ --------- */
 #  define HAVE_SD
+#  define IEC_SLOW_IEEE_FAST
 #  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
 #  define SD_SUPPLY_VOLTAGE (1L<<21)
 

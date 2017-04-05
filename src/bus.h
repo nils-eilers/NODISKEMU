@@ -29,6 +29,7 @@
 #define BUS_H
 
 #include <stdbool.h>
+
 #include "config.h"
 #include "iec.h"
 #include "ieee.h"
@@ -54,7 +55,25 @@ static inline void bus_init(void) {
     ieee488_Init();
 }
 
+#ifdef IEC_SLOW_IEEE_FAST
+
+#include <avr/power.h>
+#include "uart.h"
+#include "timer.h"
+
+static inline void set_clock_prescaler(uint8_t bus) {
+  uart_flush();
+  if (active_bus == IEC) clock_prescale_set(clock_div_2);    // Set clock to 16/2 =  8 MHz
+  else                   clock_prescale_set(clock_div_1);    // Set clock to        16 MHz
+  timer_init();
+  uart_init();
+}
+#else
+static inline void set_clock_prescaler(uint8_t bus) {}
+#endif
+
 static inline void bus_mainloop(void) {
+  set_clock_prescaler(active_bus);
   if (active_bus == IEC)
     iec_mainloop();
   else

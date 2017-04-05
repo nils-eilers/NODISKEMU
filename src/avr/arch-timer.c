@@ -27,13 +27,29 @@
 
 #include "config.h"
 #include "timer.h"
+#include "bus.h"
 
 void timer_init(void) {
   /* Count F_CPU/8 in timer 0 */
   TCCR0B = _BV(CS01);
 
-  /* Set up a 100Hz interrupt using timer 1 */
+
+  /* Set up a 100Hz interrupt using timer 1
+
+     The petSD+ runs at 8 MHz in IEC mode and at 16 MHz in IEEE-488 mode
+     so after switching modes we need to re-init the timer interrupt
+     to keep the interrupt occuring 100 times per second
+   */
+
+#ifdef IEC_SLOW_IEEE_FAST
+  if (active_bus == IEC)
+    OCR1A  = F_CPU / 64 / 100 - 1;
+  else
+    OCR1A  = (F_CPU * 2) / 64 / 100 - 1;
+#else
   OCR1A  = F_CPU / 64 / 100 - 1;
+#endif
+
   TCNT1  = 0;
   TCCR1A = 0;
   TCCR1B = _BV(WGM12) | _BV(CS10) | _BV(CS11);

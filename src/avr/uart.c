@@ -140,9 +140,18 @@ static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
 void uart_init(void) {
   /* Configure serial port */
-
+#ifdef IEC_SLOW_IEEE_FAST
+  if (active_bus == IEC) {
+    UBRRH = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
+    UBRRL = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
+  } else {
+    UBRRH = (int)((double)(F_CPU*2)/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
+    UBRRL = (int)((double)(F_CPU*2)/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
+  }
+#else
   UBRRH = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
   UBRRL = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
+#endif
 
   UCSRB = _BV(TXEN);
   UCSRC = _BV(UCSZ1) | _BV(UCSZ0);

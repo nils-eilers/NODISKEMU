@@ -33,7 +33,9 @@ CONFIG_HARDWARE_NAME=petSD+
 CONFIG_HARDWARE_VARIANT=9
 CONFIG_MCU=atmega1284p
 CONFIG_LINKER_RELAX=y
-CONFIG_MCU_FREQ=18432000
+# The petSD+ runs at 8 MHz in IEC mode and 16 MHz in IEEE-488 mode
+# We set 8 MHz here to get the timings right for the IEC code
+CONFIG_MCU_FREQ=8000000
 CONFIG_BOOTLOADER=y
 CONFIG_BOOT_DEVID=0x2b445370
 # UART TxD shares the port pin with the busy LED, so you'd usually
