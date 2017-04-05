@@ -239,7 +239,7 @@ static inline void iec_interrupts_init(void) {
 
 
 /*** IEEE signals ***/
-/* not documented yet, look at petSD/XS-1541 for guidance */
+/* not documented yet, look at petSD/petSD+ for guidance */
 
 /*** User interface ***/
 /* Button NEXT changes to the next disk image and enables sleep mode (held) */
