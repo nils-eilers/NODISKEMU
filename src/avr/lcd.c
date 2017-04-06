@@ -39,10 +39,16 @@
 #include "timer.h"
 #include "errormsg.h"
 #include "bus.h"
+#include "arch-timer.h"
 
 
-#define LCD_DELAY_US_DATA   46
-#define LCD_DELAY_MS_CLEAR  10
+#define LCD_DELAY_US_DATA       46
+#define LCD_DELAY_US_E          20
+
+#define LCD_DELAY_MS_POWERON    15
+#define LCD_DELAY_MS_CLEAR      10
+#define LCD_DELAY_MS_LONG        5
+#define LCD_DELAY_MS_SHORT       1
 
 #define LCD_DDRAM 128
 
@@ -53,6 +59,30 @@ uint8_t lcd_y;                  // 0..LCD_COLS-1
 static int lcd_putchar(char c, FILE *stream);
 static FILE lcd_stream = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
 static FILE *lcd_stdout;
+
+
+// avr-libc requires constant delays so we're doing some macro voodoo here
+
+#ifdef IEC_SLOW_IEEE_FAST
+#define modesafe_delay_us(x)            \
+  if (active_bus == IEC)                \
+    _delay_us(x);                       \
+  else                                  \
+    _delay_us(x*2);
+#else
+#define modesafe_delay_us(x) _delay_us(x)
+#endif
+
+#ifdef IEC_SLOW_IEEE_FAST
+#define modesafe_delay_ms(x)            \
+  if (active_bus == IEC)                \
+    _delay_ms(x);                       \
+  else                                  \
+    _delay_ms(x*2);
+#else
+#define modesafe_delay_us(x) _delay_us(x)
+#endif
+
 
 
 static inline void lcd_set_data_mode(void) {
@@ -67,7 +97,7 @@ static inline void lcd_set_command_mode(void) {
 
 static void lcd_pulse_e(void) {
   LCD_PORT_E |= _BV(LCD_PIN_E);                // E high
-  _delay_us(20);
+  modesafe_delay_us(LCD_DELAY_US_E);
   LCD_PORT_E &= ~_BV(LCD_PIN_E);               // E low
 }
 
@@ -76,11 +106,11 @@ static void lcd_write(uint8_t v) {
   LCD_PORT_DATA &= 0xF0;
   LCD_PORT_DATA |= ((v >> 4) & 0x0F);          // high nibble
   lcd_pulse_e();
-  _delay_us(LCD_DELAY_US_DATA);
+  modesafe_delay_us(LCD_DELAY_US_DATA);
   LCD_PORT_DATA &= 0xF0;
   LCD_PORT_DATA |= ( v       & 0x0F);          // low  nibble
   lcd_pulse_e();
-  _delay_us(LCD_DELAY_US_DATA);
+  modesafe_delay_us(LCD_DELAY_US_DATA);
 }
 
 
@@ -120,7 +150,7 @@ void lcd_locate(uint8_t x, uint8_t y) {
 void lcd_clear(void) {
   lcd_send_command(0x01);
   lcd_x = lcd_y = 0;
-  _delay_ms(LCD_DELAY_MS_CLEAR);
+  modesafe_delay_ms(LCD_DELAY_MS_CLEAR);
 }
 
 
@@ -146,16 +176,16 @@ void lcd_init(void) {
   LCD_PORT_DATA &= 0xF0;
 
 
-  _delay_ms(15);               // allow LCD to init after power-on
+  modesafe_delay_ms(LCD_DELAY_MS_POWERON);
 
   LCD_PORT_DATA &= 0xF0;
   LCD_PORT_DATA |= 0x03;       // send init value 0x30 three times
-  lcd_pulse_e(); _delay_ms(5);
-  lcd_pulse_e(); _delay_ms(1);
-  lcd_pulse_e(); _delay_ms(1);
+  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
+  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_SHORT);
+  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_SHORT);
 
   LCD_PORT_DATA &= 0xF2;       // select bus width: 4-bit
-  lcd_pulse_e(); _delay_ms(5);
+  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
 
   lcd_write(0x28);             // 4 bit, 2 line, 5x7 dots
   lcd_write(0x0C);             // Display on, cursor off
