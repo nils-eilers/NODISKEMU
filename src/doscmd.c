@@ -61,6 +61,47 @@
 
 static FIL romfile;
 
+/* ---- Minimal drive rom emulation ---- */
+
+typedef struct magic_value_s {
+  uint16_t address;
+  uint8_t  val[2];
+} magic_value_t;
+
+/* These are address/value pairs used by some programs to detect a 1541. */
+/* Currently we remember two bytes per address since that's the longest  */
+/* block required. */
+static const PROGMEM magic_value_t c1541_magics[] = {
+  { 0xfea0, { 0x0d, 0xed } }, /* used by DreamLoad and ULoad Model 3 */
+  { 0xe5c6, { 0x34, 0xb1 } }, /* used by DreamLoad and ULoad Model 3 */
+  { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader */
+  { 0,      { 0, 0 } }        /* end mark */
+};
+
+/* System partition G-P answer */
+static const PROGMEM uint8_t system_partition_info[] = {
+  0xff,0xe2,0x00,0x53,0x59,0x53,0x54,0x45,
+  0x4d,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,
+  0xa0,0xa0,0xa0,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x0d
+};
+
+#ifndef globalflags
+/* AVR uses GPIOR for this */
+uint8_t globalflags;
+#endif
+
+uint8_t command_buffer[CONFIG_COMMAND_BUFFER_SIZE+2];
+uint8_t command_length,original_length;
+
+date_t date_match_start;
+date_t date_match_end;
+
+uint16_t datacrc = 0xffff;
+
+
+#ifdef CONFIG_HAVE_IEC
+
 /* ---- Fastloader tables ---- */
 
 enum {
@@ -86,6 +127,7 @@ struct fastloader_rxtx_s {
   fastloader_rx_t rxfunc;
   fastloader_tx_t txfunc;
 };
+
 
 static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
 #ifdef CONFIG_LOADER_GEOS
@@ -260,73 +302,12 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 
   { FL_NONE, 0, 0, 0 }  // end marker
 };
-
-/* ---- Minimal drive rom emulation ---- */
-
-typedef struct magic_value_s {
-  uint16_t address;
-  uint8_t  val[2];
-} magic_value_t;
-
-/* These are address/value pairs used by some programs to detect a 1541. */
-/* Currently we remember two bytes per address since that's the longest  */
-/* block required. */
-static const PROGMEM magic_value_t c1541_magics[] = {
-  { 0xfea0, { 0x0d, 0xed } }, /* used by DreamLoad and ULoad Model 3 */
-  { 0xe5c6, { 0x34, 0xb1 } }, /* used by DreamLoad and ULoad Model 3 */
-  { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader */
-  { 0,      { 0, 0 } }        /* end mark */
-};
-
-/* System partition G-P answer */
-static const PROGMEM uint8_t system_partition_info[] = {
-  0xff,0xe2,0x00,0x53,0x59,0x53,0x54,0x45,
-  0x4d,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,
-  0xa0,0xa0,0xa0,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0x00,0x00,0x0d
-};
-
-#ifndef globalflags
-/* AVR uses GPIOR for this */
-uint8_t globalflags;
-#endif
-
-uint8_t command_buffer[CONFIG_COMMAND_BUFFER_SIZE+2];
-uint8_t command_length,original_length;
-
-date_t date_match_start;
-date_t date_match_end;
-
-uint16_t datacrc = 0xffff;
-
-#ifdef CONFIG_HAVE_IEC
 static uint8_t previous_loader;
 
 /* partial fastloader data capture */
 static uint16_t  capture_address, capture_remain;
 static uint8_t   capture_offset;
 static buffer_t *capture_buffer;
-#endif
-
-#ifdef CONFIG_STACK_TRACKING
-//FIXME: AVR-only code
-uint16_t minstack = RAMEND;
-
-void __cyg_profile_func_enter (void *this_fn, void *call_site) __attribute__((no_instrument_function));
-void __cyg_profile_func_exit  (void *this_fn, void *call_site) __attribute__((alias("__cyg_profile_func_enter")));
-
-void __cyg_profile_func_enter (void *this_fn, void *call_site) {
-  if (SP < minstack) minstack = SP;
-}
-#endif
-
-#ifdef HAVE_RTC
-/* Days of the week as used by the CMD FD */
-static const PROGMEM uint8_t downames[] = "SUN.MON.TUESWED.THURFRI.SAT.";
-
-/* Skeleton of the ASCII time format */
-static const PROGMEM uint8_t asciitime_skel[] = " xx/xx/xx xx:xx:xx xM\r";
-#endif
 
 #ifdef CONFIG_CAPTURE_LOADERS
 static uint8_t loader_buffer[CONFIG_CAPTURE_BUFFER_SIZE];
@@ -411,7 +392,29 @@ static void save_capbuffer(void) {
   set_error(ERROR_DRIVE_NOT_READY);
 }
 
+#endif // CONFIG_CAPTURE_LOADERS
+#endif // CONFIG_HAVE_IEC
+
+#ifdef CONFIG_STACK_TRACKING
+//FIXME: AVR-only code
+uint16_t minstack = RAMEND;
+
+void __cyg_profile_func_enter (void *this_fn, void *call_site) __attribute__((no_instrument_function));
+void __cyg_profile_func_exit  (void *this_fn, void *call_site) __attribute__((alias("__cyg_profile_func_enter")));
+
+void __cyg_profile_func_enter (void *this_fn, void *call_site) {
+  if (SP < minstack) minstack = SP;
+}
 #endif
+
+#ifdef HAVE_RTC
+/* Days of the week as used by the CMD FD */
+static const PROGMEM uint8_t downames[] = "SUN.MON.TUESWED.THURFRI.SAT.";
+
+/* Skeleton of the ASCII time format */
+static const PROGMEM uint8_t asciitime_skel[] = " xx/xx/xx xx:xx:xx xM\r";
+#endif
+
 
 /* ------------------------------------------------------------------------- */
 /*  Parsing helpers                                                          */
