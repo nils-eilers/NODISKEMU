@@ -32,6 +32,7 @@
 #include "config.h"
 #include "avrcompat.h"
 #include "uart.h"
+#include "bus.h"
 
 // uint8_t txbuf[1 << CONFIG_UART_BUF_SHIFT];
 // FIXME: use CONFIG_UART_BUF_SHIFT in interrupt routine
