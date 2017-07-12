@@ -41,7 +41,10 @@ CONFIG_BOOT_DEVID=0x2b445370
 # UART TxD shares the port pin with the busy LED, so you'd usually
 # prefer to disable debug output
 CONFIG_UART_DEBUG=n
-CONFIG_UART_BAUDRATE=115200
+# This baud rate setting is ignored. The actual values for the petSD+
+# are set in src/avr/uart.c. 0xdeadbeef disables the computation of
+# values for the UBBR registers.
+CONFIG_UART_BAUDRATE=0xdeadbeef
 CONFIG_UART_BUF_SHIFT=8
 CONFIG_COMMAND_CHANNEL_DUMP=y
 CONFIG_SD_AUTO_RETRIES=10

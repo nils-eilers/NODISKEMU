@@ -29,10 +29,16 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <stdio.h>
+
 #include "config.h"
 #include "avrcompat.h"
 #include "uart.h"
 #include "bus.h"
+
+#if CONFIG_UART_BAUDRATE != 0xdeadbeef
+#  define BAUD CONFIG_UART_BAUDRATE
+#  include <util/setbaud.h>
+#endif
 
 // uint8_t txbuf[1 << CONFIG_UART_BUF_SHIFT];
 // FIXME: use CONFIG_UART_BUF_SHIFT in interrupt routine
@@ -141,17 +147,20 @@ static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
 void uart_init(void) {
   /* Configure serial port */
-#ifdef IEC_SLOW_IEEE_FAST
-  if (active_bus == IEC) {
-    UBRRH = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
-    UBRRL = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
-  } else {
-    UBRRH = (int)((double)(F_CPU*2)/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
-    UBRRL = (int)((double)(F_CPU*2)/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
-  }
-#else
-  UBRRH = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) >> 8;
-  UBRRL = (int)((double)F_CPU/(16.0*CONFIG_UART_BAUDRATE)-1) & 0xff;
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
+   // petSD+ 38400 baud, 8N1
+   // Values taken from http://wormfood.net/avrbaudcalc.php?clock=8%2C16
+   UBRRH = 0;
+   UBRRL = (active_bus == IEC) ? 0x0C : 0x19;
+   UCSRA &= ~(1 << U2X0);
+#  else
+   UBRRH = UBRRH_VALUE;
+   UBRRL = UBRRL_VALUE;
+#  if USE_2X
+   UCSRA |= (1 << U2X);          /* U2X-mode required */
+#    else
+   UCSRA &= ~(1 << U2X);         /* U2X-not required */
+#  endif
 #endif
 
   UCSRB = _BV(TXEN);
