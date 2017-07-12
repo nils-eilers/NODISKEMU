@@ -42,13 +42,13 @@
 #include "arch-timer.h"
 
 
-#define LCD_DELAY_US_DATA       46
-#define LCD_DELAY_US_E          20
+#define LCD_DELAY_US_DATA       92
+#define LCD_DELAY_US_E          40
 
-#define LCD_DELAY_MS_POWERON    15
-#define LCD_DELAY_MS_CLEAR      10
-#define LCD_DELAY_MS_LONG        5
-#define LCD_DELAY_MS_SHORT       1
+#define LCD_DELAY_MS_POWERON    30
+#define LCD_DELAY_MS_CLEAR      20
+#define LCD_DELAY_MS_LONG       10
+#define LCD_DELAY_MS_SHORT       2
 
 #define LCD_DDRAM 128
 
