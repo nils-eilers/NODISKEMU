@@ -157,9 +157,9 @@ void uart_init(void) {
    UBRRH = UBRRH_VALUE;
    UBRRL = UBRRL_VALUE;
 #  if USE_2X
-   UCSRA |= (1 << U2X);          /* U2X-mode required */
+   UCSRA |= (1 << U2X0);        /* U2X-mode required */
 #    else
-   UCSRA &= ~(1 << U2X);         /* U2X-not required */
+   UCSRA &= ~(1 << U2X0);       /* U2X-not required */
 #  endif
 #endif
 
