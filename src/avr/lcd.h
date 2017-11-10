@@ -50,8 +50,8 @@ void lcd_puts_P(const char *progmem_s);
 void lcd_printf_P(const char *fmt, ...);
 void lcd_cursor(bool on);
 void lcd_clrlines(uint8_t from, uint8_t to);
-void lcd_adjust_contrast(void);
-void lcd_adjust_brightness(void);
+uint8_t lcd_set_contrast(uint8_t contrast);
+uint8_t lcd_set_brightness(uint8_t contrast);
 
 #else
 
@@ -66,6 +66,6 @@ static inline void lcd_puts_P(const char *progmem_s) {}
 static inline void lcd_printf_P(const char *fmt, ...) {}
 static inline void lcd_cursor(bool on) {}
 static inline void lcd_clrlines(uint8_t from, uint8_t to) {}
-static inline void lcd_adjust_contrast(void) {}
-static inline void lcd_adjust_brightness(void) {}
+static inline uint8_t lcd_set_contrast(uint8_t contrast) { return 1; }
+static inline uint8_t lcd_set_brightness(uint8_t contrast) { return 1; }
 #endif

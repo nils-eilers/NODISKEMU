@@ -40,6 +40,7 @@
 #include "errormsg.h"
 #include "bus.h"
 #include "arch-timer.h"
+#include "i2c.h"
 
 
 #define LCD_DELAY_US_DATA       92
@@ -248,3 +249,10 @@ void lcd_clrlines(uint8_t from, uint8_t to) {
       lcd_putc(' ');
 }
 
+uint8_t lcd_set_contrast(uint8_t contrast) {
+  return i2c_write_register(I2C_SLAVE_ADDRESS, PWM_CONTRAST, contrast);
+}
+
+uint8_t lcd_set_brightness(uint8_t brightness) {
+  return i2c_write_register(I2C_SLAVE_ADDRESS, PWM_BRIGHTNESS, 255 - brightness);
+}

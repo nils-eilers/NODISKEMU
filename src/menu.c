@@ -49,7 +49,6 @@
 #include "wrapops.h"
 #include "fatops.h"     // pet2ascn()
 #include "doscmd.h"
-#include "i2c.h"
 
 
 uint8_t menu_system_enabled = true;
@@ -810,8 +809,8 @@ bool menu(void) {
     else if (mp == 2) menu_device_number();
     else if (mp == 3) menu_set_clock();
     else if (mp == 4) menu_select_bus();
-    else if (mp == 5) lcd_adjust_contrast();
-    else if (mp == 6) lcd_adjust_brightness();
+    else if (mp == 5) menu_adjust_contrast();
+    else if (mp == 6) menu_adjust_brightness();
     else  break;
     if (current_error != ERROR_OK) break;
   }
@@ -828,7 +827,7 @@ static void pwm_error(void) {
   wait_anykey();
 }
 
-void lcd_adjust_contrast(void) {
+void menu_adjust_contrast(void) {
   uint8_t v = 2;
   uint8_t i;
   uint8_t min = 0;
@@ -848,7 +847,7 @@ void lcd_adjust_contrast(void) {
       lcd_putc(i >= v ? ' ' : 0xFF);
     }
     lcd_putc(']');
-    res = i2c_write_register(I2C_SLAVE_ADDRESS, PWM_CONTRAST, v);
+    res = lcd_set_contrast(v);
     if (res) break;
     for (;;) {
       if (get_key_autorepeat(KEY_PREV)) {
@@ -872,7 +871,7 @@ void lcd_adjust_contrast(void) {
 }
 
 
-void lcd_adjust_brightness(void) {
+void menu_adjust_brightness(void) {
   uint8_t v = 255;
   uint8_t i;
   uint8_t min = 0;
@@ -894,7 +893,7 @@ void lcd_adjust_brightness(void) {
     }
     lcd_putc(']');
     lcd_printf("%03d", v);
-    res = i2c_write_register(I2C_SLAVE_ADDRESS, PWM_BRIGHTNESS, 255 - v);
+    res = lcd_set_brightness(v);
     if (res) break;
     for (;;) {
       step = 10;

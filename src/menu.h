@@ -49,6 +49,8 @@ void lcd_update_disk_status(void);
 void handle_lcd(void);
 bool handle_buttons(void);
 bool menu(void);
+void menu_adjust_contrast(void);
+void menu_adjust_brightness(void);
 
 static inline void lcd_bootscreen(void) {
   lcd_draw_screen(SCRN_SPLASH);
@@ -67,5 +69,7 @@ static inline void handle_lcd(void) {}
 static inline bool handle_buttons(void) { return false; }
 static inline void lcd_update_disk_status(void) {}
 static inline bool menu(void) { return false; }
+static inline void menu_adjust_contrast(void) {}
+static inline void menu_adjust_brightness(void) {}
 
 #endif
