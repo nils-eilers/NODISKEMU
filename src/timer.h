@@ -106,5 +106,7 @@ uint8_t get_key_short(uint8_t key_mask);
 // Check if a key has been pressed for a long while
 uint8_t get_key_long(uint8_t key_mask);
 
+// Wait until all keys are released
+void wait_anykey(void);
 
 #endif

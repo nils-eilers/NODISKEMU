@@ -43,7 +43,7 @@ volatile uint8_t key_state;     // debounced key state: bit = 1: key pressed
 volatile uint8_t key_press;     // key press detect
 volatile uint8_t key_rpt;       // key long press and repeat
 
-// Used only by the assembly interrupt routine:
+// Used by the assembly interrupt routine:
 volatile uint8_t key_ct0;               // 8 vertical counters, bit 0
 volatile uint8_t key_ct1;               // 8 vertical counters, bit 1
 volatile uint8_t key_ct2;               // 8 vertical counters, bit 2
@@ -100,3 +100,9 @@ uint8_t get_key_long(uint8_t key_mask) {
   return get_key_press(get_key_rpt(key_mask));
 }
 
+void wait_anykey(void) {
+  while (get_key_state(KEY_ANY));
+  while (!get_key_state(KEY_ANY));
+  while (get_key_state(KEY_ANY));
+  key_state = key_press = key_rpt = key_ct0 = key_ct1 = key_ct2 = key_repeat_counter = 0;
+}
