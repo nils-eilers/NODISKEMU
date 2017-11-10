@@ -43,6 +43,8 @@ void board_diagnose(void) {
   char buffer[21];
   unsigned int counter = 0;
 
+  lcd_init();
+  lcd_bootscreen();
   lcd_clear();
   sdcard_interface_init();
   buttons_init();

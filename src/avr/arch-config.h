@@ -269,8 +269,8 @@ static inline void buttons_init(void) {
 
 /*** board-specific initialisation ***/
 /* Currently used on uIEC/CF and uIEC/SD only */
-//#define HAVE_BOARD_INIT
-//static inline void board_init(void) {
+//#define HAVE_EARLY_BOARD_INIT
+//static inline void early_board_init(void) {
 //  // turn on power LED
 //  DDRG  |= _BV(PG1);
 //  PORTG |= _BV(PG1);
@@ -573,9 +573,9 @@ static inline void buttons_init(void) {
 /* Use diskmux code to optionally turn off second IDE drive */
 #  define NEED_DISKMUX
 
-#  define HAVE_BOARD_INIT
+#  define HAVE_EARLY_BOARD_INIT
 
-static inline void board_init(void) {
+static inline void early_board_init(void) {
   /* Force control lines of the external SRAM high */
   DDRG  = _BV(PG0) | _BV(PG1) | _BV(PG2);
   PORTG = _BV(PG0) | _BV(PG1) | _BV(PG2);
@@ -792,9 +792,9 @@ static inline void buttons_init(void) {
   PORTG |= BUTTON_NEXT | BUTTON_PREV;
 }
 
-#  define HAVE_BOARD_INIT
+#  define HAVE_EARLY_BOARD_INIT
 
-static inline void board_init(void) {
+static inline void early_board_init(void) {
   // turn on power LED
   DDRG  |= _BV(PG1);
   PORTG |= _BV(PG1);
@@ -915,12 +915,12 @@ static inline void buttons_init(void) {
 #  define SOFTI2C_BIT_INTRQ     PC2
 #  define SOFTI2C_DELAY         6
 
-#  define HAVE_BOARD_INIT
+#  define HAVE_EARLY_BOARD_INIT
 #  define ENC28J60_CONTROL_PORT PORTC
 #  define ENC28J60_CONTROL_CS   PC4
 #  define SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
 
-static inline void board_init(void) {
+static inline void early_board_init(void) {
   DDRC  |= _BV(PC4);
   PORTC |= _BV(PC4);       /* Disable  ENC28J60 */
 }
@@ -1103,20 +1103,27 @@ static inline uint8_t device_hw_address(void) {
 
 
 #  ifdef CONFIG_ONBOARD_DISPLAY
-#    define HAVE_BOARD_INIT
+#    define HAVE_EARLY_BOARD_INIT
+#    define HAVE_LATE_BOARD_INIT
 #include "lcd.h"
 #include "diagnose.h"
+#include "timer.h"
 
-static inline void board_init(void) {
-  lcd_init();
-  lcd_bootscreen();
-  buttons_init();
+static inline void early_board_init(void) {
 #ifdef CONFIG_HAVE_IEC
   IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
   IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
 #endif
+}
+
+static inline void late_board_init(void) {
+  lcd_init();
+  lcd_bootscreen();
+  buttons_init();
   uint16_t buttons = ADCW;
-  if (buttons > 580 && buttons < 630) board_diagnose();
+  if (buttons > 580 && buttons < 630) {
+    board_diagnose();
+  }
 }
 
 

@@ -61,7 +61,7 @@ int main(void) __attribute__((OS_main));
 #endif
 int main(void) {
   /* Early system initialisation */
-  board_init();
+  early_board_init();
   system_init_early();
   leds_init();
 
@@ -120,10 +120,12 @@ int main(void) {
   if (menu_system_enabled)
     lcd_splashscreen();
 
+  bus_interface_init();
+  bus_init();
+  read_configuration();
+  late_board_init();
+
   for (;;) {
-    bus_interface_init();
-    bus_init();    // needs delay, inits device address with HW settings
-    read_configuration(); // may change device address
     if (menu_system_enabled)
       lcd_refresh();
     else {
@@ -134,5 +136,8 @@ int main(void) {
     /* so present it here at last */
     printf("#%02d\r\n", device_address);
     bus_mainloop();
+    bus_interface_init();
+    bus_init();    // needs delay, inits device address with HW settings
+    read_configuration(); // may change device address
   }
 }

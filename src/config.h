@@ -54,11 +54,17 @@
 #endif
 
 /* Generate a dummy function if there is no board-specific initialisation */
-#ifndef HAVE_BOARD_INIT
-static inline void board_init(void) {
+#ifndef HAVE_EARLY_BOARD_INIT
+static inline void early_board_init(void) {
   return;
 }
 #endif
+#ifndef HAVE_LATE_BOARD_INIT
+static inline void late_board_init(void) {
+  return;
+}
+#endif
+
 
 /* ----- Translate CONFIG_ADD symbols to HAVE symbols ----- */
 /* By using two symbols for this purpose it's easier to determine if */
