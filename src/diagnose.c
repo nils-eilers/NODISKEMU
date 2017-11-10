@@ -33,6 +33,8 @@
 #include "timer.h"
 #include "led.h"
 #include "progmem.h"
+#include "i2c.h"
+#include "lcd.h"
 
 
 // petSD+ diagnose
@@ -69,6 +71,11 @@ void board_diagnose(void) {
       hfuse == CONFIG_HFUSE &&
       efuse == CONFIG_EFUSE) lcd_puts_P(PSTR("OK"));
   else lcd_puts_P(PSTR("BAD"));
+
+  lcd_locate(0, 2); lcd_puts_P(PSTR("PWM:"));
+  int16_t res = i2c_read_register(I2C_SLAVE_ADDRESS, I2C_SOFTWARE_VERSION);
+  if (res < 0) lcd_puts_P(PSTR("--"));
+  else lcd_printf("%02X", res);
 
   for (;;) {
     if (counter & 4) {
