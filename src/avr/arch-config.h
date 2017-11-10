@@ -1038,7 +1038,7 @@ static inline void buttons_init(void) {
   // disable digitial input register for PA7
   DIDR0 |= _BV(ADC7D);
 
-  // divider 128: 18.432 MHz / 128 = 144 kHz (50 kHz..200 kHz)
+  // divider 128: 16 MHz / 128 = 125 kHz (50 kHz..200 kHz)
   // enable ADC
   ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN);
 
