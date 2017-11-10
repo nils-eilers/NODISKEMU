@@ -1125,6 +1125,8 @@ static inline void late_board_init(void) {
   uint16_t buttons = ADCW;
   if (buttons > 580 && buttons < 630) {
     board_diagnose();
+  } else if (buttons >= 630 && buttons < 680) {
+    lcd_adjust_contrast();
   }
 }
 
