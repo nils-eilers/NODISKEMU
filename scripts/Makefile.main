@@ -55,6 +55,12 @@ SRC += eeprom-conf.c parser.c utils.c led.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
 SRC += $(CONFIG_ARCH)/system.c
 
+# List any extra directories to look for include files here.
+#     Each directory must be seperated by a space.
+#     Use forward slashes for directory separators.
+#     For a directory that has spaces, enclose it in quotes.
+EXTRAINCDIRS =
+
 ifneq ($(CONFIG_NO_SD),y)
   SRC += sdcard.c
 endif
@@ -144,13 +150,6 @@ OPT = s
 DEBUG = dwarf-2
 
 
-# List any extra directories to look for include files here.
-#     Each directory must be seperated by a space.
-#     Use forward slashes for directory separators.
-#     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS =
-
-
 # Compiler flag to set the C Standard level.
 #     c89   = "ANSI" C
 #     gnu89 = c89 plus GCC extensions
@@ -231,6 +230,7 @@ endif
 #             and function names needs to be present in the assembler source
 #             files -- see avr-libc docs [FIXME: not yet described there]
 ASFLAGS = -Wa,-gstabs -I$(OBJDIR) -Isrc -Isrc/$(CONFIG_ARCH)
+ASFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 
 
 #---------------- Linker Options ----------------
