@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Nils Eilers. All rights reserved.
+ * Copyright (c) 2015, 2017 Nils Eilers. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,6 +49,7 @@
 #include "wrapops.h"
 #include "fatops.h"     // pet2ascn()
 #include "doscmd.h"
+#include "i2c.h"
 
 
 uint8_t menu_system_enabled = true;
@@ -461,6 +462,8 @@ static void rom_menu_main(uint8_t y) {
         lcd_printf("Set clock");
       break;
     case 4: lcd_puts_P(PSTR("Select IEC/IEEE-488")); break;
+    case 5: lcd_puts_P(PSTR("Adjust LCD contrast")); break;
+    case 6: lcd_puts_P(PSTR("Adjust brightness")); break;
     default: break;
   }
 }
@@ -730,9 +733,9 @@ cleanup:
 }
 
 #ifdef HAVE_DUAL_INTERFACE
-#define MAIN_MENU_LAST_ENTRY 4
+#define MAIN_MENU_LAST_ENTRY 6
 #else
-#define MAIN_MENU_LAST_ENTRY 3
+#define MAIN_MENU_LAST_ENTRY 5
 #endif
 
 bool menu(void) {
@@ -768,12 +771,13 @@ bool menu(void) {
           if (my > 0) {
             --my;               // Move within same page
           } else {
+            mp = LCD_LINES - 1;
             my = LCD_LINES - 1; // page up
             break;
           }
         } else {
           // flip down to last menu entry
-          my = 0;
+          my = MAIN_MENU_LAST_ENTRY % LCD_LINES;
           mp = MAIN_MENU_LAST_ENTRY;
           break;
         }
@@ -806,6 +810,8 @@ bool menu(void) {
     else if (mp == 2) menu_device_number();
     else if (mp == 3) menu_set_clock();
     else if (mp == 4) menu_select_bus();
+    else if (mp == 5) lcd_adjust_contrast();
+    else if (mp == 6) lcd_adjust_brightness();
     else  break;
     if (current_error != ERROR_OK) break;
   }
@@ -816,3 +822,99 @@ bool menu(void) {
   return old_bus != active_bus;
 }
 
+static void pwm_error(void) {
+  lcd_locate(0, LCD_LINES - 2);
+  lcd_puts_P(PSTR("Error:PWM controller\nnot found"));
+  wait_anykey();
+}
+
+void lcd_adjust_contrast(void) {
+  uint8_t v = 2;
+  uint8_t i;
+  uint8_t min = 0;
+  uint8_t max = LCD_COLS - 2;
+  uint8_t res;
+
+  lcd_clear();
+  lcd_puts_P(PSTR("Adjust LCD contrast"));
+  lcd_locate(0, 1);
+
+  lcd_cursor(false);
+  set_busy_led(true);
+  for (;;) {
+    lcd_locate(0, 1);
+    lcd_putc('[');
+    for (i = 0; i < LCD_COLS - 2; i++) {
+      lcd_putc(i >= v ? ' ' : 0xFF);
+    }
+    lcd_putc(']');
+    res = i2c_write_register(I2C_SLAVE_ADDRESS, PWM_CONTRAST, v);
+    if (res) break;
+    for (;;) {
+      if (get_key_autorepeat(KEY_PREV)) {
+        if (v <= min) v = max;
+        else --v;
+        break;
+      }
+      if (get_key_autorepeat(KEY_NEXT)) {
+        if (v >= max) v = min;
+        else ++v;
+        break;
+      }
+      if (get_key_press(KEY_SEL)) {
+        lcd_cursor(false);
+        set_busy_led(false);
+        return;
+      }
+    }
+  }
+  if (res) pwm_error();
+}
+
+
+void lcd_adjust_brightness(void) {
+  uint8_t v = 255;
+  uint8_t i;
+  uint8_t min = 0;
+  uint8_t max = 255; // LCD_COLS - 2;
+  uint8_t res;
+  uint8_t step;
+
+  lcd_clear();
+  lcd_puts_P(PSTR("Adjust brightness"));
+  lcd_locate(0, 1);
+
+  lcd_cursor(false);
+  set_busy_led(true);
+  for (;;) {
+    lcd_locate(0, 1);
+    lcd_putc('[');
+    for (i = 0; i < 18; i++) {
+      lcd_putc(i >= (v / 14) ? ' ' : 0xFF);
+    }
+    lcd_putc(']');
+    lcd_printf("%03d", v);
+    res = i2c_write_register(I2C_SLAVE_ADDRESS, PWM_BRIGHTNESS, 255 - v);
+    if (res) break;
+    for (;;) {
+      step = 10;
+      if (v < 20 || v > 235) step = 1;
+      if (get_key_autorepeat(KEY_PREV)) {
+        if (v <= min) v = max;
+        else v -= step;
+        break;
+      }
+      if (get_key_autorepeat(KEY_NEXT)) {
+        if (v >= max) v = min;
+        else v += step;
+        break;
+      }
+      if (get_key_press(KEY_SEL)) {
+        lcd_cursor(false);
+        set_busy_led(false);
+        return;
+      }
+    }
+  }
+  if (res) pwm_error();
+}

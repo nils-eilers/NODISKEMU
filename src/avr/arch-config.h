@@ -1085,6 +1085,8 @@ static inline uint8_t device_hw_address(void) {
 #  define SOFTI2C_BIT_SDA       PC1
 #  define SOFTI2C_DELAY         6
 
+// Definitions for I2C PWM slave on petSD+ 2.x boards
+#  include                      "i2c-lcd-pwm-io-config.h"
 
 #  define LCD_PORT_E            PORTD
 #  define LCD_DDR_E             DDRD
