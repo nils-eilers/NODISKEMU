@@ -1021,14 +1021,6 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define IEEE_BIT_TE           _BV(IEEE_PIN_TE)
 #  define IEEE_BIT_IFC          _BV(IEEE_PIN_IFC)
 
-static inline void ieee_interface_init(void) {
-  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
-  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
-  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
-  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
-  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
-  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
-}
 
 
 static inline void buttons_init(void) {
@@ -1130,6 +1122,17 @@ static inline void late_board_init(void) {
   }
 }
 
+#include "i2c.h"
+
+static inline void ieee_interface_init(void) {
+  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
+  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
+  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
+  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
+  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
+  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
+  i2c_write_register(I2C_SLAVE_ADDRESS, IO_IEC, 1); // Enable IEEE-488 bus
+}
 
 #ifdef CONFIG_HAVE_IEC
 #  define IEC_OUTPUTS_NONINVERTED
@@ -1340,6 +1343,12 @@ static inline void iec_interface_init(void) {
   /* exclusive INTx line */
 #    error Implement me!
 #  endif
+#endif
+
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
+  // Enable IEC bus. This is done by a wire link inside the adapter cable
+  // for older petSD+ boards without IEC connector
+  i2c_write_register(I2C_SLAVE_ADDRESS, IO_IEC, 0);
 #endif
 }
 

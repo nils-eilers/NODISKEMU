@@ -138,6 +138,5 @@ int main(void) {
     bus_mainloop();
     bus_interface_init();
     bus_init();    // needs delay, inits device address with HW settings
-    read_configuration(); // may change device address
   }
 }
