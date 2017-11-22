@@ -828,12 +828,12 @@ static void pwm_error(void) {
 }
 
 void menu_adjust_contrast(void) {
-  uint8_t v = 2;
   uint8_t i;
   uint8_t min = 0;
   uint8_t max = LCD_COLS - 2;
   uint8_t res;
 
+  lcd_contrast = 2;
   lcd_clear();
   lcd_puts_P(PSTR("Adjust LCD contrast"));
   lcd_locate(0, 1);
@@ -844,41 +844,42 @@ void menu_adjust_contrast(void) {
     lcd_locate(0, 1);
     lcd_putc('[');
     for (i = 0; i < LCD_COLS - 2; i++) {
-      lcd_putc(i >= v ? ' ' : 0xFF);
+      lcd_putc(i >= lcd_contrast ? ' ' : 0xFF);
     }
     lcd_putc(']');
-    res = lcd_set_contrast(v);
+    res = lcd_set_contrast(lcd_contrast);
     if (res) break;
     for (;;) {
       if (get_key_autorepeat(KEY_PREV)) {
-        if (v <= min) v = max;
-        else --v;
+        if (lcd_contrast <= min) lcd_contrast = max;
+        else --lcd_contrast;
         break;
       }
       if (get_key_autorepeat(KEY_NEXT)) {
-        if (v >= max) v = min;
-        else ++v;
+        if (lcd_contrast >= max) lcd_contrast = min;
+        else ++lcd_contrast;
         break;
       }
       if (get_key_press(KEY_SEL)) {
         lcd_cursor(false);
         set_busy_led(false);
+        menu_ask_store_settings();
         return;
       }
     }
   }
-  if (res) pwm_error();
+  pwm_error();
 }
 
 
 void menu_adjust_brightness(void) {
-  uint8_t v = 255;
   uint8_t i;
   uint8_t min = 0;
-  uint8_t max = 255; // LCD_COLS - 2;
+  uint8_t max = 255;
   uint8_t res;
   uint8_t step;
 
+  lcd_brightness = 255;
   lcd_clear();
   lcd_puts_P(PSTR("Adjust brightness"));
   lcd_locate(0, 1);
@@ -889,31 +890,32 @@ void menu_adjust_brightness(void) {
     lcd_locate(0, 1);
     lcd_putc('[');
     for (i = 0; i < 18; i++) {
-      lcd_putc(i >= (v / 14) ? ' ' : 0xFF);
+      lcd_putc(i >= (lcd_brightness / 14) ? ' ' : 0xFF);
     }
     lcd_putc(']');
-    lcd_printf("%03d", v);
-    res = lcd_set_brightness(v);
+    lcd_printf("%03d", lcd_brightness);
+    res = lcd_set_brightness(lcd_brightness);
     if (res) break;
     for (;;) {
       step = 10;
-      if (v < 20 || v > 235) step = 1;
+      if (lcd_brightness < 20 || lcd_brightness > 235) step = 1;
       if (get_key_autorepeat(KEY_PREV)) {
-        if (v <= min) v = max;
-        else v -= step;
+        if (lcd_brightness <= min) lcd_brightness = max;
+        else lcd_brightness -= step;
         break;
       }
       if (get_key_autorepeat(KEY_NEXT)) {
-        if (v >= max) v = min;
-        else v += step;
+        if (lcd_brightness >= max) lcd_brightness = min;
+        else lcd_brightness += step;
         break;
       }
       if (get_key_press(KEY_SEL)) {
         lcd_cursor(false);
         set_busy_led(false);
+        menu_ask_store_settings();
         return;
       }
     }
   }
-  if (res) pwm_error();
+  pwm_error();
 }

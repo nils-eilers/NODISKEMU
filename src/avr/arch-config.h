@@ -1118,6 +1118,7 @@ static inline void late_board_init(void) {
   if (buttons > 580 && buttons < 630) {
     board_diagnose();
   } else if (buttons >= 630 && buttons < 680) {
+    lcd_set_brightness(0xFF);                       // maximum brightness
     menu_adjust_contrast();
   }
 }
