@@ -42,7 +42,7 @@
 #include "lcd.h"
 
 void board_diagnose(void) {
-  char buffer[21];
+  char buffer[32];
   unsigned int counter = 0;
 
   lcd_init();
