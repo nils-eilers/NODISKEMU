@@ -37,6 +37,7 @@
 #include "ustring.h"
 #include "eeprom-conf.h"
 #include "uart.h"
+#include "lcd.h"
 
 uint8_t rom_filename[ROM_NAME_LENGTH+1];
 
@@ -77,6 +78,8 @@ static EEMEM struct {
   uint8_t  romname[ROM_NAME_LENGTH];
   uint8_t  active_bus;
   uint8_t  menu_system_enabled;
+  uint8_t  lcd_contrast;
+  uint8_t  lcd_brightness;
 } __attribute__((packed)) storedconfig;
 
 
@@ -113,6 +116,7 @@ void read_configuration(void) {
 #endif
 
   size = eeprom_read_word(&storedconfig.structsize);
+  printf("%d/%d bytes read from EEPROM\n", size, sizeof(storedconfig));
 
   /* write, then abort if the size bytes are not set */
   if (size == 0xffff) {
@@ -186,6 +190,17 @@ void read_configuration(void) {
     active_bus = eeprom_read_byte(&storedconfig.active_bus);
 #endif
 
+#ifdef CONFIG_ONBOARD_DISPLAY
+  if (size > 32) {
+    lcd_contrast = eeprom_read_byte(&storedconfig.lcd_contrast);
+    lcd_brightness = eeprom_read_byte(&storedconfig.lcd_brightness);
+    printf("lcd_contrast -> %d\n", lcd_contrast);
+    lcd_set_contrast(lcd_contrast);
+    printf("lcd_brightness -> %d\n", lcd_brightness);
+    lcd_set_brightness(lcd_brightness);
+  }
+#endif
+
   /* Prevent problems due to accidental writes */
   eeprom_safety();
 
@@ -219,6 +234,10 @@ void write_configuration(void) {
   eeprom_write_byte(&storedconfig.active_bus, active_bus);
 #ifdef CONFIG_HW_ADDR_OR_BUTTONS
   eeprom_write_byte(&storedconfig.menu_system_enabled, menu_system_enabled);
+#endif
+#ifdef CONFIG_ONBOARD_DISPLAY
+  eeprom_write_byte(&storedconfig.lcd_contrast, lcd_contrast);
+  eeprom_write_byte(&storedconfig.lcd_brightness, lcd_brightness);
 #endif
 
   /* Calculate checksum over EEPROM contents */
