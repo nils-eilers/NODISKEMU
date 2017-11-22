@@ -1014,9 +1014,9 @@ you may have to edit arch-config.h too to change the port definitions.
 Copyright
 ---------
 
-Copyright (C) 2007-2016  Ingo Korb <ingo@akana.de>
+Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
 
-Copyright (C) 2015-2016 Nils Eilers <nils.eilers@gmx.de>
+Copyright (C) 2015-2017 Nils Eilers <nils.eilers@gmx.de>
 
 NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
