@@ -833,7 +833,6 @@ void menu_adjust_contrast(void) {
   uint8_t max = LCD_COLS - 2;
   uint8_t res;
 
-  lcd_contrast = 2;
   lcd_clear();
   lcd_puts_P(PSTR("Adjust LCD contrast"));
   lcd_locate(0, 1);

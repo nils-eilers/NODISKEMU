@@ -55,7 +55,7 @@
 
 uint8_t lcd_x;                  // 0..LCD_LINES-1
 uint8_t lcd_y;                  // 0..LCD_COLS-1
-uint8_t lcd_contrast;
+uint8_t lcd_contrast = 2;       // Default value that works for me
 uint8_t lcd_brightness;
 
 
