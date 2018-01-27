@@ -878,7 +878,6 @@ void menu_adjust_brightness(void) {
   uint8_t res;
   uint8_t step;
 
-  lcd_brightness = 255;
   lcd_clear();
   lcd_puts_P(PSTR("Adjust brightness"));
   lcd_locate(0, 1);

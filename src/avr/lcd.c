@@ -55,8 +55,8 @@
 
 uint8_t lcd_x;                  // 0..LCD_LINES-1
 uint8_t lcd_y;                  // 0..LCD_COLS-1
-uint8_t lcd_contrast = 2;       // Default value that works for me
-uint8_t lcd_brightness;
+uint8_t lcd_contrast = 2;       // Default values which work for me
+uint8_t lcd_brightness = 255;
 
 
 static int lcd_putchar(char c, FILE *stream);
