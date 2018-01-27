@@ -891,7 +891,6 @@ void menu_adjust_brightness(void) {
       lcd_putc(i >= (lcd_brightness / 14) ? ' ' : 0xFF);
     }
     lcd_putc(']');
-    lcd_printf("%03d", lcd_brightness);
     res = lcd_set_brightness(lcd_brightness);
     if (res) break;
     for (;;) {
