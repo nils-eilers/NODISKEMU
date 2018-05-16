@@ -66,7 +66,7 @@ void spi_set_speed(spi_speed_t speed) {
     if (active_bus == IEC)
       spi_set_divisor(SPI_DIVISOR_SLOW);
     else
-      spi_set_divisor(SPI_DIVISOR_FAST * 2);
+      spi_set_divisor(SPI_DIVISOR_SLOW * 2);
   }
 #else
   if (speed == SPI_SPEED_FAST) {
