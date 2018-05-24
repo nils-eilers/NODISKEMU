@@ -209,7 +209,7 @@ int lcd_putc(char c, FILE *stream) {
 }
 #endif
 
-void lcd_puts_P(prog_char *text) {
+void lcd_puts_P(char *text) {
   uint8_t ch;
 
   while ((ch = pgm_read_byte(text++))) {
@@ -222,7 +222,7 @@ void lcd_puts_P(prog_char *text) {
   updatecursor();
 }
 
-void lcd_putxy_P(uint8_t xpos, uint8_t ypos, prog_char *text) {
+void lcd_putxy_P(uint8_t xpos, uint8_t ypos, char *text) {
   if (xpos > (LCD_COLUMNS-1) || ypos > (LCD_ROWS-1)) return;
 
   lcd_gotoxy(xpos,ypos);

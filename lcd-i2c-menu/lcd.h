@@ -34,9 +34,9 @@
 
 void lcd_init(void);
 void lcd_clrscr(void);
-void lcd_putxy_P(uint8_t xpos, uint8_t ypos, prog_char *text);
+void lcd_putxy_P(uint8_t xpos, uint8_t ypos, char *text);
 void lcd_putxy(uint8_t xpos, uint8_t ypos, char *text);
-void lcd_puts_P(prog_char *text);
+void lcd_puts_P(char *text);
 void lcd_puts(char *text);
 void lcd_setcursormode(uint8_t mode);
 void lcd_gotoxy(uint8_t x, uint8_t y);
