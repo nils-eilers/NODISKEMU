@@ -50,20 +50,21 @@
 /* E2 is used for dual-controller displays that split the displayed */
 /* lines between two LCD controllers. Define to 0 for a single-     */
 /* controller display.                                              */
-#define LCD_E2           _BV(PA3)
+//#define LCD_E2           _BV(PA3)
+#define LCD_E2           0
 
 /* Number of lines and columns of the display.              */
 /* Set LCD_ROWS_BOTTOM to 0 for single-controller displays. */
-#define LCD_COLUMNS     27
-#define LCD_ROWS_TOP    2
-#define LCD_ROWS_BOTTOM 2
+#define LCD_COLUMNS     20
+#define LCD_ROWS_TOP    4
+#define LCD_ROWS_BOTTOM 0
 
 /* Start address of the display lines in the controller ram. For dual- */
 /* controller displays it is assumed that both use the same addresses. */
-#define LCD_ROWADDR {0x00, 0x40}
+//#define LCD_ROWADDR {0x00, 0x40}
 
 /* Example for a single-controller 4 row display: */
-//#define LCD_ROWADDR {0x00, 0x40, 0x14, 0x54}
+#define LCD_ROWADDR {0x00, 0x40, 0x14, 0x54}
 
 /* Encoder port assignments */
 #define ENCODER_PIN         PINC

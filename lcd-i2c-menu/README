@@ -2,11 +2,10 @@ The code in this directory is meant to run on a second AVR chip,
 connected to the one running NODISKEMU over I2C plus one additional line
 called IntRequest.
 
-It is only meant as an example, a display compatible to the 27x4 it is
-currently set up for is probably hard to find. To adapt the code for a
-different display, change config.h as noted in its comments and adjust
-the layout in main.c (status line length, positions of the
-address/partition fields, if changing the number of lines also edit
+It is only meant as an example.  To adapt the code for a different
+display, change config.h as noted in its comments and adjust the
+layout in main.c (status line length, positions of the address /
+partition fields, if changing the number of lines also edit
 set_part(), every call to set_line and set_line_part, "case
 DISPLAY_ADDRESS:" branch in parse_display).
 
