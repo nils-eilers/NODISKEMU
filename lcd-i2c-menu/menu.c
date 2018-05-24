@@ -16,7 +16,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   
+
    menu.c: Generic menu code
 
 */
@@ -32,7 +32,13 @@
 
 
 char *menulines[CONFIG_MAX_MENU_ENTRIES];
+
+#if CONFIG_MAX_MENU_ENTRIES > 255
+#error Value too large
+#else
 static uint8_t entrycount;
+#endif
+
 static char *menuheap;
 extern char __heap_start;
 
@@ -66,7 +72,7 @@ void menu_resetlines(void) {
   menuheap = &__heap_start;
   entrycount = 0;
 }
-  
+
 uint8_t menu_addline(char *line) {
   /* Check remaining heap space */
   if (((uint16_t)menuheap+strlen(line)+1) > SP-32 || entrycount >= CONFIG_MAX_MENU_ENTRIES) {

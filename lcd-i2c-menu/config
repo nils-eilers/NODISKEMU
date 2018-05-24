@@ -32,7 +32,7 @@
 # into autoconf.h.
 
 # MCU to compile for
-CONFIG_MCU=atmega644
+CONFIG_MCU=atmega1284p
 
 # Use the -relax parameter when linking?
 # Passing -O9 and -relax to the linker saves a bit of flash,
@@ -53,4 +53,4 @@ CONFIG_I2C_BUFFER_SIZE=40
 # be used. Further entries are silently dropped,
 # the actual number of menu entries may be lower than this
 # limit if there isn't enough free ram to store the text.
-CONFIG_MAX_MENU_ENTRIES=100
+CONFIG_MAX_MENU_ENTRIES=250
