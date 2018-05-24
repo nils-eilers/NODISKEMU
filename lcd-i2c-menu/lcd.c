@@ -47,13 +47,13 @@ static FILE lcd_stdout = FDEV_SETUP_STREAM(lcd_putc, NULL, _FDEV_SETUP_WRITE);
 static const PROGMEM uint8_t lcd_rowaddr[] = LCD_ROWADDR;
 static uint8_t cursor_controller;
 
-static void inline lcd1_strobe(void) {
+static inline void lcd1_strobe(void) {
   LCD_PORT |=  LCD_E1;
   _delay_us(1);
   LCD_PORT &= (uint8_t)~LCD_E1;
 }
 
-static void inline lcd2_strobe(void) {
+static inline void lcd2_strobe(void) {
   LCD_PORT |=  LCD_E2;
   _delay_us(1);
   LCD_PORT &= (uint8_t)~LCD_E2;
@@ -71,7 +71,7 @@ static void lcd_wait(uint8_t controller) {
   uint8_t tmp;
 
   LCD_DDR = LCD_RS | LCD_RW | LCD_E1 | LCD_E2;
-  
+
   LCD_PORT |=  LCD_RW;
   LCD_PORT &= (uint8_t)~LCD_RS;
 
@@ -155,7 +155,7 @@ void lcd_init(void) {
 }
 
 // Anzeige des Cursors auf richtigem Display aktivieren
-void static updatecursor(void) {
+static void updatecursor(void) {
   if (LCD_ROWS_BOTTOM == 0 || cursor_y < LCD_ROWS_TOP) {
     lcd_write(LCD_UPPER,0,DISPLAY_ON | cursor_mode);
     lcd_write(LCD_LOWER,0,DISPLAY_ON);

@@ -123,7 +123,7 @@ static void pet2asc(uint8_t *buf) {
  * PETSCII in-place. Modified for LCD use, substitutes the custom
  * "left arrow" character 0x01 with _.
  */
-static void asc2pet(uint8_t *buf) {
+void asc2pet(uint8_t *buf) {
   uint8_t ch;
   while (*buf) {
     ch = *buf;
