@@ -98,7 +98,7 @@ uint8_t menu_display(uint8_t init, uint8_t startentry) {
     lcd_setcursormode(LCD_CURSOR_NONE);
     lcd_clrscr();
 
-    prevencoder = encoder_position;
+    prevencoder = encoder_position / (CONFIG_ENCODER_TYPE);
     prevoffset  = -1;
     preventry   = curentry;
     scrollofs   = -1;
@@ -114,7 +114,7 @@ uint8_t menu_display(uint8_t init, uint8_t startentry) {
     if (curoffset < 0) curoffset = 0;
   }
 
-  curencoder = encoder_position;
+  curencoder = encoder_position / (CONFIG_ENCODER_TYPE);
 
   /* Encoder position changed */
   if (curencoder != prevencoder) {

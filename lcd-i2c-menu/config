@@ -54,3 +54,9 @@ CONFIG_I2C_BUFFER_SIZE=40
 # the actual number of menu entries may be lower than this
 # limit if there isn't enough free ram to store the text.
 CONFIG_MAX_MENU_ENTRIES=250
+
+# Encoder-type. 1 for half-step encoder, 2 for full-step.
+# If the menu scrolls 2 entries per step, set to 2.
+# ALPS STEC12E08 for example requires CONFIG_ENCODER_TYPE=2
+CONFIG_ENCODER_TYPE=2
+
