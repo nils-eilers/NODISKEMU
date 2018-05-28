@@ -24,6 +24,7 @@
 #include "config.h"
 #include <avr/io.h>
 #include <string.h>
+#include <avr/pgmspace.h>
 #include "encoder.h"
 #include "lcd.h"
 #include "timer.h"

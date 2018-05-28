@@ -24,8 +24,6 @@
 #ifndef LCD_H
 #define LCD_H
 
-#include <avr/pgmspace.h>
-
 #define LCD_CURSOR_NONE  0x00
 #define LCD_CURSOR_LINE  0x02
 #define LCD_CURSOR_BLOCK 0x01
