@@ -193,6 +193,10 @@ void lcd_gotoxy(uint8_t x, uint8_t y) {
 }
 
 void lcd_putch(char c) {
+  if (c == '\n') {
+    lcd_gotoxy(0,(cursor_y+1) % LCD_ROWS);
+    return;
+  }
   lcd_write(cursor_controller,1,c);
   if (++cursor_x > LCD_COLUMNS-1)
     lcd_gotoxy(0,(cursor_y+1) % LCD_ROWS);
@@ -210,15 +214,10 @@ int lcd_putc(char c, FILE *stream) {
 #endif
 
 void lcd_puts_P(char *text) {
-  uint8_t ch;
+  uint8_t c;
 
-  while ((ch = pgm_read_byte(text++))) {
-    if (ch == '\n') {
-      lcd_gotoxy(0,(cursor_y+1) % LCD_ROWS);
-    } else {
-      lcd_putch(ch);
-    }
-  }
+  while ((c = pgm_read_byte(text++)))
+      lcd_putch(c);
   updatecursor();
 }
 
