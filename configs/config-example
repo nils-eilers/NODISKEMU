@@ -199,3 +199,7 @@ CONFIG_DISPLAY_BUFFER_SIZE=40
 # Default device address 11 doesn't conflict with internal drives
 # configured as 8 as seen on the CBM 8296D
 CONFIG_DEFAULT_ADDR=11
+
+# If the card detect switch is broken, compilation with
+# disabled cart detection is possible:
+CONFIG_IGNORE_CARD_DETECT=n

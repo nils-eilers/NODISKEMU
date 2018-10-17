@@ -930,7 +930,9 @@ static inline void early_board_init(void) {
 /* ---------- Hardware configuration: petSD+ --------- */
 #  define HAVE_SD
 #  define IEC_SLOW_IEEE_FAST
+#ifndef CONFIG_IGNORE_CARD_DETECT
 #  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
+#endif
 #  define SD_SUPPLY_VOLTAGE (1L<<21)
 
 /* 250 kHz slow, 2 MHz fast */
@@ -942,13 +944,19 @@ static inline void sdcard_interface_init(void) {
   PORTD  |=  _BV(PD5);
   DDRD   &= ~_BV(PD6);            /* write protect  */
   PORTD  |=  _BV(PD6);
+#ifndef CONFIG_IGNORE_CARD_DETECT
   PCMSK3 |=  _BV(PCINT29);        /* card change interrupt */
   PCICR  |=  _BV(PCIE3);
   PCIFR  |=  _BV(PCIF3);
+#endif
 }
 
 static inline uint8_t sdcard_detect(void) {
+#ifdef CONFIG_IGNORE_CARD_DETECT
+  return 1;
+#else
   return (!(PIND & _BV(PD5)));
+#endif
 }
 
 static inline uint8_t sdcard_wp(void) {
