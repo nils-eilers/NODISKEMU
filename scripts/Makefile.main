@@ -54,6 +54,8 @@ SRC += doscmd.c ff.c d64ops.c diagnose.c
 SRC += eeprom-conf.c parser.c utils.c led.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
 SRC += $(CONFIG_ARCH)/system.c
+# Always include fastloader.c, if only to define detected_loader as FL_NONE
+SRC += fastloader.c
 
 # List any extra directories to look for include files here.
 #     Each directory must be seperated by a space.
@@ -75,7 +77,11 @@ ifneq ($(CONFIG_HAVE_IEC),y)
 endif
 
 ifeq ($(CONFIG_HAVE_IEC),y)
-  SRC += iec.c fastloader.c
+  SRC += iec.c
+  SRC += fl-ar6.c fl-dolphin.c fl-dreamload.c fl-eload.c
+  SRC += fl-epyxcart.c fl-fc3exos.c fl-geos.c fl-gijoe.c
+  SRC += fl-mmzak.c fl-nippon.c fl-turbodisk.c fl-ulm3.c
+  SRC += fl-n0sdos.c fl-samsjourney.c
 endif
 
 ifeq ($(CONFIG_HAVE_IEEE),y)

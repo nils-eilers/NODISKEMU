@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -64,6 +64,8 @@ uint8_t wheels44_send_byte_2mhz(uint8_t byte);
 
 void ar6_1581_send_byte(uint8_t byte);
 uint8_t ar6_1581p_get_byte(void);
+
+void n0sdos_send_byte(uint8_t byte);
 
 typedef enum { PARALLEL_DIR_IN = 0,
                PARALLEL_DIR_OUT } parallel_dir_t;

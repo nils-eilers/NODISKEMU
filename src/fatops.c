@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
    ASCII/PET conversion Copyright (C) 2008 Jim Brain <brain@jbrain.com>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
@@ -58,6 +58,7 @@
 #define BOOTSECTOR_FILE       "bootsect.128"
 
 static const PROGMEM char p00marker[] = "C64File";
+#define P00MARKER_LENGTH 7
 
 typedef enum { EXT_UNKNOWN, EXT_IS_X00, EXT_IS_TYPE } exttype_t;
 
@@ -875,7 +876,7 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
         if (res != FR_OK)
           goto notp00;
 
-        if (ustrcmp_P(ops_scratch, p00marker))
+        if (memcmp_P(ops_scratch, p00marker, P00MARKER_LENGTH))
           goto notp00;
 
         /* Copy the internal name - dent->name is still zeroed */

@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -70,12 +70,12 @@ static void confirm_blink(uint8_t type) {
       set_busy_led(1);
 #endif
     targettime = ticks + MS_TO_TICKS(100);
-    while (time_before(getticks(),targettime)) ;
+    while (time_before(ticks,targettime)) ;
 
     set_dirty_led(0);
     set_busy_led(0);
     targettime = ticks + MS_TO_TICKS(100);
-    while (time_before(getticks(),targettime)) ;
+    while (time_before(ticks,targettime)) ;
   }
 }
 

@@ -1,6 +1,6 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
 
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
    Copyright (C) 2007-2008  M.Kiesel <mayne@users.sourceforge.net>
    Final Cartridge III, DreamLoad fastloader support:
    Copyright (C) 2008  Thomas Giesel <skoe@directbox.com>
@@ -93,7 +93,7 @@ IEC_ATN_INT_VECT:
 
         ; ATN is low, continue depending from active fast loader
         lds     r18, detected_loader
-        cpi     r18, FL_DREAMLOAD_OLD
+        cpi     r18, FLCODE_DREAMLOAD_OLD
         brne    iiv_not_fl_dreamload_old
         ; dreamload (old), receive a command code
         rcall   dreamload_get_command_old
@@ -115,7 +115,7 @@ iiv_atn_irq_end:
 
         ; CLOCK is low, continue depending from active fast loader
         lds     r18, detected_loader
-        cpi     r18, FL_DREAMLOAD
+        cpi     r18, FLCODE_DREAMLOAD
         brne    iiv_not_fl_dreamload
         ; dreamload, receive a command code
         rcall   dreamload_get_command
@@ -162,7 +162,7 @@ IEC_CLK_INT_VECT:
         ; CLOCK is low, continue depending from active fast loader
 #ifdef CONFIG_LOADER_DREAMLOAD
         lds     r18, detected_loader
-        cpi     r18, FL_DREAMLOAD
+        cpi     r18, FLCODE_DREAMLOAD
         brne    clk_not_fl_dreamload
         ; dreamload, receive a command code
         rcall   dreamload_get_command
@@ -1791,6 +1791,65 @@ parallel_send_handshake:
         call    delay1us
         cbi     _SFR_IO_ADDR(PARALLEL_HDDR), PARALLEL_HSK_OUT_BIT  ; set pin to input
         sbi     _SFR_IO_ADDR(PARALLEL_HPORT), PARALLEL_HSK_OUT_BIT ; enable pullup
+        ret
+
+#endif
+
+#ifdef CONFIG_LOADER_N0SDOS
+        ;; ====================================================================
+        ;;  N0stalgia loaders
+        ;; ====================================================================
+
+        ;; void n0sdos_send_byte(uint8_t byte)
+        .global n0sdos_send_byte
+n0sdos_send_byte:
+        cli
+
+        ;; set up data byte for transmission
+        mov     r0, r24
+
+        ;; clock and data high
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        ;; wait until clock is high
+1:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        rjmp    1b
+
+        ;; delay
+        delay_cycles 9*8 - 10
+
+        ;; send bits 0+1
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 8*8 - 16
+
+        ;; send bits 2+3
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 8*8 - 16
+
+        ;; send bits 4+5
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 8*8 - 16
+
+        ;; send bits 6+7
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 5*8 - 6 - 2
+
+        ;; set clock high, data low
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK ; 1
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA  ; 1
+
+        delay_cycles 6*8
+
+        sei
         ret
 
 #endif

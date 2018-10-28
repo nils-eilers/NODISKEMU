@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -42,8 +42,8 @@ buffer_t buffers[CONFIG_BUFFER_COUNT+1];
 /// The actual data buffers
 static uint8_t bufferdata[CONFIG_BUFFER_COUNT*256];
 
-uint8_t active_buffers; // Number of active data buffers
-uint8_t dirty_buffers;  // Number of dirty buffers
+/// Number of active data buffers + 16 * number of dirty buffers
+uint8_t active_buffers;
 
 /**
  * callback_dummy - dummy function for the buffer callbacks
@@ -214,7 +214,7 @@ void free_buffer(buffer_t *buffer) {
   buffer->allocated = 0;
 
   if (buffer->dirty)
-    dirty_buffers--;
+    active_buffers -= 16;
   if (buffer->secondary < BUFFER_SEC_SYSTEM)
     active_buffers--;
 
@@ -276,12 +276,12 @@ buffer_t *find_buffer(uint8_t secondary) {
  * @buf: pointer to the buffer
  *
  * This function marks the given buffer as dirty, tracks
- * this in dirty_buffers and turns on the dirty LED.
+ * this in active_buffers and turns on the dirty LED.
  */
 void mark_buffer_dirty(buffer_t *buf) {
   if (!buf->dirty) {
     buf->dirty = 1;
-    dirty_buffers++;
+    active_buffers += 16;
     set_dirty_led(1);
   }
 }
@@ -291,13 +291,13 @@ void mark_buffer_dirty(buffer_t *buf) {
  * @buf: pointer to the buffer
  *
  * This function marks the given buffer as clean, tracks
- * this in dirty_buffers and turns off the dirty LED if required.
+ * this in active_buffers and turns off the dirty LED if required.
  */
 void mark_buffer_clean(buffer_t *buf) {
   if (buf->dirty) {
     buf->dirty = 0;
-    dirty_buffers--;
-    if (dirty_buffers == 0)
+    active_buffers -= 16;
+    if (get_dirty_buffer_count() == 0)
       set_dirty_led(0);
   }
 }

@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -28,40 +28,54 @@
 #ifndef FASTLOADER_H
 #define FASTLOADER_H
 
-#define FL_NONE              0
-#define FL_TURBODISK         1
-#define FL_FC3_LOAD          2
-#define FL_FC3_SAVE          3
-#define FL_DREAMLOAD         4
-#define FL_DREAMLOAD_OLD     5
-#define FL_FC3_FREEZED       6
-#define FL_ULOAD3            7
-#define FL_GI_JOE            8
-#define FL_EPYXCART          9
-#define FL_GEOS_S1_64       10
-#define FL_GEOS_S1_128      11
-#define FL_GEOS_S23_1541    12
-#define FL_GEOS_S23_1571    13
-#define FL_GEOS_S23_1581    14
-#define FL_WHEELS_S1_64     15
-#define FL_WHEELS_S1_128    16
-#define FL_WHEELS_S2        17
-#define FL_WHEELS44_S2      18
-#define FL_WHEELS44_S2_1581 19
-#define FL_NIPPON           20
-#define FL_AR6_1581_LOAD    21
-#define FL_AR6_1581_SAVE    22
-#define FL_ELOAD1           23
-#define FL_FC3_OLDFREEZED   24
+/* these two values are needed in the assembler implementation for AVR */
+#define FLCODE_DREAMLOAD     1
+#define FLCODE_DREAMLOAD_OLD 2
 
 #ifndef __ASSEMBLER__
 
-extern uint8_t detected_loader;
+#define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
+
+typedef enum {
+  FL_NONE          = 0,
+  FL_DREAMLOAD     = FLCODE_DREAMLOAD,
+  FL_DREAMLOAD_OLD = FLCODE_DREAMLOAD_OLD,
+  FL_TURBODISK,
+  FL_FC3_LOAD,
+  FL_FC3_SAVE,
+  FL_FC3_FREEZED,
+  FL_ULOAD3,
+  FL_GI_JOE,
+  FL_EPYXCART,
+  FL_GEOS_S1_64,
+  FL_GEOS_S1_128,
+  FL_GEOS_S23_1541,
+  FL_GEOS_S23_1571,
+  FL_GEOS_S23_1581,
+  FL_WHEELS_S1_64,
+  FL_WHEELS_S1_128,
+  FL_WHEELS_S2,
+  FL_WHEELS44_S2,
+  FL_WHEELS44_S2_1581,
+  FL_NIPPON,
+  FL_AR6_1581_LOAD,
+  FL_AR6_1581_SAVE,
+  FL_ELOAD1,
+  FL_FC3_OLDFREEZED,
+  FL_MMZAK,
+  FL_N0SDOS_FILEREAD,
+  FL_SAMSJOURNEY,
+} fastloaderid_t;
+
+extern fastloaderid_t detected_loader;
 extern volatile uint8_t fl_track;
 extern volatile uint8_t fl_sector;
 extern uint8_t (*fast_send_byte)(uint8_t byte);
 extern uint8_t (*fast_get_byte)(void);
 
+uint8_t check_keys(void);
+
+/* per-loader functions, located in separate fl-*.c files */
 void load_turbodisk(uint8_t);
 void load_fc3(uint8_t freezed);
 void load_fc3oldfreeze(uint8_t);
@@ -78,11 +92,18 @@ void load_wheels_s2(uint8_t);
 void load_nippon(uint8_t);
 void load_ar6_1581(uint8_t);
 void save_ar6_1581(uint8_t);
+void load_mmzak(uint8_t);
+void load_n0sdos_fileread(uint8_t);
+void load_samsjourney(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);
 void load_dolphin(void);
 void save_dolphin(void);
+
+/* functions that are shared between multiple loaders */
+/* currently located in fastloader.c                  */
+int16_t gijoe_read_byte(void);
 
 # ifdef PARALLEL_ENABLED
 extern volatile uint8_t parallel_rxflag;
@@ -92,5 +113,5 @@ static inline void parallel_clear_rxflag(void) { parallel_rxflag = 0; }
 static inline void parallel_clear_rxflag(void) {}
 # endif
 
-#endif
+#endif // not assembler
 #endif

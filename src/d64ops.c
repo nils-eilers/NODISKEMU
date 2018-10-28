@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -1494,7 +1494,7 @@ static uint16_t d64_freeblocks(uint8_t part) {
       break;
 
     case D64_TYPE_DNP:
-      // DNP doesn't exclude anything
+      /* DNP reserves a partial track, handled below */
       break;
 
     case D64_TYPE_D41:
@@ -1509,10 +1509,19 @@ static uint16_t d64_freeblocks(uint8_t part) {
       if (i == D80_DIR_TRACK)
         continue; // continue the for loop
       break;      // break out of the switch
-
     }
 
-    blocks += sectors_free(part,i);
+    if ((partition[part].imagetype & D64_TYPE_MASK)
+        == D64_TYPE_DNP && i == 1) {
+      /* DNP: ignore sectors 0-63 on track 1 */
+      for (uint16_t j = 64; j < 256; j++) {
+        if (is_free(part, 1, j) > 0)
+          blocks++;
+      }
+
+    } else {
+      blocks += sectors_free(part,i);
+    }
   }
 
   return blocks;

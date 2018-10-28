@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -61,46 +61,8 @@
 
 static FIL romfile;
 
-/* ---- Minimal drive rom emulation ---- */
-
-typedef struct magic_value_s {
-  uint16_t address;
-  uint8_t  val[2];
-} magic_value_t;
-
-/* These are address/value pairs used by some programs to detect a 1541. */
-/* Currently we remember two bytes per address since that's the longest  */
-/* block required. */
-static const PROGMEM magic_value_t c1541_magics[] = {
-  { 0xfea0, { 0x0d, 0xed } }, /* used by DreamLoad and ULoad Model 3 */
-  { 0xe5c6, { 0x34, 0xb1 } }, /* used by DreamLoad and ULoad Model 3 */
-  { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader */
-  { 0,      { 0, 0 } }        /* end mark */
-};
-
-/* System partition G-P answer */
-static const PROGMEM uint8_t system_partition_info[] = {
-  0xff,0xe2,0x00,0x53,0x59,0x53,0x54,0x45,
-  0x4d,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,
-  0xa0,0xa0,0xa0,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0x00,0x00,0x0d
-};
-
-#ifndef globalflags
-/* AVR uses GPIOR for this */
-uint8_t globalflags;
-#endif
-
-uint8_t command_buffer[CONFIG_COMMAND_BUFFER_SIZE+2];
-uint8_t command_length,original_length;
-
-date_t date_match_start;
-date_t date_match_end;
-
-uint16_t datacrc = 0xffff;
 
 
-#ifdef CONFIG_HAVE_IEC
 
 /* ---- Fastloader tables ---- */
 
@@ -128,7 +90,7 @@ struct fastloader_rxtx_s {
   fastloader_tx_t txfunc;
 };
 
-
+#ifdef CONFIG_HAVE_IEC
 static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
 #ifdef CONFIG_LOADER_GEOS
   [RXTX_GEOS_1MHZ]     = { geos_get_byte_1mhz,     geos_send_byte_1mhz     },
@@ -152,6 +114,7 @@ struct fastloader_crc_s {
   uint8_t  loadertype;
   uint8_t  rxtx;
 };
+
 
 static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_TURBODISK
@@ -221,9 +184,22 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x4870, FL_AR6_1581_LOAD,    RXTX_NONE          },
   { 0x2925, FL_AR6_1581_SAVE,    RXTX_NONE          },
 #endif
+#ifdef CONFIG_LOADER_MMZAK
+  { 0x12a6, FL_MMZAK,            RXTX_NONE          }, // Maniac Mansion/Zak McKracken
+#endif
+#ifdef CONFIG_LOADER_GIJOE
+  { 0x0c92, FL_GI_JOE,           RXTX_NONE          }, // hacked-up GI Joe loader seen in an Eidolon crack
+#endif
+#ifdef CONFIG_LOADER_N0SDOS
+  { 0x327d, FL_N0SDOS_FILEREAD,  RXTX_NONE          }, // CRC up to 0x65f to avoid junk data
+#endif
+#ifdef CONFIG_LOADER_SAMSJOURNEY
+  { 0x6af4, FL_SAMSJOURNEY,      RXTX_NONE          }, // CRC of penultimate M-W
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
+#endif // CONFIG_HAVE_IEC
 
 struct fastloader_handler_s {
   uint16_t             address;
@@ -283,6 +259,15 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x0500, FL_AR6_1581_LOAD,    load_ar6_1581,  0 },
   { 0x05f4, FL_AR6_1581_SAVE,    save_ar6_1581,  0 },
 #endif
+#ifdef CONFIG_LOADER_MMZAK
+  { 0x0500, FL_MMZAK,            load_mmzak,     0 },
+#endif
+#ifdef CONFIG_LOADER_N0SDOS
+  { 0x041b, FL_N0SDOS_FILEREAD,  load_n0sdos_fileread, 0 },
+#endif
+#ifdef CONFIG_LOADER_SAMSJOURNEY
+  { 0x0400, FL_SAMSJOURNEY,      load_samsjourney, 0 },
+#endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
 };
@@ -294,6 +279,7 @@ struct fastloader_capture_s {
   uint8_t  buffer_id;
 };
 
+#ifdef CONFIG_HAVE_IEC
 static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 #ifdef CONFIG_LOADER_GEOS
   { FL_GEOS_S1_64,  0x42a, 255, BUFFER_SYS_CAPTURE1 },
@@ -302,21 +288,83 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 
   { FL_NONE, 0, 0, 0 }  // end marker
 };
-static uint8_t previous_loader;
+#endif // CONFIG_HAVE_IEC
 
+/* ---- Minimal drive rom emulation ---- */
+
+typedef struct magic_value_s {
+  uint16_t address;
+  uint8_t  val[2];
+} magic_value_t;
+
+/* These are address/value pairs used by some programs to detect a 1541. */
+/* Currently we remember two bytes per address since that's the longest  */
+/* block required. */
+static const PROGMEM magic_value_t c1541_magics[] = {
+  { 0xfea0, { 0x0d, 0xed } }, /* used by DreamLoad and ULoad Model 3 */
+  { 0xe5c6, { 0x34, 0xb1 } }, /* used by DreamLoad and ULoad Model 3 */
+  { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader */
+  { 0,      { 0, 0 } }        /* end mark */
+};
+
+/* System partition G-P answer */
+static const PROGMEM uint8_t system_partition_info[] = {
+  0xff,0xe2,0x00,0x53,0x59,0x53,0x54,0x45,
+  0x4d,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,0xa0,
+  0xa0,0xa0,0xa0,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x0d
+};
+
+#ifndef globalflags
+/* AVR uses GPIOR for this */
+uint8_t globalflags;
+#endif
+
+uint8_t command_buffer[CONFIG_COMMAND_BUFFER_SIZE+2];
+uint8_t command_length,original_length;
+
+date_t date_match_start;
+date_t date_match_end;
+
+uint16_t datacrc = 0xffff;
+static fastloaderid_t previous_loader;
+
+#ifdef CONFIG_HAVE_IEC
 /* partial fastloader data capture */
 static uint16_t  capture_address, capture_remain;
 static uint8_t   capture_offset;
 static buffer_t *capture_buffer;
+#endif
+
+#ifdef CONFIG_STACK_TRACKING
+//FIXME: AVR-only code
+uint16_t minstack = RAMEND;
+
+void __cyg_profile_func_enter (void *this_fn, void *call_site) __attribute__((no_instrument_function));
+void __cyg_profile_func_exit  (void *this_fn, void *call_site) __attribute__((alias("__cyg_profile_func_enter")));
+
+void __cyg_profile_func_enter (void *this_fn, void *call_site) {
+  if (SP < minstack) minstack = SP;
+}
+#endif
+
+#ifdef HAVE_RTC
+/* Days of the week as used by the CMD FD */
+static const PROGMEM uint8_t downames[] = "SUN.MON.TUESWED.THURFRI.SAT.";
+
+/* Skeleton of the ASCII time format */
+static const PROGMEM uint8_t asciitime_skel[] = " xx/xx/xx xx:xx:xx xM\r";
+#endif
+
+
+/* ------------------------------------------------------------------------- */
+/*  Drive code exec helpers                                                  */
+/* ------------------------------------------------------------------------- */
 
 #ifdef CONFIG_CAPTURE_LOADERS
 static uint8_t loader_buffer[CONFIG_CAPTURE_BUFFER_SIZE];
 static uint8_t *loader_ptr = loader_buffer;
 static uint8_t capture_count = 0;
-
-/* ------------------------------------------------------------------------- */
-/*  Capture helpers                                                          */
-/* ------------------------------------------------------------------------- */
 
 /* Convert byte to two-character hex string */
 static uint8_t *byte_to_hex(uint8_t num, uint8_t *str) {
@@ -391,29 +439,57 @@ static void save_capbuffer(void) {
   /* Notify the user */
   set_error(ERROR_DRIVE_NOT_READY);
 }
-
 #endif // CONFIG_CAPTURE_LOADERS
-#endif // CONFIG_HAVE_IEC
 
-#ifdef CONFIG_STACK_TRACKING
-//FIXME: AVR-only code
-uint16_t minstack = RAMEND;
+static void run_loader(uint16_t address) {
+  if (detected_loader == FL_NONE) {
+    uart_puts_P(PSTR("Code exec at "));
+    uart_puthex(address >> 8);
+    uart_puthex(address & 0xff);
+    uart_puts_P(PSTR(", CRC "));
+    uart_puthex(datacrc >> 8);
+    uart_puthex(datacrc & 0xff);
+    uart_putcrlf();
+  }
 
-void __cyg_profile_func_enter (void *this_fn, void *call_site) __attribute__((no_instrument_function));
-void __cyg_profile_func_exit  (void *this_fn, void *call_site) __attribute__((alias("__cyg_profile_func_enter")));
+  if (detected_loader == FL_NONE)
+    detected_loader = previous_loader;
 
-void __cyg_profile_func_enter (void *this_fn, void *call_site) {
-  if (SP < minstack) minstack = SP;
+#ifdef CONFIG_CAPTURE_LOADERS
+  if (detected_loader == FL_NONE && datacrc != 0xffff) {
+    dump_command();
+    dump_buffer_state();
+    save_capbuffer();
+  }
+#endif
+
+  /* Try to find a handler for loader */
+  const struct fastloader_handler_s *ptr = fl_handler_table;
+  uint8_t loader,parameter;
+  fastloader_handler_t handler;
+
+  while ( (loader = pgm_read_byte(&ptr->loadertype)) != FL_NONE ) {
+    if (detected_loader == loader &&
+        address == pgm_read_word(&ptr->address)) {
+      /* Found it */
+      handler   = (fastloader_handler_t)pgm_read_word(&ptr->handler);
+      parameter = pgm_read_byte(&ptr->parameter);
+
+      /* Call */
+      handler(parameter);
+
+      break;
+    }
+    ptr++;
+  }
+
+  if (loader == FL_NONE)
+    set_error_ts(ERROR_UNKNOWN_DRIVECODE, datacrc >> 8, datacrc & 0xff);
+
+  datacrc = 0xffff;
+  previous_loader = detected_loader;
+  detected_loader = FL_NONE;
 }
-#endif
-
-#ifdef HAVE_RTC
-/* Days of the week as used by the CMD FD */
-static const PROGMEM uint8_t downames[] = "SUN.MON.TUESWED.THURFRI.SAT.";
-
-/* Skeleton of the ASCII time format */
-static const PROGMEM uint8_t asciitime_skel[] = " xx/xx/xx xx:xx:xx xM\r";
-#endif
 
 
 /* ------------------------------------------------------------------------- */
@@ -647,12 +723,8 @@ static void parse_block(void) {
       return;
     }
 
-    /* Use current partition for 0 */
-    if (params[1] == 0)
-      params[1] = current_part;
-
     if (*str == 'R') {
-      read_sector(buf,params[1],params[2],params[3]);
+      read_sector(buf, buf->pvt.buffer.part, params[2], params[3]);
       if (command_buffer[0] == 'B') {
         buf->position = 1;
         buf->lastused = buf->data[0];
@@ -663,7 +735,7 @@ static void parse_block(void) {
     } else {
       if (command_buffer[0] == 'B')
         buf->data[0] = buf->position-1; // FIXME: Untested, verify!
-      write_sector(buf,params[1],params[2],params[3]);
+      write_sector(buf, buf->pvt.buffer.part, params[2], params[3]);
     }
     break;
 
@@ -1048,7 +1120,20 @@ static void parse_getpartition(void) {
   *ptr++ = (partition[part].fatfs.fatbase      ) & 0xff;
   ptr += 5; // reserved bytes
 
-  uint32_t size = (partition[part].fatfs.max_clust - 1) * partition[part].fatfs.csize;
+  uint32_t size;
+
+  if (partition[part].fop == &d64ops) {
+    /* return the size of the disk image, rounded up */
+    size = (partition[part].imagehandle.fsize + 511) / 512;
+
+  } else {
+    /* return the size of the FAT partition */
+    size = (partition[part].fatfs.max_clust - 1) * partition[part].fatfs.csize;
+  }
+
+  if (size > 0xffffff)
+    size = 0xffffff;
+
   *ptr++ = (size >> 16) & 0xff;
   *ptr++ = (size >>  8) & 0xff;
   *ptr   = size & 0xff;
@@ -1072,59 +1157,13 @@ static void parse_initialize(void) {
 
 /* --- M-E --- */
 static void handle_memexec(void) {
-#ifdef CONFIG_HAVE_IEC
   uint16_t address;
 
   if (command_length < 5)
     return;
 
-
-  if (detected_loader == FL_NONE) {
-    uart_puts_P(PSTR("M-E at "));
-    uart_puthex(command_buffer[4]);
-    uart_puthex(command_buffer[3]);
-    uart_puts_P(PSTR(", CRC "));
-    uart_puthex(datacrc >> 8);
-    uart_puthex(datacrc & 0xff);
-    uart_putcrlf();
-  }
-
-  if (detected_loader == FL_NONE)
-    detected_loader = previous_loader;
-
-#ifdef CONFIG_CAPTURE_LOADERS
-  if (detected_loader == FL_NONE && datacrc != 0xffff) {
-    dump_command();
-    dump_buffer_state();
-    save_capbuffer();
-  }
-#endif
-
-  /* Try to find a handler for loader */
-  const struct fastloader_handler_s *ptr = fl_handler_table;
-  uint8_t loader,parameter;
-  fastloader_handler_t handler;
-
   address = command_buffer[3] + (command_buffer[4]<<8);
-  while ( (loader = pgm_read_byte(&ptr->loadertype)) != FL_NONE ) {
-    if (detected_loader == loader &&
-        address == pgm_read_word(&ptr->address)) {
-      /* Found it */
-      handler   = (fastloader_handler_t)pgm_read_word(&ptr->handler);
-      parameter = pgm_read_byte(&ptr->parameter);
-
-      /* Call */
-      handler(parameter);
-
-      break;
-    }
-    ptr++;
-  }
-
-  datacrc = 0xffff;
-  previous_loader = detected_loader;
-  detected_loader = FL_NONE;
-#endif /* CONFIG_HAVE_IEC */
+  run_loader(address);
 }
 
 /* --- M-R --- */
@@ -1810,7 +1849,21 @@ static void parse_user(void) {
 
   uint8_t c = command_buffer[1] & 15;
   switch (c) {
-  case 1:
+  case 0:
+    /* U0 - only device address changes for now */
+    if ((command_buffer[2] & 0x1f) == 0x1e &&
+        command_buffer[3] >= 4 &&
+        command_buffer[3] <= 30) {
+      device_address = command_buffer[3];
+      display_address(device_address);
+      lcd_update_device_addr();
+      break;
+    } else {
+      set_error(ERROR_SYNTAX_UNKNOWN);
+    }
+    break;
+
+ case 1:
     /* Tiny little hack: Rewrite as (B)-R and call that                */
     /* This will always work because there is either a : in the string */
     /* or the drive will start parsing at buf[3].                      */
@@ -1826,7 +1879,7 @@ static void parse_user(void) {
     parse_block();
     break;
 
-  case 9:
+  case '9':
     if (command_length == 2) {
       /* Soft-reset - just return the dos version */
       set_error(ERROR_DOSVERSION);
@@ -1855,20 +1908,11 @@ static void parse_user(void) {
     set_error(ERROR_DOSVERSION);
     break;
 
-  case 0:
-    /* U0 - only device address changes for now */
-    if ((command_buffer[2] & 0x1f) == 0x1e &&
-        command_buffer[3] >= 4 &&
-        command_buffer[3] <= 30) {
-      device_address = command_buffer[3];
-      display_address(device_address);
-      lcd_update_device_addr();
-      break;
-    }
-    /* Fall through */
-
   default:
-    set_error(ERROR_SYNTAX_UNKNOWN);
+    /* start program in buffer */
+    run_loader(0x500 + 3 * (command_buffer[1] - '3'));
+    break;
+
     break;
   }
 }

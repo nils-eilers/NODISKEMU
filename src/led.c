@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -44,5 +44,5 @@ volatile uint8_t led_state;
  */
 void update_leds(void) {
   set_busy_led(active_buffers != 0);
-  set_dirty_led(dirty_buffers != 0);
+  set_dirty_led(get_dirty_buffer_count() != 0);
 }

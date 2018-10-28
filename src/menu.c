@@ -486,13 +486,11 @@ void menu_browse_files(void) {
   uint8_t stack_my[MAX_LASTPOS];
   uint8_t pos_stack;
   uint8_t save_active_buffers;
-  uint8_t save_dirty_buffers;
 
   pos_stack = 0;
   memset(stack_mp, 0, sizeof(stack_mp));
   memset(stack_my, 0, sizeof(stack_my));
   save_active_buffers = active_buffers;
-  save_dirty_buffers = dirty_buffers;
 
 start:
   lcd_clear();
@@ -722,7 +720,6 @@ reread:
 
   set_busy_led(false); set_dirty_led(true);
   active_buffers = save_active_buffers;
-  dirty_buffers = save_dirty_buffers;
   if (mp == NAV_ABORT) return;
   goto start;
 

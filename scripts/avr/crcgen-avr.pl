@@ -2,7 +2,7 @@
 #
 # Generate bootloader CRC for the AVR version of NODISKEMU
 #
-#  Copyright (C) 2012-2015  Ingo Korb <ingo@akana.de>
+#  Copyright (C) 2012-2018  Ingo Korb <ingo@akana.de>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without

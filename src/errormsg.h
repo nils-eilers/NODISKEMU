@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -79,6 +79,7 @@ uint8_t set_ok_message(buffer_t *buf);
 #define ERROR_PARTITION_ILLEGAL  77
 #define ERROR_BUFFER_TOO_SMALL   78
 #define ERROR_IMAGE_INVALID      79
+#define ERROR_UNKNOWN_DRIVECODE  98
 #define ERROR_CLOCK_UNSTABLE     99
 
 /// Version number string, will be added to message 73

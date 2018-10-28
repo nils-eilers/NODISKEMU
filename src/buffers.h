@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -127,6 +127,7 @@ typedef struct buffer_s {
       uint8_t sector;      /* BAM-sector (if more than one) */
     } bam;
     struct {
+      uint8_t part;           /* current partition at buffer creation time */
       uint8_t size;           /* Number of buffers in chain  */
       struct buffer_s *first; /* Pointer to the first buffer */
       struct buffer_s *next;  /* Pointer to the next buffer  */
@@ -178,14 +179,14 @@ static void inline unstick_buffer(buffer_t *buf) {
 /* Returns pointer to buffer on success or NULL on failure */
 buffer_t *find_buffer(uint8_t secondary);
 
-/* Number of currently allocated buffers */
+/* Number of currently allocated buffers + 16 * number of write buffers */
 extern uint8_t active_buffers;
 
-/* Number of write buffers */
-extern uint8_t dirty_buffers;
-
 /* Check if any buffers are free */
-#define check_free_buffers() (active_buffers < CONFIG_BUFFER_COUNT)
+#define check_free_buffers() ((active_buffers & 0x0f) < CONFIG_BUFFER_COUNT)
+
+/* Return the number of dirty buffers */
+#define get_dirty_buffer_count() (active_buffers >> 4)
 
 /* Mark a buffer as write-buffer and sticky it */
 // Note: inline function is smaller than external on AVR with gcc 4.8.2
