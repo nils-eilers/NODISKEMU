@@ -1035,7 +1035,6 @@ Deprecation notices
 -------------------
 The following feature(s) will or may be removed in the future:
 
-- large buffers
 - partition support
 
 #### M2I support ####
@@ -1044,10 +1043,6 @@ P00 support. To continue to use your M2I-format software, convert
 your files to P00 format (e.g. with m2itopc64.c) and set your device
 to extension mode 2 (XE2). I'm not aware of any M2I files to be used
 with a PET so this shouldn't hurt anybody.
-
-#### Large buffers ####
-Seriously, would you like to destroy your FAT filesystem? Accessing blocks
-outside a disk image is not only for the brave, it shouldn't be possible.
 
 #### Partition support ####
 Commodore's hard drives didn't support them, Windows is unable to cope
