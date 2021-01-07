@@ -33,7 +33,6 @@
 #include "uart.h"
 #include "enc28j60.h"
 
-bool have_enc28j60;
 
 static uint8_t enc28j60_bank;
 

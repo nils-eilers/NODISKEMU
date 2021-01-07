@@ -66,7 +66,6 @@
 //  Global variables
 // -------------------------------------------------------------------------
 
-uint8_t device_address = CONFIG_DEFAULT_ADDR;   // Current device address
 volatile bool ieee488_TE75160;                  // direction set for data lines
 volatile bool ieee488_TE75161;                  // direction set for ctrl lines
 volatile bool ieee488_ATN_received;             // ATN interrupt sets this to true
