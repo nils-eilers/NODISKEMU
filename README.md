@@ -923,7 +923,8 @@ The track indicates the current device address.
 
 ### XS:name ###
 
-Set up a swap list - see "Changing Disk Images" below.
+Set up a swap list. Lines starting with a semicolon (`;`) are comments
+and are skipped when parsing the list.
 
 
 ### XS ###

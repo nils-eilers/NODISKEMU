@@ -25,6 +25,7 @@ Old NEWS from sd2iec below:
         - ISO8601-like format for T-R and T-W
         - autoswap list generation
         - persistent mini-filesystem in EEPROM
+        - allow comments in swap lists
 
 2012-02-26 - release 0.10.3
         - Bugfix: Un-break I2C display communication
