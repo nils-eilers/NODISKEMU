@@ -26,6 +26,7 @@ Old NEWS from sd2iec below:
         - autoswap list generation
         - persistent mini-filesystem in EEPROM
         - allow comments in swap lists
+        - disable P00 header for .crt and .tcrt
 
 2012-02-26 - release 0.10.3
         - Bugfix: Un-break I2C display communication
