@@ -145,8 +145,18 @@ endif
 # petSD+ rev. 2.x boards have a I2C slave for PWM and digital output
 # Include path to shared include file
 ifeq ($(CONFIG_HARDWARE_VARIANT),9)
+  NEED_I2C := y
   EXTRAINCDIRS += test lcd-i2c-pwm-io
 endif
+
+# cbmSD-mini is based on petSD+, so:
+# petSD+ rev. 2.x boards have a I2C slave for PWM and digital output
+# Include path to shared include file
+ifeq ($(CONFIG_HARDWARE_VARIANT),10)
+  NEED_I2C := y
+  EXTRAINCDIRS += test lcd-i2c-pwm-io
+endif
+
 
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.

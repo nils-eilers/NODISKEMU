@@ -32,7 +32,7 @@
 ; TODO: support other hardware variants
 
 
-#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS || CONFIG_HARDWARE_VARIANT == HW_CBMSDMINI
 
 ; Read ADC value and reduce value to 8 bits
         lds     r24, ADCL       ; read ADC value, LSB first!

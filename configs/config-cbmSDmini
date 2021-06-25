@@ -1,0 +1,85 @@
+# This may not look like it, but it's a -*- makefile -*-
+#
+# NODISKEMU - SD/MMC to IEEE-488 interface/controller
+# Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
+#
+# NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
+#
+#  Inspired by MMC2IEC by Lars Pontoppidan et al.
+#
+#  FAT filesystem access based on code from ChaN, see tff.c|h.
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License only.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#  config-cbmSD-mini: NODISKEMU configuration for Steve Grey's cbmSD mini
+#
+#
+# This file is included in the main NODISKEMU Makefile and also parsed
+# into autoconf.h.
+
+CONFIG_ARCH=avr
+CONFIG_HARDWARE_NAME=cbmSD-mini
+CONFIG_HARDWARE_VARIANT=10
+CONFIG_MCU=atmega1284p
+CONFIG_LINKER_RELAX=y
+# The cbmSD mini runs at 8 MHz in IEC mode and 16 MHz in IEEE-488 mode
+# We set 8 MHz here to get the timings right for the IEC code
+CONFIG_MCU_FREQ=8000000
+CONFIG_BOOTLOADER=y
+CONFIG_BOOT_DEVID=0x44536243
+# UART TxD shares the port pin with the busy LED, so you'd usually
+# prefer to disable debug output
+CONFIG_UART_DEBUG=n
+# This baud rate setting is ignored. The actual values for the cbmSD mini
+# are set in src/avr/uart.c. 0xdeadbeef disables the computation of
+# values for the UBBR registers.
+CONFIG_UART_BAUDRATE=0xdeadbeef
+CONFIG_UART_BUF_SHIFT=8
+CONFIG_COMMAND_CHANNEL_DUMP=y
+CONFIG_SD_AUTO_RETRIES=10
+CONFIG_SD_DATACRC=y
+CONFIG_ERROR_BUFFER_SIZE=100
+CONFIG_COMMAND_BUFFER_SIZE=120
+CONFIG_BUFFER_COUNT=32
+CONFIG_MAX_PARTITIONS=2
+CONFIG_RTC_PCF8583=n
+CONFIG_RTC_DSRTC=n
+CONFIG_HAVE_IEEE=y
+CONFIG_HAVE_IEC=y
+CONFIG_LOADER_TURBODISK=y
+CONFIG_LOADER_FC3=y
+CONFIG_LOADER_DREAMLOAD=y
+CONFIG_LOADER_ULOAD3=y
+CONFIG_LOADER_GIJOE=y
+CONFIG_LOADER_EPYXCART=y
+CONFIG_LOADER_GEOS=y
+CONFIG_LOADER_WHEELS=y
+CONFIG_LOADER_NIPPON=y
+CONFIG_LOADER_AR6=y
+CONFIG_LOADER_ELOAD1=y
+# A remote LCD with dedicated controller is not supported because
+# the cbmSD mini lacks an interrupt port pin for it
+CONFIG_REMOTE_DISPLAY=n
+CONFIG_ONBOARD_DISPLAY=y
+CONFIG_P00CACHE=y
+CONFIG_P00CACHE_SIZE=4000
+CONFIG_HAVE_EEPROMFS=y
+# 2048 words boot section, Brown-out detection level at Vcc=4.3V
+CONFIG_EFUSE=0xFC
+CONFIG_HFUSE=0xD2
+CONFIG_LFUSE=0xF7
+# This device uses some signal lines either for buttons to control
+# a menu system or to set the device address by jumpers:
+CONFIG_HW_ADDR_OR_BUTTONS=y
+CONFIG_IGNORE_CARD_DETECT=y
