@@ -162,6 +162,9 @@ ARCH_CFLAGS += -fno-inline-small-functions
 ARCH_CFLAGS += -fno-move-loop-invariants
 ARCH_CFLAGS += -fno-split-wide-types
 
+# GCC 11/12 throws countless array out of bounds warnings for variable[0]
+ARCH_CFLAGS += -Wno-array-bounds
+
 # turn these on to keep the functions in the same order as in the source
 # this is only useful if you're looking at disassembly
 #ARCH_CFLAGS += -fno-reorder-blocks

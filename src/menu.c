@@ -326,7 +326,7 @@ uint8_t calc_number_of_days(uint8_t month, uint8_t year) {
 
 
 void menu_set_clock(void) {
-#if HAVE_RTC
+#ifdef HAVE_RTC
   struct tm t;
   uint8_t p;
   uint8_t days;
