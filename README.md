@@ -1019,7 +1019,7 @@ you may have to edit arch-config.h too to change the port definitions.
 Copyright
 ---------
 
-Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
 Copyright (C) 2015-2017 Nils Eilers <nils.eilers@gmx.de>
 
