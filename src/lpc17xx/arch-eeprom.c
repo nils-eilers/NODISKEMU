@@ -26,7 +26,7 @@
 */
 
 #include "config.h"
-#include <arm/NXP/LPC17xx/LPC17xx.h>
+#include "lpc176x.h"
 #include "i2c.h"
 #include "arch-eeprom.h"
 

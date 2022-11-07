@@ -28,7 +28,7 @@
 #ifndef ARCH_CONFIG_H
 #define ARCH_CONFIG_H
 
-#include <arm/NXP/LPC17xx/LPC17xx.h>
+#include "lpc176x.h"
 #include "bitband.h"
 
 /* AVR compatibility macro */
