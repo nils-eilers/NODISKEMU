@@ -1165,6 +1165,10 @@ static uint8_t d64_read(buffer_t *buf) {
  * and returns 1.
  */
 static uint8_t d64_seek(buffer_t *buf, uint32_t position, uint8_t index) {
+  (void)buf;
+  (void)position;
+  (void)index;
+
   set_error(ERROR_SYNTAX_UNABLE);
   return 1;
 }
@@ -1631,6 +1635,12 @@ static void d64_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
 }
 
 static void d64_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length, uint8_t mode) {
+  (void)path;
+  (void)dent;
+  (void)buf;
+  (void)length;
+  (void)mode;
+
   set_error(ERROR_SYNTAX_UNABLE);
 }
 
