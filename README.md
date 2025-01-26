@@ -89,10 +89,14 @@ computer attached to the IEEE-488 bus.
 Directories
 -----------
 
+petSD's default unit number became 11 in order to avoid any conflicts
+with CBM 8296 built-in drives which usually are set to 8. You may even
+use a further disk drive as unit 9 without any conflicts to petSD's 11.
+
 Displaying directories works as usual, either the BASIC 2 way with
 
 ```
-LOAD"$",8
+LOAD"$",11
 LIST
 ```
 
@@ -100,7 +104,7 @@ or `CATALOG` for BASIC 4. You can abbreviate to `cA` and specify the
 unit address:
 
 ```
-cAu9
+cAu11
 ```
 
 There are however some more advanced features:
@@ -119,13 +123,13 @@ description of the syntax, two basic examples are provided here:
 
 Short format:
 ```
-LOAD"$=T",8
+LOAD"$=T",11
 LIST
 ```
 
 Long format:
 ```
-LOAD"$=T:*=L",8
+LOAD"$=T:*=L",11
 LIST
 ```
 
@@ -140,7 +144,7 @@ change to "NAT" later for compatibility.
 This example assumes a printer attached as unit 4:
 
 ```
-LOAD "$",8
+LOAD "$",11
 OPEN 4,4:CMD 4
 LIST
 PRINT#4:CLOSE 4
@@ -160,7 +164,7 @@ This can be done in two ways, either by appending the command to the OPEN
 command or by sending it separately with the PRINT# command. An an example:
 
 ```
-OPEN1,8,15,"CD:DIRNAME":CLOSE1
+OPEN1,11,15,"CD:DIRNAME":CLOSE1
 ```
 This opens the logical channel 1 on device 8 and sends the string `CD:DIRNAME`
 to the command channel 15.
@@ -205,7 +209,7 @@ Unfortunately, BASIC 2 has no built-in command for this purpose, so it's
 rather cumbersome:
 
 ```
-10 OPEN1,8,15
+10 OPEN1,11,15
 20 INPUT#1,E,E$,T,S
 30 PRINT E;E$;T;S
 40 CLOSE1
