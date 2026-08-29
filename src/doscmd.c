@@ -584,7 +584,7 @@ void do_chdir(uint8_t *parsestr) {
 
   if (ustrlen(name) != 0) {
     /* Path component after the : */
-    if (name[0] == '_') {
+    if (name[0] == '_' && !name[1]) {
       /* Going up a level */
       ustrcpy(dent.name, name);
       if (chdir(&path,&dent))
