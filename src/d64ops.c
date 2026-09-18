@@ -205,7 +205,7 @@ static uint16_t sector_lba(uint8_t part, uint8_t track, const uint8_t sector) {
       return 39*29 + (track-39)*27 + sector + offset;
     if (track < 64)
       return 39*29 + 14*27 + (track-53)*25 + sector + offset;
-    return 39*29 + 14*27 + 11*25 + (track-64) + sector + offset;
+    return 39*29 + 14*27 + 11*25 + (track-64)*23 + sector + offset;
   }
 }
 
