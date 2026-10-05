@@ -188,17 +188,19 @@ void display_service(void) {
     path.dir  = partition[current_part].current_dir;
 
     if (sel == 1) {
-      /* Previous directory */
-      dent.name[0] = '_';
-      dent.name[1] = 0;
+      /* Previous directory - signalled by a NULL dirent */
+      if (chdir(&path, NULL))
+        return;
     } else {
       i2c_read_registers(DISPLAY_I2C_ADDR, DISPLAY_MENU_GETENTRY, sizeof(displaybuffer), displaybuffer);
 
       if (first_match(&path, displaybuffer, FLAG_HIDDEN, &dent))
         return;
+
+      if (chdir(&path, &dent))
+        return;
     }
 
-    chdir(&path, &dent);
     update_current_dir(&path);
   }
 }

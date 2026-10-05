@@ -1726,7 +1726,8 @@ void d64_raw_directory(path_t *path, buffer_t *buf) {
 /**
  * d64_chdir - chdir for Dxx files
  * @path   : path object of the location of dirname
- * @dirname: directory to be changed into
+ * @dirname: directory to be changed into, NULL to move one directory
+ *           up (left arrow) - unmounts the image at the root
  *
  * Changes the directory in the path object for DNP files,
  * returns an error for everything else.
@@ -1736,14 +1737,7 @@ static uint8_t d64_chdir(path_t *path, cbmdirent_t *dirname) {
   if (partition[path->part].imagetype != D64_TYPE_DNP)
     return image_chdir(path,dirname);
 
-  if (dirname->name[0] == 0) {
-    /* Empty string: root directory */
-    path->dir.dxx.track  = 1;
-    path->dir.dxx.sector = 1;
-    return 0;
-  }
-
-  if (dirname->name[0] == '_' && dirname->name[1] == 0) {
+  if (dirname == NULL) {
     /* Move up a directory, unmount if at the root */
     uint8_t parent[2];
 
@@ -1758,6 +1752,13 @@ static uint8_t d64_chdir(path_t *path, cbmdirent_t *dirname) {
 
     path->dir.dxx.track  = parent[0];
     path->dir.dxx.sector = parent[1];
+    return 0;
+  }
+
+  if (dirname->name[0] == 0) {
+    /* Empty string: root directory */
+    path->dir.dxx.track  = 1;
+    path->dir.dxx.sector = 1;
     return 0;
   }
 

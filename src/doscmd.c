@@ -582,12 +582,11 @@ void do_chdir(uint8_t *parsestr) {
   /* clear '*' file */
   previous_file_dirent.name[0] = 0;
 
-  if (ustrlen(name) != 0) {
+  if (*name) {
     /* Path component after the : */
     if (name[0] == '_' && !name[1]) {
-      /* Going up a level */
-      ustrcpy(dent.name, name);
-      if (chdir(&path,&dent))
+      /* Going up a level - signalled by a NULL dirent */
+      if (chdir(&path, NULL))
         return;
     } else {
       /* A directory name - try to match it */

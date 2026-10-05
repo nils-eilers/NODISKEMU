@@ -53,7 +53,7 @@
  * @opendir     : open a directory
  * @readdir     : read an entry from a directory
  * @mkdir       : create a directory
- * @chdir       : change current directory
+ * @chdir       : change current directory, a NULL dirent moves one level up
  * @rename      : rename a file
  *
  * This structure holds function pointers for the various
