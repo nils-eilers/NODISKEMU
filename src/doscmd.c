@@ -582,6 +582,17 @@ void do_chdir(uint8_t *parsestr) {
   /* clear '*' file */
   previous_file_dirent.name[0] = 0;
 
+  /* CMD drives change to the root directory when the argument is a single slash */
+  if ((name[0] == '/' && !name[1]) ||
+      (!name[0] && parsestr[0] == '/' && !parsestr[1])) {
+    dent.name[0] = 0;
+    if (chdir(&path, &dent))
+      return;
+
+    update_current_dir(&path);
+    return;
+  }
+
   if (*name) {
     /* Path component after the : */
     if (name[0] == '_' && !name[1]) {
