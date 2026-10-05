@@ -874,6 +874,10 @@ static void parse_copy(void) {
         open_rel(&dstpath, &dent, dstbuf, srcbuf->recordlen, 1);
       else
         open_write(&dstpath, &dent, savedtype, dstbuf, 0);
+
+      if (current_error != 0) {
+        goto cleanup;
+      }
     }
 
     while (1) {
