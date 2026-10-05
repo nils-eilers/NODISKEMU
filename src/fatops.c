@@ -1069,6 +1069,10 @@ uint8_t fat_chdir(path_t *path, cbmdirent_t *dent) {
   if (dent == NULL) {
     FILINFO finfo;
 
+    /* going up in the root dir is a no-op */
+    if (path->dir.fat == 0)
+      return 0;
+
     ops_scratch[0] = '.';
     ops_scratch[1] = '.';
     ops_scratch[2] = 0;
