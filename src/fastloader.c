@@ -54,7 +54,7 @@
 #include "wrapops.h"
 #include "fastloader.h"
 
-uint8_t detected_loader = FL_NONE;
+fastloaderid_t detected_loader = FL_NONE;
 
 #ifdef CONFIG_HAVE_IEC
 #include "iec-bus.h"
