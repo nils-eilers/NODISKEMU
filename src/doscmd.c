@@ -1580,7 +1580,8 @@ static void parse_scratch(void) {
   count = 0;
   /* Loop over all file names */
   while (filename != NULL) {
-    parse_path(filename, &path, &name, 0);
+    if (parse_path(filename, &path, &name, 0))
+      return;
 
     if (opendir(&matchdh, &path))
       return;
