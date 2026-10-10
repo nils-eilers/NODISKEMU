@@ -842,7 +842,9 @@ void file_open(uint8_t secondary) {
   /* If the secondary is already in use, close the existing buffer */
   buf = find_buffer(secondary);
   if (buf != NULL) {
-    /* FIXME: What should we do if an error occurs? */
+    /* A real drive just discards the old channel here without flushing, */
+    /* but calling the cleanup seems nicer and makes resource management */
+    /* in the various ops implementations simpler.                       */
     cleanup_and_free_buffer(buf);
   }
 
