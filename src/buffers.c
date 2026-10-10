@@ -243,7 +243,8 @@ uint8_t free_multiple_buffers(uint8_t flags) {
       if ((flags & FMB_FREE_SYSTEM) || buffers[i].secondary < BUFFER_SEC_SYSTEM) {
         if ((flags & FMB_FREE_STICKY) || !buffers[i].sticky) {
           if (flags & FMB_CLEAN) {
-            res = res || buffers[i].cleanup(&buffers[i]);
+            if (buffers[i].cleanup(&buffers[i]))
+              res = 1;
           }
           free_buffer(&buffers[i]);
         }
