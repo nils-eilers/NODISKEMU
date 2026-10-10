@@ -40,6 +40,7 @@
 #include "doscmd.h"
 #include "fastloader-ll.h"
 #include "fileops.h"
+#include "gcccompat.h"
 #include "iec-bus.h"
 #include "iec.h"
 #include "parser.h"
@@ -50,7 +51,7 @@
 #include "fastloader.h"
 
 
-static const PROGMEM uint8_t hexchars[16] = "0123456789ABCDEF";
+static const PROGMEM NONSTRING uint8_t hexchars[16] = "0123456789ABCDEF";
 
 static uint8_t hex2bin(uint8_t *ch) {
   uint8_t result;
