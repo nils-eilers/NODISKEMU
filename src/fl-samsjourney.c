@@ -282,13 +282,21 @@ static uint8_t write_file_by_name(uint8_t name) {
 
     /* receive the actual data */
     while (length-- > 0) {
-      if (buf->mustflush) {
-        buf->refill(buf);
+      if (buf != NULL && buf->mustflush) {
+        if (buf->refill(buf)) {
+          /* write failed and buffer was freed, can't signal this   */
+          /* but we can at least discard the remaining data cleanly */
+          buf = NULL;
+        }
       }
 
       res = getbyte();
       if (res < 0)
         goto fail;
+
+      if (buf == NULL)
+        continue;
+
       buf->data[buf->position] = res;
 
       if (buf->lastused < buf->position)
@@ -301,7 +309,8 @@ static uint8_t write_file_by_name(uint8_t name) {
   }
 
  fail:
-  cleanup_and_free_buffer(buf);
+  if (buf != NULL)
+    cleanup_and_free_buffer(buf);
   return retval;
 }
 
