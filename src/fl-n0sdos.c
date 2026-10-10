@@ -157,7 +157,9 @@ void load_n0sdos_fileread(UNUSED_PARAMETER) {
 
       if (!buf->sendeoi) {
         /* read next sector if available */
-        buf->refill(buf);
+        if (buf->refill(buf))
+          /* no way to signal errors, just stop sending */
+          goto leave;
       }
     }
 
