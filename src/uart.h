@@ -56,6 +56,14 @@ void uart_putcrlf(void);
 #define uart_putcrlf() do {} while(0)
 #define uart_trace(a,b,c) do {} while(0)
 
+/* Without UART debugging stdout is never set up and remains NULL.     */
+/* avr-libc's printf would then dereference a NULL FILE pointer, which */
+/* on AVR points to the register file: it clobbers r6/r7 and may call */
+/* a random address depending on the contents of r3, r8 and r9.        */
+#ifdef __AVR__
+#  define printf(str,...) do {} while(0)
+#endif
+
 #endif
 
 #endif
