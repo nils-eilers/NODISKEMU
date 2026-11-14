@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name psdp24-rescue)(type Legacy)(uri ${KIPRJMOD}/psdp24-rescue.lib)(options "")(descr ""))
+  (lib (name eilers)(type Legacy)(uri /home/j/Projekte/my/petSD+/psdp24/eilers.lib)(options "")(descr ""))
+)

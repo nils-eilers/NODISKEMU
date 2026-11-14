@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name logo)(type KiCad)(uri "$(KIPRJMOD)/logo")(options "")(descr ""))
+  (lib (name eilers4)(type KiCad)(uri ${KIPRJMOD}/eilers4.pretty)(options "")(descr ""))
+)

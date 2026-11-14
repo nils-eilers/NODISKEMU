@@ -1,0 +1,6 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "psdp24-rescue") (type "Legacy") (uri "${KIPRJMOD}/psdp24-rescue.lib") (options "") (descr ""))
+	(lib (name "eilers") (type "Legacy") (uri "/home/j/Projekte/my/petSD+/psdp24/eilers.lib") (options "") (descr ""))
+	(lib (name "psdp24-cache") (type "Legacy") (uri "/home/jekyll/NODISKEMU/hardware/petsdplus/psdp24/psdp24-cache.lib") (options "") (descr "Veraltete Projektcache-Bibliothek"))
+)
