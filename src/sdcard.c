@@ -37,6 +37,11 @@
 #include "timer.h"
 #include "uart.h"
 #include "sdcard.h"
+#ifdef CONFIG_ONBOARD_DISPLAY
+#include "lcd.h"
+#include "menu.h"
+#include "progmem.h"
+#endif
 
 #ifdef CONFIG_TWINSD
 #  define MAX_CARDS 2
@@ -357,6 +362,11 @@ DSTATUS sd_initialize(BYTE drv) {
   if (drv >= MAX_CARDS)
     return STA_NOINIT | STA_NODISK;
 
+#ifdef CONFIG_ONBOARD_DISPLAY
+  lcd_clear();
+  lcd_puts_P(PSTR("Initializing\nSD card..."));
+#endif
+
   /* skip initialisation if the card is not present */
   if (sd_status(drv) & STA_NODISK)
     return sd_status(drv);
@@ -489,13 +499,17 @@ DSTATUS sd_initialize(BYTE drv) {
   spi_set_speed(SPI_SPEED_FAST);
   disk_state = DISK_OK;
 
+#ifdef CONFIG_ONBOARD_DISPLAY
+  lcd_draw_screen(SCRN_STATUS);
+#endif
+
   return sd_status(drv);
 }
 DSTATUS disk_initialize(BYTE drv) __attribute__ ((weak, alias("sd_initialize")));
 
 
 /**
- * sd_read - reads sectors from the SD card to buffer
+ * sd_read_once - reads sectors without command/token recovery
  * @drv   : drive
  * @buffer: pointer to the buffer
  * @sector: first sector to be read

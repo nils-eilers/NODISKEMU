@@ -1111,8 +1111,6 @@ static inline void early_board_init(void) {
 }
 
 static inline void late_board_init(void) {
-  lcd_init();
-  lcd_bootscreen();
   if (!menu_system_enabled) return; // Held address jumpers are not boot keys.
   uint8_t buttons = analog_buttons_boot_keys();
   (void)get_key_press(KEY_ANY);
@@ -1339,8 +1337,6 @@ static inline void early_board_init(void) {
 }
 
 static inline void late_board_init(void) {
-  lcd_init();
-  lcd_bootscreen();
   if (!menu_system_enabled) return; // Held address jumpers are not boot keys.
   uint8_t buttons = analog_buttons_boot_keys();
   (void)get_key_press(KEY_ANY);

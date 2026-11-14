@@ -91,6 +91,17 @@ int main(void) {
   buffers_init();
   buttons_init();
 
+  /* Reset the display before any card access, even if filesystem setup hangs.
+   * A processor reset does not necessarily reset the powered LCD module.
+   */
+  lcd_init();
+  lcd_bootscreen();
+#ifdef CONFIG_ONBOARD_DISPLAY
+  /* Keep the splash visible before card initialization can replace it. */
+  tick_t splash_end = getticks() + MS_TO_TICKS(5000);
+  while (time_before(getticks(), splash_end)) {}
+#endif
+
   /* Anything that does something which needs the system clock */
   /* should be placed after system_init_late() */
   rtc_init();    // accesses I2C
@@ -120,13 +131,11 @@ int main(void) {
     board_diagnose();
 #endif
 
-  if (menu_system_enabled)
-    lcd_splashscreen();
-
   bus_interface_init();
   bus_init();
   read_configuration();
   late_board_init();
+  lcd_draw_screen(SCRN_STATUS);
 
   for (;;) {
     if (menu_system_enabled)
