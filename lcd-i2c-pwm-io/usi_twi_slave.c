@@ -243,6 +243,7 @@ typedef enum
 
 static uint8_t slaveAddress;
 static uint8_t i2c_register;
+static bool expect_register;
 static volatile overflowState_t overflowState;
 
 /*************************************************************************
@@ -258,6 +259,8 @@ static volatile overflowState_t overflowState;
 void usiTwiSlaveInit( uint8_t ownAddress)
 {
    slaveAddress = ownAddress / 2;
+   i2c_register = 0;
+   expect_register = true;
 
    // In Two Wire mode (USIWM1, USIWM0 = 1X), the slave USI will pull SCL
    // low when a start condition is detected or a counter overflow (only
@@ -402,6 +405,9 @@ ISR( USI_OVERFLOW_VECTOR )
             }
             else
             {
+               // Every write transaction starts with a register address.
+               // Keep the selected register across a repeated START to read.
+               expect_register = true;
                overflowState = USI_SLAVE_REQUEST_DATA;
             } // end if
             send_usi_to_send_ack( );
@@ -431,7 +437,8 @@ ISR( USI_OVERFLOW_VECTOR )
          // next USI_SLAVE_REQUEST_REPLY_FROM_SEND_DATA
       case USI_SLAVE_SEND_DATA:
          // Get data from Buffer
-         if (I2C_SOFTWARE_VERSION)
+         if (i2c_register == I2C_SOFTWARE_VERSION ||
+             i2c_register == I2C_SOFTWARE_VERSION_COMPAT)
             USIDR = CONFIG_VERSION;
          else
          {
@@ -460,12 +467,15 @@ ISR( USI_OVERFLOW_VECTOR )
          // copy data from USIDR and send ACK
          // next USI_SLAVE_REQUEST_DATA
       case USI_SLAVE_GET_DATA_AND_SEND_ACK:
-         if (i2c_register == 0)
+         if (expect_register)
+         {
             i2c_register = USIDR;
+            expect_register = false;
+         }
          else
          {
             usiTwiWriteReg(i2c_register, USIDR);
-            i2c_register = 0;
+            expect_register = true;
          }
          // next USI_SLAVE_REQUEST_DATA
          overflowState = USI_SLAVE_REQUEST_DATA;

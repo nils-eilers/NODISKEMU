@@ -14,7 +14,12 @@
 #pragma once
 
 
+// Eight-bit write address (seven-bit slave address 0x26).
+// Keep compatible with deployed Tiny firmware.
 #define I2C_SLAVE_ADDRESS       0x4C
+#if I2C_SLAVE_ADDRESS & 1
+#error I2C_SLAVE_ADDRESS must have its read/write bit cleared
+#endif
 
 // Write registers
 #define PWM_CONTRAST            1
@@ -23,9 +28,11 @@
 
 // Read registers
 #define I2C_SOFTWARE_VERSION    1
+// Alias used by masters working around the legacy register-state bug.
+#define I2C_SOFTWARE_VERSION_COMPAT 0
 
 // Software version
-#define CONFIG_VERSION          0x4E
+#define CONFIG_VERSION          0x69
 
 // LCD contrast
 #define PWM0_DEFAULT            2

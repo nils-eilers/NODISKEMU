@@ -73,7 +73,9 @@ void board_diagnose(void) {
   else lcd_puts_P(PSTR("BAD"));
 
   lcd_locate(0, 2); lcd_puts_P(PSTR("PWM:"));
-  int16_t res = i2c_read_register(I2C_SLAVE_ADDRESS, I2C_SOFTWARE_VERSION);
+  // Legacy Tiny firmware returns its version for every read. Select zero
+  // to leave its register state idle instead of corrupting the next write.
+  int16_t res = i2c_read_register(I2C_SLAVE_ADDRESS, I2C_SOFTWARE_VERSION_COMPAT);
   if (res < 0) lcd_puts_P(PSTR("--"));
   else lcd_printf("%02X", res);
 
