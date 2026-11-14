@@ -100,6 +100,9 @@ uint8_t get_key_press(uint8_t key_mask);
 // Check if a key is pressed right now
 uint8_t get_key_state(uint8_t key_mask);
 
+// Atomically read held keys and consume their press events from the same tick.
+uint8_t get_key_state_and_press(uint8_t key_mask, uint8_t *pressed);
+
 // Check if a key has been pressed for a short while
 uint8_t get_key_short(uint8_t key_mask);
 

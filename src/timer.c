@@ -85,6 +85,16 @@ uint8_t get_key_state(uint8_t key_mask) {
   return key_mask;
 }
 
+uint8_t get_key_state_and_press(uint8_t key_mask, uint8_t *pressed) {
+  uint8_t held;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    held = key_state & key_mask;
+    *pressed = key_press & key_mask;
+    key_press ^= *pressed;
+  }
+  return held;
+}
+
 
 uint8_t get_key_short(uint8_t key_mask) {
   uint8_t tmp;

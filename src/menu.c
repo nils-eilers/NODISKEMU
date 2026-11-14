@@ -54,13 +54,11 @@
 
 uint8_t menu_system_enabled = true;
 
-#ifndef CONFIG_DIR_BUFFERS
-#define CONFIG_DIR_BUFFERS 2
-#endif
-
 #define MAX_LASTPOS 16
 #define ENTRIES_PER_BLOCK (256 / sizeof(entry_t))
-#define MAX_DIR_ENTRIES (CONFIG_DIR_BUFFERS * 256 / sizeof(entry_t *))
+#define DIRNAV_OFFSET 2
+#define NAV_ABORT 0
+#define NAV_PARENT 1
 #define E_DIR   1
 #define E_IMAGE 2
 
@@ -68,13 +66,39 @@ typedef struct {
   uint8_t  flags;
   uint8_t  filename[16];
   uint16_t filesize;
+  uint32_t ordinal; // Stable tie-breaker for identical 16-byte names
 } entry_t;
+
+typedef struct {
+  tick_t level_since;
+  tick_t next;
+  uint8_t key;
+  uint8_t level;
+} browser_repeat_t;
 
 
 static tick_t lcd_timeout;
 static bool lcd_timer;
 static uint16_t lcd_current_screen;
-static entry_t **ep;
+static struct {
+  buffer_t *blocks;
+  uint8_t *first_data; // Directory-handle metadata leaves its data area free
+  uint16_t capacity, count;
+  uint32_t first, total;
+  bool sorted;
+} browser_page;
+
+static entry_t *browser_entry(uint16_t index) {
+  if (index < ENTRIES_PER_BLOCK)
+    return (entry_t *)(browser_page.first_data + index * sizeof(entry_t));
+  index -= ENTRIES_PER_BLOCK;
+  buffer_t *block = browser_page.blocks;
+  while (index >= ENTRIES_PER_BLOCK) {
+    index -= ENTRIES_PER_BLOCK;
+    block = block->pvt.buffer.next;
+  }
+  return (entry_t *)(block->data + index * sizeof(entry_t));
+}
 
 #if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS && LCD_COLS >= 8 && LCD_LINES >= 4
 /* "SD", 20x16 pixels in a 4x2 arrangement: slots 0..3 above 4..7.
@@ -446,12 +470,13 @@ void menu_set_clock(void) {
 
 void lcd_print_dir_entry(uint16_t i) {
   char filename[16 + 1];
+  entry_t *entry = browser_entry(i);
 
-  if      (ep[i]->flags & E_DIR)   lcd_puts_P(PSTR("DIR "));
-  else if (ep[i]->flags & E_IMAGE) lcd_puts_P(PSTR("IMG "));
-  else lcd_printf("%3u ", ep[i]->filesize);
+  if      (entry->flags & E_DIR)   lcd_puts_P(PSTR("DIR "));
+  else if (entry->flags & E_IMAGE) lcd_puts_P(PSTR("IMG "));
+  else lcd_printf("%3u ", entry->filesize);
   memset (filename, 0, sizeof(filename));
-  ustrncpy(filename, ep[i]->filename,
+  ustrncpy(filename, entry->filename,
            (LCD_COLS - 4) > 16 ? 16 : LCD_COLS - 4);
   pet2asc((uint8_t *) filename);
   lcd_puts(filename);
@@ -462,28 +487,216 @@ void clear_command_buffer(void) {
   command_length = 0;
 }
 
-int compare(const void *p1, const void *p2) {
-  const entry_t *const *a = p1;
-  const entry_t *const *b = p2;
+static int browser_compare(const entry_t *a, const entry_t *b) {
 
   // 1st: directories alphabetically
   // 2nd: image files alphabetically
   // 3rd: file names alphabetically
 
-  bool a_is_dir = ((*a)->flags & E_DIR);
-  bool b_is_dir = ((*b)->flags & E_DIR);
+  if (!browser_page.sorted) goto ordinal;
+  bool a_is_dir = (a->flags & E_DIR);
+  bool b_is_dir = (b->flags & E_DIR);
   if (a_is_dir && !b_is_dir) return -1;
   else if (!a_is_dir && b_is_dir) return 1;
 
-  bool a_is_img = ((*a)->flags & E_IMAGE);
-  bool b_is_img = ((*b)->flags & E_IMAGE);
+  bool a_is_img = (a->flags & E_IMAGE);
+  bool b_is_img = (b->flags & E_IMAGE);
   if (a_is_img && !b_is_img) return -1;
   else if (!a_is_img && b_is_img) return 1;
 
-  return strncmp((const char *)(*a)->filename,
-                 (const char *)(*b)->filename, sizeof((*a)->filename));
+  int result = strncmp((const char *)a->filename,
+                       (const char *)b->filename, sizeof(a->filename));
+  if (result) return result;
+ordinal:
+  return a->ordinal < b->ordinal ? -1 : a->ordinal > b->ordinal;
 }
 
+static void browser_free_cache(void) {
+  buffer_t *block = browser_page.blocks;
+  while (block) {
+    buffer_t *next = block->pvt.buffer.next;
+    free_buffer(block);
+    block = next;
+  }
+  memset(&browser_page, 0, sizeof(browser_page));
+}
+
+static uint8_t browser_allocate_cache(buffer_t *buf) {
+  browser_page.first_data = buf->data;
+  browser_page.capacity = ENTRIES_PER_BLOCK;
+  buffer_t **tail = &browser_page.blocks;
+  for (uint8_t i = 0; i < CONFIG_BUFFER_COUNT; i++) {
+    if (buffers[i].allocated) continue;
+    buffer_t *block = alloc_system_buffer();
+    if (!block) return 1;
+    *tail = block;
+    block->pvt.buffer.next = NULL;
+    tail = &block->pvt.buffer.next;
+    browser_page.capacity += ENTRIES_PER_BLOCK;
+  }
+  return 0;
+}
+
+static void browser_swap(uint16_t a, uint16_t b) {
+  entry_t *pa = browser_entry(a), *pb = browser_entry(b);
+  entry_t tmp = *pa;
+  *pa = *pb;
+  *pb = tmp;
+}
+
+/* A max-heap retains the smallest entries for forward paging; a min-heap
+ * retains the largest for backward paging. No pointer table is required. */
+static int browser_heap_compare(uint16_t a, uint16_t b, bool reverse) {
+  int result = browser_compare(browser_entry(a), browser_entry(b));
+  return reverse ? -result : result;
+}
+
+static void browser_sift_down(uint16_t root, uint16_t count, bool reverse) {
+  for (;;) {
+    uint16_t child = root * 2 + 1;
+    if (child >= count) return;
+    if (child + 1 < count && browser_heap_compare(child, child + 1, reverse) < 0)
+      child++;
+    if (browser_heap_compare(root, child, reverse) >= 0) return;
+    browser_swap(root, child);
+    root = child;
+  }
+}
+
+/* Scan the directory and retain the adjacent sorted window. The anchor is
+ * copied by the caller before replacing the cache. Each file's ordinal makes
+ * even duplicate display names unambiguous. Native image order is retained.
+ * Return 1 only for real I/O errors, never merely because the cache is full. */
+static uint8_t browser_load_page(path_t *path, buffer_t *buf,
+                                 const entry_t *anchor, bool reverse) {
+  cbmdirent_t dent;
+  uint32_t eligible = 0;
+  browser_page.count = 0;
+  browser_page.total = 0;
+  if (opendir(&buf->pvt.dir.dh, path)) return 1;
+  for (;;) {
+    int8_t result = next_match(&buf->pvt.dir.dh, NULL, NULL, NULL, 0, &dent);
+    if (result < 0) break;
+    if (result > 0) return 1;
+    if (browser_page.total == UINT32_MAX - DIRNAV_OFFSET) {
+      set_error(ERROR_DIR_ERROR);
+      return 1;
+    }
+    if (!browser_page.total) browser_page.sorted = dent.opstype == OPSTYPE_FAT;
+    entry_t entry;
+    entry.ordinal = browser_page.total++;
+    entry.flags = 0;
+    if (dent.opstype == OPSTYPE_FAT &&
+        check_imageext(dent.pvt.fat.realname) != IMG_UNKNOWN)
+      entry.flags |= E_IMAGE;
+    if ((dent.typeflags & EXT_TYPE_MASK) == TYPE_DIR) entry.flags |= E_DIR;
+    ustrncpy(entry.filename, dent.name, sizeof(entry.filename));
+    entry.filesize = dent.blocksize;
+    if (anchor) {
+      int order = browser_compare(&entry, anchor);
+      if (reverse ? order >= 0 : order <= 0) continue;
+    }
+    eligible++;
+    if (browser_page.count < browser_page.capacity) {
+      uint16_t child = browser_page.count++;
+      *browser_entry(child) = entry;
+      while (child) {
+        uint16_t parent = (child - 1) / 2;
+        if (browser_heap_compare(parent, child, reverse) >= 0) break;
+        browser_swap(parent, child);
+        child = parent;
+      }
+    } else {
+      int order = browser_compare(&entry, browser_entry(0));
+      if (reverse ? order <= 0 : order >= 0) continue;
+      *browser_entry(0) = entry;
+      browser_sift_down(0, browser_page.count, reverse);
+    }
+  }
+  browser_page.first = reverse ? eligible - browser_page.count :
+                                browser_page.total - eligible;
+  for (uint16_t count = browser_page.count; count > 1; count--) {
+    browser_swap(0, count - 1);
+    browser_sift_down(0, count - 1, reverse);
+  }
+  if (reverse) {
+    for (uint16_t i = 0; i < browser_page.count / 2; i++)
+      browser_swap(i, browser_page.count - 1 - i);
+  }
+  set_busy_led(false); set_dirty_led(true);
+  return 0;
+}
+
+static uint8_t browser_seek_position(path_t *path, buffer_t *buf, uint32_t *mp) {
+  for (;;) {
+    if (*mp >= browser_page.total + DIRNAV_OFFSET)
+      *mp = browser_page.total + DIRNAV_OFFSET - 1;
+    if (*mp < DIRNAV_OFFSET && !browser_page.first) return 0;
+    uint32_t rank = *mp < DIRNAV_OFFSET ? 0 : *mp - DIRNAV_OFFSET;
+    if (browser_page.count && rank >= browser_page.first &&
+        rank - browser_page.first < browser_page.count) return 0;
+
+    lcd_clear();
+    lcd_puts_P(PSTR("Reading..."));
+    uint32_t old_first = browser_page.first;
+    bool reverse = rank < browser_page.first;
+    bool edge = !rank || rank == browser_page.total - 1 || !browser_page.count;
+    entry_t anchor;
+    if (!edge)
+      anchor = *browser_entry(reverse ? 0 : browser_page.count - 1);
+    if (browser_load_page(path, buf, edge ? NULL : &anchor, edge ? rank != 0 : reverse))
+      return 1;
+    if (!browser_page.count) {
+      if (browser_page.total && browser_load_page(path, buf, NULL, false)) return 1;
+      *mp = 0;
+      return 0;
+    }
+    /* A changed directory must not cause an endless rescan. */
+    if (!edge && (reverse ? browser_page.first >= old_first :
+                           browser_page.first <= old_first)) {
+      *mp = browser_page.first + DIRNAV_OFFSET;
+      return 0;
+    }
+  }
+}
+
+/* Local to the browser: other menus retain the normal key-repeat behavior.
+ * Initial repeat delay 500 ms; intervals 150, 80 and 40 ms. Each level
+ * lasts two seconds of continuously holding the same direction.
+ */
+static uint8_t browser_repeat_update(browser_repeat_t *repeat, uint8_t held,
+                                     uint8_t pressed, tick_t now) {
+  const uint8_t mask = KEY_PREV | KEY_NEXT;
+  held &= mask;
+  pressed &= mask;
+  if (held == mask || pressed == mask) {
+    repeat->key = 0;
+    return 0;
+  }
+  if ((pressed && (!held || pressed == held)) ||
+      (held && held != repeat->key)) {
+    repeat->key = held;
+    repeat->level = 0;
+    repeat->level_since = now;
+    repeat->next = now + MS_TO_TICKS(500);
+    return pressed && !held ? pressed : held;
+  }
+  if (!held) {
+    repeat->key = 0;
+    return 0;
+  }
+  while (repeat->level < 2 &&
+         (tick_t)(now - repeat->level_since) >= MS_TO_TICKS(2000)) {
+    repeat->level++;
+    repeat->level_since += MS_TO_TICKS(2000);
+  }
+  if (time_before(now, repeat->next)) return 0;
+  uint8_t interval = repeat->level == 0 ? MS_TO_TICKS(150) :
+                     repeat->level == 1 ? MS_TO_TICKS(80) : MS_TO_TICKS(40);
+  /* Schedule from now; slow LCD redraws must not produce a burst of moves. */
+  repeat->next = now + interval;
+  return held;
+}
 
 static void rom_menu_browse(uint8_t y) {
   switch (y) {
@@ -514,136 +727,39 @@ static void rom_menu_main(uint8_t y) {
 
 
 void menu_browse_files(void) {
+  browser_repeat_t repeat = {0};
   buffer_t *buf;
-  buffer_t *buf_tbl;
-  buffer_t *buf_cur;
-  buffer_t *first_buf;
   path_t path;
-  cbmdirent_t dent;
-  uint16_t entries;
-  uint8_t entry_num;
-  bool fat_filesystem;
+  uint32_t entries;
   uint8_t i;
   uint8_t my;
-  uint16_t mp;
+  uint32_t mp;
   bool action;
-  uint16_t stack_mp[MAX_LASTPOS];
+  uint32_t stack_mp[MAX_LASTPOS];
   uint8_t stack_my[MAX_LASTPOS];
   uint8_t pos_stack;
-  uint8_t save_active_buffers;
 
   pos_stack = 0;
   memset(stack_mp, 0, sizeof(stack_mp));
   memset(stack_my, 0, sizeof(stack_my));
-  save_active_buffers = active_buffers;
 
 start:
+  repeat.key = 0;
   lcd_clear();
   lcd_puts_P(PSTR("Reading..."));
 
-  buf = buf_tbl = buf_cur = first_buf = NULL;
-  entries = entry_num = mp = 0;
-  fat_filesystem = false;
-
-  // Allocate one buffer, used to read a single directory entry
+  buf = NULL;
+  mp = 0;
   if ((buf = alloc_system_buffer()) == NULL) goto cleanup;
-
-  // Allocate buffers with continuous data segments
-  // Stores pointers to directory entries for qsort
-  if ((buf_tbl = alloc_linked_buffers(CONFIG_DIR_BUFFERS)) == NULL) goto cleanup;
-  ep = (entry_t **)buf_tbl->data;
-
-  // Buffers to store the actual diretory entries.
-  // Whilst the directory grows, new buffers get allocated and linked
-  if ((buf_cur = alloc_system_buffer()) == NULL) goto cleanup;
-  first_buf = buf_cur;
-
-  // Allocating buffers affects the LEDs
-  set_busy_led(false); set_dirty_led(true);
-
+  if (browser_allocate_cache(buf)) goto cleanup;
   path.part = current_part;
-  path.dir  = partition[path.part].current_dir;
-  uart_trace(&path.dir, 0, sizeof(dir_t));
-  uart_putcrlf();
-  uart_flush();
-  if (opendir(&buf->pvt.dir.dh, &path)) goto cleanup;
-
-  for (;;) {
-    if (next_match(&buf->pvt.dir.dh,
-                    buf->pvt.dir.matchstr,
-                    buf->pvt.dir.match_start,
-                    buf->pvt.dir.match_end,
-                    buf->pvt.dir.filetype,
-                    &dent) == 0)
-    {
-      if (entries >= MAX_DIR_ENTRIES) {
-        lcd_clear();
-        lcd_puts_P(PSTR("Too many entries\nfor menu"));
-        wait_anykey();
-        goto cleanup;
-      }
-      uint8_t e_flags = 0;
-      if (dent.opstype == OPSTYPE_FAT) {
-        fat_filesystem = true;
-        if (check_imageext(dent.pvt.fat.realname) != IMG_UNKNOWN)
-          e_flags |= E_IMAGE;
-      }
-      // Current block full?
-      if (entry_num == ENTRIES_PER_BLOCK) {
-        entry_num = 0;
-        buffer_t *old_buf = buf_cur;
-        if ((buf_cur = alloc_system_buffer()) == NULL) {
-          printf("alloc buf_cur failed, %d entries", entries);
-          goto cleanup;
-        }
-        set_busy_led(false); set_dirty_led(true);
-        buf_cur->pvt.buffer.next = NULL;
-        old_buf->pvt.buffer.next = buf_cur;
-      }
-
-      // Store entry
-      ep[entries] = (entry_t *) (buf_cur->data + entry_num * sizeof(entry_t));
-      ustrncpy(ep[entries]->filename, dent.name, 16);
-      ep[entries]->filesize = dent.blocksize;
-      if ((dent.typeflags & EXT_TYPE_MASK) == TYPE_DIR)
-        e_flags |= E_DIR;
-      ep[entries]->flags = e_flags;
-      entries++;
-      entry_num++;
-    } else {
-      // No more directory entries to read
-      break;
-    }
-  }
-  printf("%d entries\r\n", entries);
-
-  if (fat_filesystem)
-    qsort(ep, entries, sizeof(entry_t*), compare);
-
-  for (uint16_t i = 0; i < entries; i++) {
-    printf("%3u: ", i);
-    if (ep[i]->flags & E_DIR)
-      uart_puts_P(PSTR(" DIR "));
-    else if (ep[i]->flags & E_IMAGE)
-      uart_puts_P(PSTR(" IMG "));
-    else
-      printf("%4u ", ep[i]->filesize);
-    uint8_t filename[16 + 1];
-    ustrncpy(filename, ep[i]->filename, 16);
-    filename[16] = '\0';
-    pet2asc(filename);
-    printf("%s\r\n", filename);
-    uart_flush();
-  }
-  uart_putcrlf();
-
-#define DIRNAV_OFFSET   2
-#define NAV_ABORT       0
-#define NAV_PARENT      1
+  path.dir = partition[path.part].current_dir;
+  if (browser_load_page(&path, buf, NULL, false)) goto cleanup;
+  entries = browser_page.total;
 
   mp = stack_mp[pos_stack];
   my = stack_my[pos_stack];
-  printf("mp set to %d\r\n", mp);
+  printf("mp set to %lu\r\n", (unsigned long)mp);
   if (mp < (LCD_LINES - 1))
     my = mp;
   else
@@ -652,15 +768,19 @@ start:
 
   for (i=0; i < MAX_LASTPOS; i++) {
     if (pos_stack == i) uart_putc('>');
-    printf("%d ", stack_mp[i]);
+    printf("%lu ", (unsigned long)stack_mp[i]);
   }
   uart_putcrlf();
 
   for (;;) {
+    if (browser_seek_position(&path, buf, &mp)) goto cleanup;
+    entries = browser_page.total;
+    uint32_t first = browser_page.first ? browser_page.first + DIRNAV_OFFSET : 0;
+    if (mp - first < my) my = mp - first;
     lcd_clear();
     for (i = 0; i < LCD_LINES; i++) {
       lcd_locate(0, i);
-      uint16_t y = mp - my + i;
+      uint32_t y = mp - my + i;
       if (y < DIRNAV_OFFSET) {
         rom_menu_browse(y);
       } else {
@@ -668,20 +788,33 @@ start:
         if (y >= entries) {
           lcd_puts_P(PSTR("-- End of dir --"));
           break;
+        } else if (y < browser_page.first ||
+                   y - browser_page.first >= browser_page.count) {
+          lcd_puts_P(PSTR("-- More files --"));
+          break;
         } else {
-          lcd_print_dir_entry(y);
+          lcd_print_dir_entry(y - browser_page.first);
         }
       }
     }
 
     lcd_cursor(true);
+    action = false;
     for (;;) {
       lcd_locate(0, my);
       //printf("mp: %u   my: %u\r\n", mp, my);
       //while (!get_key_state(KEY_ANY));
-      if (get_key_autorepeat(KEY_PREV)) {
+      uint8_t pressed;
+      uint8_t held = get_key_state_and_press(KEY_PREV | KEY_NEXT, &pressed);
+      (void)get_key_rpt(KEY_PREV | KEY_NEXT);
+      uint8_t key = browser_repeat_update(&repeat, held, pressed, getticks());
+      if (key == KEY_PREV) {
         if (mp > 0) {
           --mp;
+          if (browser_page.first && mp < browser_page.first + DIRNAV_OFFSET) {
+            my = LCD_LINES - 1;
+            break;
+          }
           if (my > 0) --my;
           else {
             my = LCD_LINES - 1;
@@ -700,9 +833,13 @@ start:
           break;
         }
       }
-      if (get_key_autorepeat(KEY_NEXT)) {
+      if (key == KEY_NEXT) {
         if (mp < (entries -1 + DIRNAV_OFFSET)) {
           ++mp;
+          if (mp >= browser_page.first + browser_page.count + DIRNAV_OFFSET) {
+            my = 0;
+            break;
+          }
           if (my < (LCD_LINES - 1))  ++my;
           else {
             my = 0;
@@ -726,6 +863,8 @@ start:
       uart_puts_P(PSTR("CD_\r\n"));
       ustrcpy_P(command_buffer, PSTR("CD_"));
       command_length = 3;
+      browser_free_cache();
+      free_buffer(buf); buf = NULL;
       parse_doscommand();
       clear_command_buffer();
       stack_mp[pos_stack] = 0;
@@ -735,8 +874,8 @@ start:
       if (current_error != ERROR_OK) goto cleanup;
       goto reread;
     }
-    if (ep[mp - DIRNAV_OFFSET]->flags & E_DIR ||
-        ep[mp - DIRNAV_OFFSET]->flags & E_IMAGE)
+    entry_t *selected = browser_entry(mp - DIRNAV_OFFSET - browser_page.first);
+    if (selected->flags & (E_DIR | E_IMAGE))
     {
       // The current directory also occupies a slot in the position stack.
       if (pos_stack >= MAX_LASTPOS - 1) {
@@ -748,8 +887,10 @@ start:
       }
       clear_command_buffer();
       ustrcpy_P(command_buffer, PSTR("CD:"));
-      ustrncpy(command_buffer + 3, ep[mp - DIRNAV_OFFSET]->filename, 16);
+      memcpy(command_buffer + 3, selected->filename, sizeof(selected->filename));
       command_length = ustrlen(command_buffer);
+      browser_free_cache();
+      free_buffer(buf); buf = NULL;
       parse_doscommand();
       clear_command_buffer();
       if (current_error != ERROR_OK) goto cleanup;
@@ -762,22 +903,8 @@ start:
 
 reread:
   free_buffer(buf);
-
-  buffer_t *p = buf_tbl;
-  while (p != NULL) {
-    p->allocated = 0;
-    p = p->pvt.buffer.next;
-  }
-
-  p = first_buf;
-  if (p != NULL) do {
-    p->allocated = 0;
-    p = p->pvt.buffer.next;
-  } while (p != NULL);
-
+  browser_free_cache();
   set_busy_led(false); set_dirty_led(true);
-  ep = NULL;
-  active_buffers = save_active_buffers;
   if (mp == NAV_ABORT) return;
   goto start;
 

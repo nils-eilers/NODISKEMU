@@ -3,8 +3,8 @@
 
 Usage: python3 testcode/menu/test_menu.py
 Requires gcc. Uses ASan/UBSan; no device or firmware flashing is needed.
-The entry layout is packed like AVR, but pointers retain the host width.
-Both a 64-entry and a 256-entry pointer table are exercised on 64-bit hosts.
+The entry layout is packed like AVR. Small and full buffer pools are tested,
+including fragmented free space and directories larger than the cache.
 """
 from pathlib import Path
 import re
@@ -28,24 +28,27 @@ def function(source, name):
 
 menu = (ROOT / 'src/menu.c').read_text()
 buffers = (ROOT / 'src/buffers.c').read_text()
-declarations = menu[menu.index('#ifndef CONFIG_DIR_BUFFERS'):menu.index('static tick_t')]
-table = re.search(r'^static entry_t .*;', menu, re.M).group()
+declarations = menu[menu.index('#define MAX_LASTPOS'):menu.index('static tick_t')]
+table = re.search(r'static struct \{.*?\} browser_page;', menu, re.S).group()
 allocator = '\n'.join(function(buffers, name) for name in (
     'callback_dummy', 'alloc_specific_buffer', 'alloc_system_buffer',
     'alloc_linked_buffers', 'free_buffer'))
 browser = '\n'.join(function(menu, name) for name in (
-    'clear_command_buffer', 'compare', 'menu_browse_files'))
+    'browser_entry', 'clear_command_buffer', 'browser_compare', 'browser_free_cache',
+    'browser_allocate_cache', 'browser_swap', 'browser_heap_compare',
+    'browser_sift_down', 'browser_load_page', 'browser_seek_position',
+    'browser_repeat_update', 'menu_browse_files'))
 
 with tempfile.TemporaryDirectory(prefix='nodiskemu-menu-') as tmp:
     tmp = Path(tmp)
     (tmp / 'production.c').write_text(
         '#pragma pack(push, 1)\n' + declarations + '\n#pragma pack(pop)\n'
         + table + '\n' + allocator + '\n' + browser)
-    for count in (2, 8):
+    for count in (4, 32):
         subprocess.run([
             'gcc', '-std=gnu99', '-g', '-O1', '-fno-omit-frame-pointer',
             '-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-no-pie',
-            f'-DCONFIG_DIR_BUFFERS={count}', '-I' + str(tmp),
+            f'-DCONFIG_BUFFER_COUNT={count}', '-I' + str(tmp),
             str(Path(__file__).with_name('test_menu.c')), '-o', str(tmp / 'test'),
         ], check=True)
         subprocess.run([str(tmp / 'test')], check=True, timeout=15)

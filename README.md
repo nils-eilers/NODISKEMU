@@ -409,6 +409,21 @@ of the buffer position, For example, "B-P 9 4 1" positions to byte
 260 (1\*256+4) of the buffer on secondary address 9.
 
 
+LCD file browser
+----------------
+
+The LCD file browser uses available sector buffers to cache directory entries.
+Even one free buffer is sufficient. If a directory is larger than the cache,
+continue with NEXT or PREV to load the adjacent entries automatically.
+"Reading..." indicates a reload; this rescans the directory to preserve
+directory/image/name sorting on FAT. Disk images retain their native order.
+Browser buffers are released before changing directories or mounting images.
+
+Holding PREV or NEXT accelerates navigation after two and four seconds,
+with repeat intervals of 150, 80 and 40 ms. Releasing the key or changing
+direction restarts the initial speed.
+
+
 Diagnostics
 -----------
 
