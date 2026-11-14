@@ -37,6 +37,7 @@
 #include "ustring.h"
 #include "utils.h"
 #include "display.h"
+#include "timer.h"
 
 #include "uart.h"
 
@@ -207,9 +208,13 @@ void display_service(void) {
 
 
 void display_send_cmd(uint8_t cmd, uint8_t len, const void *buf) {
-  if (display_found)
-    /* repeat until successful - the display may be busy */
-    while (i2c_write_registers(DISPLAY_I2C_ADDR, cmd, len, buf)) ;
+  if (!display_found) return;
+  /* A busy display may NACK briefly, but a failed bus must not hang us. */
+  for (uint8_t retries = 0; retries < 20; retries++) {
+    if (!i2c_write_registers(DISPLAY_I2C_ADDR, cmd, len, buf)) return;
+    delay_ms(5);
+  }
+  display_found = 0;
 }
 
 

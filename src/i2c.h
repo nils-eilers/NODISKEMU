@@ -42,6 +42,17 @@ typedef struct i2cblock_s {
 } i2cblock_t;
 
 void i2c_init(void);
+/* AVR software-master status codes. Existing callers may still test != 0. */
+enum {
+  I2C_ERROR_ADDRESS_NACK = 1,
+  I2C_ERROR_SCL_TIMEOUT,
+  I2C_ERROR_SDA_STUCK,
+  I2C_ERROR_REGISTER_NACK,
+  I2C_ERROR_DATA_NACK
+};
+/* Transfers return zero on success and nonzero on error (single-byte reads:
+ * -1 on error). Discard read data on error; it may be only partly filled.
+ * The AVR software master reports NACK, clock timeout and stuck-bus errors. */
 uint8_t i2c_write_register(uint8_t address, uint8_t reg, uint8_t val);
 uint8_t i2c_write_registers(uint8_t address, uint8_t startreg, uint8_t count, const void *data);
 int16_t i2c_read_register(uint8_t address, uint8_t reg);

@@ -43,6 +43,7 @@
 #include "rtc.h"
 #include "ustring.h"
 #include "doscmd.h"
+#include "i2c.h"
 #include "uart.h"
 #include "dirent.h"
 #include "parser.h"     // current_part
@@ -843,9 +844,17 @@ bool menu(void) {
   return old_bus != active_bus;
 }
 
-static void pwm_error(void) {
+static void pwm_error(uint8_t error) {
   lcd_locate(0, LCD_LINES - 2);
-  lcd_puts_P(PSTR("Error:PWM controller\nnot found"));
+  lcd_puts_P(PSTR("PWM controller error\n"));
+  switch (error) {
+    case I2C_ERROR_ADDRESS_NACK:  lcd_puts_P(PSTR("I2C address NACK")); break;
+    case I2C_ERROR_REGISTER_NACK: lcd_puts_P(PSTR("I2C register NACK")); break;
+    case I2C_ERROR_DATA_NACK:     lcd_puts_P(PSTR("I2C data NACK")); break;
+    case I2C_ERROR_SCL_TIMEOUT:   lcd_puts_P(PSTR("I2C SCL timeout")); break;
+    case I2C_ERROR_SDA_STUCK:     lcd_puts_P(PSTR("I2C SDA held low")); break;
+    default: lcd_puts_P(PSTR("I2C transfer failed")); break;
+  }
   wait_anykey();
 }
 
@@ -889,7 +898,7 @@ void menu_adjust_contrast(void) {
       }
     }
   }
-  pwm_error();
+  pwm_error(res);
 }
 
 
@@ -936,5 +945,5 @@ void menu_adjust_brightness(void) {
       }
     }
   }
-  pwm_error();
+  pwm_error(res);
 }

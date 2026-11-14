@@ -177,6 +177,10 @@ CONFIG_RTC_DSRTC=y
 # I2C display
 CONFIG_REMOTE_DISPLAY=y
 
+# AVR software I2C clock-stretch timeout per SCL-high wait, in microseconds.
+# Works without timer interrupts. Valid range: 10..655350 (10 us steps).
+CONFIG_SOFTI2C_TIMEOUT_US=200000
+
 # Display buffer size
 # This buffer is used as temporary space when sending commands to
 # the display. Longer texts will be truncated.
