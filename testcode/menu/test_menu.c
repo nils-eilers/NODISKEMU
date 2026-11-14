@@ -59,7 +59,7 @@ static uint8_t command_buffer[120];
 static struct { dir_t current_dir; } partition[1];
 static unsigned files, too_many, too_deep, waits, displayed;
 static unsigned depth, deepest, commands, key_reads;
-static bool navigation, open_error, native_order, varied_names;
+static bool navigation, open_error, native_order, varied_names, image_root;
 static int read_error_at;
 static unsigned scans,root_files,available_initial;
 static bool seen[2000];
@@ -103,8 +103,9 @@ static int next_match(dh_t *dh, uint8_t *match, void *start, void *end,
   unsigned ordinal=dh->position++;
   memset(dent, 0, sizeof(*dent));
   memset(dent->name, 'A', 16); /* Exercise non-terminated stored names. */
-  dent->opstype = native_order ? 0 : OPSTYPE_FAT;
+  dent->opstype = native_order || (image_root && depth) ? 0 : OPSTYPE_FAT;
   dent->typeflags = navigation ? TYPE_DIR : 0;
+  if (image_root && !depth) dent->pvt.fat.realname[0]='I';
   if (varied_names) {
     /* Descending names, many exact duplicates, interleaved directories/images. */
     snprintf((char *)dent->name,sizeof(dent->name),"%016u",(files-ordinal)/3);
@@ -186,6 +187,7 @@ static void setup(unsigned count, unsigned available) {
   depth = deepest = commands = key_reads = 0;
   key_count = key_pos = 0;
   navigation = open_error = native_order = varied_names = false;
+  image_root = false;
   read_error_at=-1; scans=root_files=0;
   available_initial=available;
   memset(seen,0,sizeof(seen));
@@ -369,6 +371,30 @@ static void test_pages(void) {
 int main(void) {
   test_repeat();
   assert(sizeof(entry_t) == 23);
+  /* A regular file closes the entire menu on FAT and inside an image. */
+  for (unsigned image=0;image<2;image++) {
+    setup(1, CONFIG_BUFFER_COUNT);
+    native_order = image;
+    push(KEY_NEXT); push(KEY_NEXT); push(KEY_SEL);
+    assert(menu_browse_files());
+    assert(commands==0 && key_pos==key_count && current_error==ERROR_OK);
+    verify_cleanup(CONFIG_BUFFER_COUNT);
+  }
+  /* An image on FAT is entered; only selecting its regular file exits. */
+  setup(1, CONFIG_BUFFER_COUNT);
+  image_root = true;
+  push(KEY_NEXT); push(KEY_NEXT); push(KEY_SEL);
+  push(KEY_NEXT); push(KEY_NEXT); push(KEY_SEL);
+  assert(menu_browse_files());
+  assert(commands==1 && depth==1 && key_pos==key_count && current_error==ERROR_OK);
+  verify_cleanup(CONFIG_BUFFER_COUNT);
+
+  /* The explicit return entry still returns to the main menu. */
+  setup(1, CONFIG_BUFFER_COUNT);
+  push(KEY_SEL);
+  assert(!menu_browse_files());
+  verify_cleanup(CONFIG_BUFFER_COUNT);
+
   unsigned counts[] = {0, 1, 26, 27, 256, 342, 1000, 65540};
   for (unsigned i = 0; i < sizeof(counts) / sizeof(counts[0]); i++) {
     setup(counts[i], CONFIG_BUFFER_COUNT);

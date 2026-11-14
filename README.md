@@ -419,6 +419,11 @@ continue with NEXT or PREV to load the adjacent entries automatically.
 directory/image/name sorting on FAT. Disk images retain their native order.
 Browser buffers are released before changing directories or mounting images.
 
+Pressing SELECT on a regular file closes the entire menu and returns to the
+status screen, on both FAT and inside disk images. Selecting a directory or
+disk image enters it as usual. "Return to main menu" still returns to the
+main menu.
+
 Holding PREV or NEXT accelerates navigation after two and four seconds,
 with repeat intervals of 150, 80 and 40 ms. Releasing the key or changing
 direction restarts the initial speed.

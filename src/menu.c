@@ -726,7 +726,9 @@ static void rom_menu_main(uint8_t y) {
 }
 
 
-void menu_browse_files(void) {
+/* Return true when selecting a regular file should close the entire menu. */
+bool menu_browse_files(void) {
+  bool exit_menu = false;
   browser_repeat_t repeat = {0};
   buffer_t *buf;
   path_t path;
@@ -899,13 +901,15 @@ start:
       printf("pos_stack set to %d\r\n", pos_stack);
       goto reread;
     }
+    exit_menu = true;
+    goto cleanup;
   }
 
 reread:
   free_buffer(buf);
   browser_free_cache();
   set_busy_led(false); set_dirty_led(true);
-  if (mp == NAV_ABORT) return;
+  if (mp == NAV_ABORT) return exit_menu;
   goto start;
 
 cleanup:
@@ -987,7 +991,9 @@ bool menu(void) {
     lcd_cursor(false);
     if (!action) continue;
     lcd_clear();
-    if      (mp == 1) menu_browse_files();
+    if      (mp == 1) {
+      if (menu_browse_files()) break;
+    }
     else if (mp == 2) menu_device_number();
     else if (mp == 3) menu_set_clock();
     else if (mp == 4) menu_select_bus();
