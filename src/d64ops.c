@@ -481,7 +481,7 @@ uint8_t d64_bam_commit(void) {
   if (bam_buffer2)
     res |= bam_buffer2->cleanup(bam_buffer2);
 
-  return 0;
+  return res;
 }
 
 /**
@@ -2069,12 +2069,74 @@ static void format_dnp_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t
 }
 
 static void format_d80_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf) {
-  // TODO: implement D80 format
+  uint8_t last_track = get_param(part, LAST_TRACK);
+  uint8_t bam_sector = D80_BAM_SECTOR;
+
+  /* The 8050 and 8250 share the layout: each BAM sector describes up to
+     50 tracks. Rebuild the whole sector, including unused entries, so a
+     quick format also discards stale BAM headers and allocation bits. */
+  for (uint8_t first = 1; first <= last_track; first += 50) {
+    uint8_t end = first + 50;
+    uint8_t *trackmap;
+
+    if (end > last_track)
+      end = last_track + 1;
+
+    if (move_bam_window(part, first, BAM_FREECOUNT, &trackmap))
+      return;
+
+    memset(bam_buffer->data, 0, 256);
+    bam_buffer->data[0] = end > last_track ? D80_DIR_TRACK : D80_BAM_TRACK;
+    bam_buffer->data[1] = end > last_track ? 1 : bam_sector + D80_BAM_INTERLEAVE;
+    bam_buffer->data[2] = 'C';
+    bam_buffer->data[4] = first;
+    bam_buffer->data[5] = end;
+
+    for (uint8_t t = first; t < end; t++) {
+      uint8_t sectors = sectors_per_track(part, t);
+      *trackmap++ = sectors;
+      for (uint8_t s = 0; s < sectors; s++)
+        trackmap[s >> 3] |= 1 << (s & 7);
+      trackmap += D80_BAM_BITFIELD_BYTES;
+    }
+    bam_buffer->mustflush = 1;
+    bam_sector += D80_BAM_INTERLEAVE;
+  }
+
+  /* Only the BAM sectors on track 38 and 39/0, 39/1 are allocated.
+     The remaining sectors of track 38 are available for file data. */
+  for (uint8_t s = D80_BAM_SECTOR; s < bam_sector; s += D80_BAM_INTERLEAVE)
+    if (allocate_sector(part, D80_BAM_TRACK, s))
+      return;
+  for (uint8_t s = 0; s < 2; s++)
+    if (allocate_sector(part, D80_DIR_TRACK, s))
+      return;
+
+  if (d64_bam_commit())
+    return;
+
+  /* 39/0 links to the BAM, whose last sector links to directory 39/1. */
+  memset(buf->data, 0, 256);
+  buf->data[0] = D80_BAM_TRACK;
+  buf->data[1] = D80_BAM_SECTOR;
+  buf->data[2] = 'C';
+  idbuf[3] = '2';
+  idbuf[4] = 'C';
+  format_copy_label(part, buf->data, name, idbuf);
+  buf->data[0x1f] = 0xa0;
+  buf->data[0x20] = 0xa0;
+
+  if (image_write(part, sector_offset(part, D80_DIR_TRACK, 0),
+                  buf->data, 256, 0))
+    return;
+
+  clear_dir_sector(part, D80_DIR_TRACK, 1, buf->data);
 }
 
 static void format_d82_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf) {
+  /* LAST_TRACK extends the same BAM chain to 38/6 and 38/9. */
+  format_d80_image(part, buf, name, idbuf);
 }
-  // TODO: implement D82 format
 
 static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
   buffer_t *buf;
@@ -2128,13 +2190,17 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
     if (d64_getid(&path, idbuf))
       return;
 
-    /* clear the entire directory track */
-    /* This is not accurate, but I do not care. */
-    t = get_param(part, DIR_TRACK);
-    for (s=0; s < sectors_per_track(part, t); s++) {
-      if (image_write(part, sector_offset(part, t, s),
-                      buf->data, 256, 0))
-        return;
+    /* The 8x50 ROM only replaces the header and first directory sector.
+       Keep the unused directory sectors just like the other file data. */
+    if (partition[part].imagetype != D64_TYPE_D80 &&
+        partition[part].imagetype != D64_TYPE_D82) {
+      /* Retain the existing behaviour for the other image formats. */
+      t = get_param(part, DIR_TRACK);
+      for (s=0; s < sectors_per_track(part, t); s++) {
+        if (image_write(part, sector_offset(part, t, s),
+                        buf->data, 256, 0))
+          return;
+      }
     }
   }
   idbuf[2] = 0xa0;
