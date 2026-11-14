@@ -522,7 +522,7 @@ DSTATUS disk_initialize(BYTE drv) __attribute__ ((weak, alias("sd_initialize")))
  * card. If there were errors during the command transmission
  * disk_state will be set to DISK_ERROR and no retries are made.
  */
-DRESULT sd_read(BYTE drv, BYTE *buffer, DWORD sector, BYTE count) {
+static DRESULT sd_read_once(BYTE drv, BYTE *buffer, DWORD sector, BYTE count) {
   uint8_t  res, sec, errors;
   uint16_t crc, recvcrc;
 
@@ -609,6 +609,22 @@ DRESULT sd_read(BYTE drv, BYTE *buffer, DWORD sector, BYTE count) {
   }
 
   return RES_OK;
+}
+
+/* Recover command/token failures before they reach FatFs, where an image
+ * file's error flag would otherwise prevent subsequent reads until reopened.
+ * Retry the complete request with the original sector address: sd_read_once
+ * converts it to a byte address for non-SDHC cards on each attempt.
+ * CRC failures already have their own retries and do not reset the card.
+ */
+DRESULT sd_read(BYTE drv, BYTE *buffer, DWORD sector, BYTE count) {
+  for (uint8_t attempt = 0; ; attempt++) {
+    DRESULT result = sd_read_once(drv, buffer, sector, count);
+    if (result != RES_ERROR || disk_state != DISK_ERROR || attempt == 2)
+      return result;
+    if (sd_initialize(drv) & (STA_NOINIT | STA_NODISK))
+      return RES_ERROR;
+  }
 }
 DRESULT disk_read(BYTE drv, BYTE *buffer, DWORD sector, BYTE count) __attribute__ ((weak, alias("sd_read")));
 

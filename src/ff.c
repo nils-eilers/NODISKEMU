@@ -132,6 +132,10 @@ BOOL move_window (      /* TRUE: successful, FALSE: failed */
     }
 #endif
     if (sector) {
+      /* A failed transfer may already have overwritten part of the window.
+       * Do not reuse it under the previous sector tag on the next request.
+       */
+      buf->sect = 0;
       if (disk_read(fs->drive, buf->data, sector, 1) != RES_OK)
         return FALSE;
       buf->sect = sector;
