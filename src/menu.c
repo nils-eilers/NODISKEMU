@@ -59,6 +59,7 @@ uint8_t menu_system_enabled = true;
 
 #define MAX_LASTPOS 16
 #define ENTRIES_PER_BLOCK (256 / sizeof(entry_t))
+#define MAX_DIR_ENTRIES (CONFIG_DIR_BUFFERS * 256 / sizeof(entry_t *))
 #define E_DIR   1
 #define E_IMAGE 2
 
@@ -72,7 +73,7 @@ typedef struct {
 static tick_t lcd_timeout;
 static bool lcd_timer;
 static uint16_t lcd_current_screen;
-static entry_t *ep[CONFIG_DIR_BUFFERS * ENTRIES_PER_BLOCK];
+static entry_t **ep;
 
 
 static inline uint8_t min(uint8_t a, uint8_t b) {
@@ -443,7 +444,8 @@ int compare(const void *p1, const void *p2) {
   if (a_is_img && !b_is_img) return -1;
   else if (!a_is_img && b_is_img) return 1;
 
-  return ustrcmp((*a)->filename, (*b)->filename);
+  return strncmp((const char *)(*a)->filename,
+                 (const char *)(*b)->filename, sizeof((*a)->filename));
 }
 
 
@@ -508,15 +510,16 @@ start:
   fat_filesystem = false;
 
   // Allocate one buffer, used to read a single directory entry
-  if ((buf = alloc_system_buffer()) == NULL) return;
+  if ((buf = alloc_system_buffer()) == NULL) goto cleanup;
 
   // Allocate buffers with continuous data segments
   // Stores pointers to directory entries for qsort
-  if ((buf_tbl = alloc_linked_buffers(CONFIG_DIR_BUFFERS)) == NULL) return;
+  if ((buf_tbl = alloc_linked_buffers(CONFIG_DIR_BUFFERS)) == NULL) goto cleanup;
+  ep = (entry_t **)buf_tbl->data;
 
   // Buffers to store the actual diretory entries.
   // Whilst the directory grows, new buffers get allocated and linked
-  if ((buf_cur = alloc_system_buffer()) == NULL) return;
+  if ((buf_cur = alloc_system_buffer()) == NULL) goto cleanup;
   first_buf = buf_cur;
 
   // Allocating buffers affects the LEDs
@@ -527,7 +530,7 @@ start:
   uart_trace(&path.dir, 0, sizeof(dir_t));
   uart_putcrlf();
   uart_flush();
-  if (opendir(&buf->pvt.dir.dh, &path)) return;
+  if (opendir(&buf->pvt.dir.dh, &path)) goto cleanup;
 
   for (;;) {
     if (next_match(&buf->pvt.dir.dh,
@@ -537,6 +540,12 @@ start:
                     buf->pvt.dir.filetype,
                     &dent) == 0)
     {
+      if (entries >= MAX_DIR_ENTRIES) {
+        lcd_clear();
+        lcd_puts_P(PSTR("Too many entries\nfor menu"));
+        wait_anykey();
+        goto cleanup;
+      }
       uint8_t e_flags = 0;
       if (dent.opstype == OPSTYPE_FAT) {
         fat_filesystem = true;
@@ -693,6 +702,14 @@ start:
     if (ep[mp - DIRNAV_OFFSET]->flags & E_DIR ||
         ep[mp - DIRNAV_OFFSET]->flags & E_IMAGE)
     {
+      // The current directory also occupies a slot in the position stack.
+      if (pos_stack >= MAX_LASTPOS - 1) {
+        lcd_clear();
+        lcd_puts_P(PSTR("Maximum menu depth\nreached"));
+        wait_anykey();
+        action = false;
+        continue;
+      }
       clear_command_buffer();
       ustrcpy_P(command_buffer, PSTR("CD:"));
       ustrncpy(command_buffer + 3, ep[mp - DIRNAV_OFFSET]->filename, 16);
@@ -700,11 +717,9 @@ start:
       parse_doscommand();
       clear_command_buffer();
       if (current_error != ERROR_OK) goto cleanup;
-      if (pos_stack < MAX_LASTPOS) {
-        stack_mp[pos_stack]   = mp;
-        stack_my[pos_stack++] = my;
-        printf("pos_stack set to %d\r\n", pos_stack);
-      }
+      stack_mp[pos_stack]   = mp;
+      stack_my[pos_stack++] = my;
+      printf("pos_stack set to %d\r\n", pos_stack);
       goto reread;
     }
   }
@@ -713,10 +728,10 @@ reread:
   free_buffer(buf);
 
   buffer_t *p = buf_tbl;
-  do {
+  while (p != NULL) {
     p->allocated = 0;
     p = p->pvt.buffer.next;
-  } while (p != NULL);
+  }
 
   p = first_buf;
   if (p != NULL) do {
@@ -725,6 +740,7 @@ reread:
   } while (p != NULL);
 
   set_busy_led(false); set_dirty_led(true);
+  ep = NULL;
   active_buffers = save_active_buffers;
   if (mp == NAV_ABORT) return;
   goto start;
