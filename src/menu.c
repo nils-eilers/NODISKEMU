@@ -76,6 +76,22 @@ static bool lcd_timer;
 static uint16_t lcd_current_screen;
 static entry_t **ep;
 
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS && LCD_COLS >= 8 && LCD_LINES >= 4
+/* "SD", 20x16 pixels in a 4x2 arrangement: slots 0..3 above 4..7.
+ * "pet" on the baseline and the superscript plus use normal ROM glyphs.
+ */
+static const PROGMEM uint8_t petsd_logo[8][8] = {
+  {0x00, 0x0f, 0x0f, 0x18, 0x18, 0x18, 0x18, 0x0f},
+  {0x00, 0x1c, 0x1c, 0x06, 0x06, 0x00, 0x00, 0x1c},
+  {0x00, 0x1f, 0x1f, 0x18, 0x18, 0x18, 0x18, 0x18},
+  {0x00, 0x18, 0x18, 0x0c, 0x0c, 0x06, 0x06, 0x06},
+  {0x0f, 0x00, 0x00, 0x18, 0x18, 0x0f, 0x0f, 0x00},
+  {0x1c, 0x06, 0x06, 0x06, 0x06, 0x1c, 0x1c, 0x00},
+  {0x18, 0x18, 0x18, 0x18, 0x18, 0x1f, 0x1f, 0x00},
+  {0x06, 0x06, 0x06, 0x0c, 0x0c, 0x18, 0x18, 0x00}
+};
+#endif
+
 
 static inline uint8_t min(uint8_t a, uint8_t b) {
   if (a < b) return a;
@@ -117,8 +133,24 @@ void lcd_draw_screen(uint16_t screen) {
 
   switch (screen) {
   case SCRN_SPLASH:
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS && LCD_COLS >= 8 && LCD_LINES >= 4
+    lcd_load_custom_chars_P(&petsd_logo[0][0]);
+    lcd_locate((LCD_COLS - 8) / 2 + 3, 0);
+    for (uint8_t i = 0; i < 4; i++) lcd_putc(i);
+    lcd_putc('+');
+    lcd_locate((LCD_COLS - 8) / 2, 1);
+    lcd_puts_P(PSTR("pet"));
+    for (uint8_t i = 4; i < 8; i++) lcd_putc(i);
+    size_t version_length = strlen_P(versionstr);
+    if (version_length <= LCD_COLS)
+      lcd_locate((LCD_COLS - version_length) / 2, LCD_LINES - 1);
+    else
+      lcd_locate(0, LCD_LINES - 2);
+    lcd_puts_P(versionstr);
+#else
     lcd_puts_P(versionstr);
     lcd_locate(0,3); lcd_puts_P(PSTR(HWNAME));
+#endif
     // TODO: if available, print serial number here
     break;
 

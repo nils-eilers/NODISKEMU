@@ -161,6 +161,16 @@ void lcd_home(void) {
   lcd_locate(0,0);
 }
 
+void lcd_load_custom_chars_P(const uint8_t *glyphs) {
+  uint8_t x = lcd_x, y = lcd_y;
+
+  lcd_send_command(0x40); // CGRAM address zero
+  lcd_set_data_mode();
+  for (uint8_t i = 0; i < 64; i++)
+    lcd_write(pgm_read_byte(glyphs + i) & 0x1f);
+  lcd_locate(x, y);       // Restore DDRAM addressing and cursor position
+}
+
 
 void lcd_cursor(bool on) {
   lcd_send_command(on ? 0x0F : 0x0C);
@@ -207,7 +217,7 @@ void lcd_putc(char c) {
   }
 
   lcd_locate(lcd_x, lcd_y);
-  if (c >= ' ')
+  if ((uint8_t)c < 8 || (uint8_t)c >= ' ')
   {
     lcd_set_data_mode();
     lcd_write(c);
