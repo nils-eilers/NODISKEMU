@@ -35,6 +35,9 @@
 
 #include "time.h"
 
+/* Maximum supported year, expressed as years since 1900. */
+#define RTC_MAX_YEAR 199
+
 typedef enum {
   RTC_NOT_FOUND,  /* No RTC present                    */
   RTC_INVALID,    /* RTC present, but contents invalid */

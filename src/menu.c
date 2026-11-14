@@ -334,14 +334,17 @@ void menu_set_clock(void) {
 
 
   switch (rtc_state) {
+    case RTC_OK:
+      read_rtc(&t);
+      if (rtc_state == RTC_OK && t.tm_year <= RTC_MAX_YEAR)
+        break;
+      // Reading may invalidate the RTC, e.g. after a DS3231 century rollover.
+      // fall through
+
     case RTC_INVALID:
       memset(&t, 0, sizeof(t));
       t.tm_mday = 1;
       t.tm_year = 115;
-      break;
-
-    case RTC_OK:
-      read_rtc(&t);
       break;
 
     case RTC_NOT_FOUND:
@@ -369,7 +372,7 @@ void menu_set_clock(void) {
           if (t.tm_mday > days) p = SETCLK_MDAY;
           continue;
         case SETCLK_YEAR:
-          t.tm_year = menu_edit_value(t.tm_year - 100, 15, 99) + 100;
+          t.tm_year = menu_edit_value(t.tm_year - 100, 15, RTC_MAX_YEAR - 100) + 100;
           days = calc_number_of_days(t.tm_mon, t.tm_year);
           if (t.tm_mday > days) p = SETCLK_MDAY;
           continue;

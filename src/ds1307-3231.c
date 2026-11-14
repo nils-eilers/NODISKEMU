@@ -86,14 +86,20 @@ void dsrtc_read(struct tm *time) {
   if (i2c_read_registers(RTC_ADDR, REG_SECOND, 7, &tmp))
     return;
 
+  // The DS3231 century bit denotes 2100 or later, which is unsupported.
+  // Leave the default date intact instead of wrapping the year field.
+  if (dsrtc_type == RTC_3231 && (tmp[REG_MONTH] & 0x80)) {
+    rtc_state = RTC_INVALID;
+    return;
+  }
+
   time->tm_sec  = bcd2int(tmp[REG_SECOND] & 0x7f);
   time->tm_min  = bcd2int(tmp[REG_MINUTE]);
   time->tm_hour = bcd2int(tmp[REG_HOUR]);
   time->tm_mday = bcd2int(tmp[REG_DOM]);
   time->tm_mon  = bcd2int(tmp[REG_MONTH] & 0x7f) - 1;
   time->tm_wday = bcd2int(tmp[REG_DOW]) - 1;
-  time->tm_year = bcd2int(tmp[REG_YEAR]) + 100 * !!(tmp[REG_MONTH] & 0x80) + 100;
-  // FIXME: Leap year calculation is wrong in 2100
+  time->tm_year = bcd2int(tmp[REG_YEAR]) + 100;
 }
 void read_rtc(struct tm *time) __attribute__ ((weak, alias("dsrtc_read")));
 
@@ -101,7 +107,7 @@ void read_rtc(struct tm *time) __attribute__ ((weak, alias("dsrtc_read")));
 void dsrtc_set(struct tm *time) {
   uint8_t tmp[7];
 
-  if (rtc_state == RTC_NOT_FOUND)
+  if (rtc_state == RTC_NOT_FOUND || time->tm_year > RTC_MAX_YEAR)
     return;
 
   tmp[REG_SECOND] = int2bcd(time->tm_sec);
@@ -109,7 +115,7 @@ void dsrtc_set(struct tm *time) {
   tmp[REG_HOUR]   = int2bcd(time->tm_hour);
   tmp[REG_DOW]    = int2bcd(time->tm_wday+1);
   tmp[REG_DOM]    = int2bcd(time->tm_mday);
-  tmp[REG_MONTH]  = int2bcd(time->tm_mon+1) | 0x80 * (time->tm_year >= 200);
+  tmp[REG_MONTH]  = int2bcd(time->tm_mon+1);
   tmp[REG_YEAR]   = int2bcd(time->tm_year % 100);
   i2c_write_registers(RTC_ADDR, REG_SECOND, 7, tmp);
 

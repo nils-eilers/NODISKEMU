@@ -773,6 +773,8 @@ Byte        | Value
 
 
 When the time is set a year less than 80 is interpreted as 20xx.
+Years after 2099 are not supported. T-W rejects out-of-range years with
+31,SYNTAX ERROR,00,00.
 
 - "I"SO 8601 subset: "2008-01-20T13:23:45 SUN"+CHR$(13)
   This format complies with ISO 8601 and adds a day of week
@@ -781,6 +783,7 @@ When the time is set a year less than 80 is interpreted as 20xx.
   the seconds field is ignored and the day of week is calculated
   based on the specified date. The year must always be specified
   including the century if this format is used to set the time.
+  The supported ISO year range is 1980 through 2099.
   To save space, NODISKEMU only accepts this particular date/time
   representation when setting the time with T-WI and no other ISO
   8601-compliant representation.

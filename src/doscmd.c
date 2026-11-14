@@ -1627,6 +1627,10 @@ static void parse_timeread(void) {
   }
 
   read_rtc(&time);
+  if (rtc_state != RTC_OK) {
+    set_error(ERROR_SYNTAX_UNABLE);
+    return;
+  }
   hour = time.tm_hour % 12;
   if (hour == 0) hour = 12;
 
@@ -1714,6 +1718,8 @@ static void parse_timewrite(void) {
 
   struct tm time;
   uint8_t i, *ptr;
+  uint8_t *year_start;
+  uint16_t year;
 
   switch (command_buffer[3]) {
   case 'A': /* ASCII format */
@@ -1735,7 +1741,13 @@ static void parse_timewrite(void) {
     ptr++;
     time.tm_mday = parse_number(&ptr);
     ptr++;
-    time.tm_year = parse_number(&ptr);
+    year_start = ptr;
+    year = parse_number(&ptr);
+    if (year > RTC_MAX_YEAR || ptr - year_start > 3) {
+      set_error(ERROR_SYNTAX_UNABLE);
+      return;
+    }
+    time.tm_year = year;
     ptr++;
     time.tm_hour = parse_number(&ptr);
     ptr++;
@@ -1796,7 +1808,14 @@ static void parse_timewrite(void) {
     }
 
     ptr = command_buffer + 4;
-    time.tm_year = parse_number(&ptr) - 1900;
+    year = parse_number(&ptr);
+    // Check the full year before narrowing it to the 8-bit tm_year field.
+    if (ptr != command_buffer + 8 || year < 1980 ||
+        year > 1900 + RTC_MAX_YEAR) {
+      set_error(ERROR_SYNTAX_UNABLE);
+      return;
+    }
+    time.tm_year = year - 1900;
     ptr++;
     time.tm_mon  = parse_number(&ptr);
     ptr++;
@@ -1824,6 +1843,7 @@ static void parse_timewrite(void) {
 
   /* The CMD drives don't check for validity, we do - partially */
   if (time.tm_mday ==  0 || time.tm_mday >  31 ||
+      time.tm_year > RTC_MAX_YEAR ||
       time.tm_mon  >  11 ||
       time.tm_wday >   6 ||
       time.tm_hour >  23 ||
