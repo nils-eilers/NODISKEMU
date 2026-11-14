@@ -1021,7 +1021,7 @@ Copyright
 
 Copyright (C) 2007-2026  Ingo Korb <ingo@akana.de>
 
-Copyright (C) 2015-2017 Nils Eilers <nils.eilers@gmx.de>
+Copyright (C) 2015-2026 Nils Eilers <nils.eilers@gmx.de>
 
 NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
