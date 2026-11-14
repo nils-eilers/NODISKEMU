@@ -3,6 +3,10 @@
 #---------------- Source code ----------------
 ASMSRC = avr/crc7asm.S avr/timerint.S
 
+ifneq ($(filter 9 10,$(CONFIG_HARDWARE_VARIANT)),)
+  SRC += avr/analog-buttons.c
+endif
+
 ifeq ($(CONFIG_UART_DEBUG),y)
   ASMSRC += avr/uartint.S
 endif

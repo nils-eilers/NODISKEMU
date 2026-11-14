@@ -34,51 +34,32 @@
 
 #if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS || CONFIG_HARDWARE_VARIANT == HW_CBMSDMINI
 
-; Read ADC value and reduce value to 8 bits
-        lds     r24, ADCL       ; read ADC value, LSB first!
-        lds     r25, ADCH
-        subi    r24, lo8(550)   ; reduce value to 8 bits:
-        sbci    r25, hi8(550)   ; r24 = (ADCW-550) >> 1
-        lsr     r25
-        ror     r24
-
-; Start next ADC conversion for next iteration
-        lds     r25, ADCSRA
-        ori     r25, _BV(ADSC)
-        sts     ADCSRA, r25
-
-        cpi     r24, 25         ; no button pressed?
-        brcs    L_no_button
-        cpi     r24, 40         ; PREV
-        brcs    L_PREV
-        cpi     r24, 63         ; NEXT
-        brcs    L_NEXT
-        cpi     r24, 94         ; PN
-        brcs    L_PN
-        cpi     r24, 129        ; SELECT
-        brcs    L_SEL
-        cpi     r24, 168        ; PS
-        brcs    L_PS
-        cpi     r24, 214        ; NS
-        brcs    L_NS
-        ldi     r24, 0b00000111 ; PNS
-        rjmp    L_converted
-
-L_NS:   ldi     r24, 0b00000011
-        rjmp    L_converted
-L_PS:   ldi     r24, 0b00000101
-        rjmp    L_converted
-L_SEL:  ldi     r24, 0b00000001
-        rjmp    L_converted
-L_PN:   ldi     r24, 0b00000110
-        rjmp    L_converted
-L_NEXT: ldi     r24, 0b00000010
-        rjmp    L_converted
-L_PREV: ldi     r24, 0b00000100
-        rjmp    L_converted
-L_no_button:
-        clr     r24
-L_converted:
+; The C sampler performs 10-bit validation, median filtering and hysteresis.
+; Preserve the additional call-clobbered registers and the saved SREG in r0.
+; r24-r29 are already saved by the enclosing ISR. r1 may be nonzero if
+; interrupted between MUL and CLR, so provide and restore the C zero register.
+        push    r0
+        push    r1
+        clr     r1
+        push    r18
+        push    r19
+        push    r20
+        push    r21
+        push    r22
+        push    r23
+        push    r30
+        push    r31
+        call    analog_buttons_poll
+        pop     r31
+        pop     r30
+        pop     r23
+        pop     r22
+        pop     r21
+        pop     r20
+        pop     r19
+        pop     r18
+        pop     r1
+        pop     r0
 
 #else
 #if CONFIG_HARDWARE_VARIANT == HW_PETSD

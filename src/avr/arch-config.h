@@ -50,6 +50,11 @@
 /* Return value of buttons_read() */
 typedef uint8_t rawbutton_t;
 
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS || CONFIG_HARDWARE_VARIANT == HW_CBMSDMINI
+#  define HAVE_ANALOG_BUTTONS
+#  include "analog-buttons.h"
+#endif
+
 /* EEPROMFS: offset and size must be multiples of 4 */
 /* to actually enable it, CONFIG_HAVE_EEPROMFS must be set in config */
 #  define EEPROMFS_OFFSET     512
@@ -1034,24 +1039,7 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 
 
 static inline void buttons_init(void) {
-  // AVcc as voltage reference, select ADC7
-  ADMUX |= _BV(REFS0) | _BV(MUX0) | _BV(MUX1) | _BV(MUX2);
-
-  // disable digitial input register for PA7
-  DIDR0 |= _BV(ADC7D);
-
-  // divider 128: 16 MHz / 128 = 125 kHz (50 kHz..200 kHz)
-  // enable ADC
-  ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN);
-
-  // Start first conversion
-  ADCSRA |= _BV(ADSC);
-
-  // Wait for conversion to complete
-  while (ADCSRA & _BV(ADSC));
-
-  // dummy read of result
-  (void) ADCW;
+  analog_buttons_init();
 }
 
 
@@ -1125,11 +1113,13 @@ static inline void early_board_init(void) {
 static inline void late_board_init(void) {
   lcd_init();
   lcd_bootscreen();
-  buttons_init();
-  uint16_t buttons = ADCW;
-  if (buttons > 580 && buttons < 630) {
+  if (!menu_system_enabled) return; // Held address jumpers are not boot keys.
+  uint8_t buttons = analog_buttons_boot_keys();
+  (void)get_key_press(KEY_ANY);
+  (void)get_key_rpt(KEY_ANY);
+  if (buttons == KEY_PREV) {
     board_diagnose();
-  } else if (buttons >= 630 && buttons < 680) {
+  } else if (buttons == KEY_NEXT) {
     lcd_set_brightness(0xFF);                       // maximum brightness
     menu_adjust_contrast();
   }
@@ -1278,24 +1268,7 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 
 
 static inline void buttons_init(void) {
-  // AVcc as voltage reference, select ADC7
-  ADMUX |= _BV(REFS0) | _BV(MUX0) | _BV(MUX1) | _BV(MUX2);
-
-  // disable digitial input register for PA7
-  DIDR0 |= _BV(ADC7D);
-
-  // divider 128: 16 MHz / 128 = 125 kHz (50 kHz..200 kHz)
-  // enable ADC
-  ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN);
-
-  // Start first conversion
-  ADCSRA |= _BV(ADSC);
-
-  // Wait for conversion to complete
-  while (ADCSRA & _BV(ADSC));
-
-  // dummy read of result
-  (void) ADCW;
+  analog_buttons_init();
 }
 
 
@@ -1368,11 +1341,13 @@ static inline void early_board_init(void) {
 static inline void late_board_init(void) {
   lcd_init();
   lcd_bootscreen();
-  buttons_init();
-  uint16_t buttons = ADCW;
-  if (buttons > 580 && buttons < 630) {
+  if (!menu_system_enabled) return; // Held address jumpers are not boot keys.
+  uint8_t buttons = analog_buttons_boot_keys();
+  (void)get_key_press(KEY_ANY);
+  (void)get_key_rpt(KEY_ANY);
+  if (buttons == KEY_PREV) {
     board_diagnose();
-  } else if (buttons >= 630 && buttons < 680) {
+  } else if (buttons == KEY_NEXT) {
     lcd_set_brightness(0xFF);                       // maximum brightness
     menu_adjust_contrast();
   }

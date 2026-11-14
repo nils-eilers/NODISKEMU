@@ -421,6 +421,9 @@ Devices with built-in LCD support (read: petSD+) will show their
 diagnostics on the display if the menu system is enabled (see also:
 XM command).
 
+On petSD+, keep PREV held until the startup check has
+completed to enter diagnostics, or NEXT to adjust LCD contrast.
+
 The further notes apply only for devices without built-in LCD support
 (read: old petSD and pet microSD):
 
