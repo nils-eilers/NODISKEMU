@@ -332,7 +332,7 @@ static inline void ieee488_SetDC(bool x) {
 
 #else
 static inline void ieee488_InitDC(void)  {}
-static inline void ieee488_SetDC(bool x) {}
+static inline void ieee488_SetDC(bool x) {(void)x;}
 #endif
 
 // --------------------------------------------------------------------------------------

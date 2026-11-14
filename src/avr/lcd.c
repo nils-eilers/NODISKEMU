@@ -217,6 +217,8 @@ void lcd_putc(char c) {
 
 
 static int lcd_putchar(char c, FILE *stream) {
+  (void)stream;
+
   lcd_putc(c);
   return 0;
 }

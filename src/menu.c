@@ -615,8 +615,7 @@ start:
     lcd_clear();
     for (i = 0; i < LCD_LINES; i++) {
       lcd_locate(0, i);
-      int8_t y = mp - my + i;
-      if (y < 0) return; // should not happen!
+      uint16_t y = mp - my + i;
       if (y < DIRNAV_OFFSET) {
         rom_menu_browse(y);
       } else {

@@ -66,6 +66,8 @@ static inline void bus_init(void) {
 #include "spi.h"
 
 static inline void set_clock_prescaler(uint8_t bus) {
+  (void)bus;
+
   uart_flush();
   if (active_bus == IEC) clock_prescale_set(clock_div_2);    // Set clock to 16/2 =  8 MHz
   else                   clock_prescale_set(clock_div_1);    // Set clock to        16 MHz
