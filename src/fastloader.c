@@ -53,6 +53,7 @@
 #include "ustring.h"
 #include "wrapops.h"
 #include "fastloader.h"
+#include "menu.h"
 
 fastloaderid_t detected_loader = FL_NONE;
 
@@ -79,6 +80,20 @@ volatile uint8_t parallel_rxflag;
 
 /* Small helper for fastloaders that need to detect disk changes */
 uint8_t __attribute__((unused)) check_keys(void) {
+#ifdef CONFIG_ONBOARD_DISPLAY
+  /* Called while a fast loader such as GEOS is waiting for the computer.
+     The loader never returns to the main loop, so the normal menu cannot
+     run. SELECT opens the file browser here instead, so a different disk
+     image can be mounted. The bus lines are left exactly as the loader set
+     them, so the loader carries on where it was once the browser closes. */
+  if (menu_system_enabled && get_key_press(KEY_SEL)) {
+    menu_browse_files();
+    lcd_draw_screen(SCRN_STATUS);
+    update_leds();
+  }
+  /* Drop NEXT/PREV presses so they don't open the menu after the loader exits */
+  get_key_press(KEY_NEXT | KEY_PREV);
+#endif
 #if 0
   // FIXME: fastloader key_pressed
   /* Check for disk changes etc. */

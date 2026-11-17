@@ -49,6 +49,7 @@ void lcd_update_disk_status(void);
 void handle_lcd(void);
 bool handle_buttons(void);
 bool menu(void);
+bool menu_browse_files(void);
 void menu_adjust_contrast(void);
 void menu_adjust_brightness(void);
 
