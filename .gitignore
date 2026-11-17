@@ -16,3 +16,4 @@ obj-*
 config
 # Qt Creator project files:
 NODISKEMU.*
+releases/
