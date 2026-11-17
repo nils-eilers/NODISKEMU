@@ -53,6 +53,34 @@
 #define xcbi cbi
 #endif
 
+/* Bit-pair output for the GEOS/Wheels (and shared bit-pair) routines.
+   These routines build the whole output port value in a register and
+   write it with OUT, using "a data bit of 1 pulls the line low".
+   That matches inverted output hardware directly. On non-inverted
+   hardware (petSD+, cbmSD-mini) the same line levels need the opposite
+   bit values, so:
+     release_clk_data reg   - put CLOCK and DATA into the released state
+     put_bit src, n, opin   - pull output pin opin low if bit n of src is 1
+   Both variants take exactly the same number of cycles (1 and 2), so
+   the hand-counted timing of the protocols is unchanged. */
+#ifdef IEC_OUTPUTS_INVERTED
+        .macro release_clk_data reg
+        andi    \reg, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        .endm
+        .macro put_bit src, n, opin
+        bst     \src, \n
+        bld     r19, \opin
+        .endm
+#else
+        .macro release_clk_data reg
+        ori     \reg, (IEC_OBIT_DATA|IEC_OBIT_CLOCK)
+        .endm
+        .macro put_bit src, n, opin
+        sbrc    \src, \n
+        andi    r19, ~(1 << (\opin))
+        .endm
+#endif
+
 /* Timing offsets for JiffyDos read/write */
 /* These values are added to the delayloop counter before the first      */
 /* bitpair read/write. They were determined experimentally to center the */
@@ -617,11 +645,9 @@ tdbitloop2:
 send_bits_to_clk_data:
         ; rcall                  ; 3
         in   r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1 - read & mask unused IEC port lines
-        andi r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ) ; 1
-        bst  r0, 0               ; 1 - take bit 0 (lsb)
-        bld  r19, IEC_OPIN_CLOCK ; 1 - for CLOCK line
-        bst  r0, 1               ; 1 - take bit 1
-        bld  r19, IEC_OPIN_DATA  ; 1 - for DATA line
+        release_clk_data r19     ; 1 - read & mask unused IEC port lines
+        put_bit r0, 0, IEC_OPIN_CLOCK ; 2 - bit 0 -> clock
+        put_bit r0, 1, IEC_OPIN_DATA ; 2 - bit 1 -> data
         out  _SFR_IO_ADDR(IEC_OUTPUT), r19 ; 1 - output the bit pair
 
         lsr  r0                  ; 1
@@ -1257,7 +1283,7 @@ geos_send_byte_common:
 
         ;; preserve non-IEC lines on IEC_OUTPUT port
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ) ; 1
+        release_clk_data r19 ; 1
         mov     r0, r19             ; 1
         ret                         ; 4
 
@@ -1270,10 +1296,8 @@ geos_send_byte_1mhz:
         rcall   geos_send_byte_common ; 7
 
         ;; prepare bits 3+1
-        bst     r24, 3              ; 1 - read bit 3
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 1              ; 1 - read bit 1
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 3, IEC_OPIN_CLOCK ; 2 - bit 3 -> clock
+        put_bit r24, 1, IEC_OPIN_DATA ; 2 - bit 1 -> data
 
         ;; delay (1MHz speeder)
         delay_cycles 18*8 - 14
@@ -1289,10 +1313,8 @@ geos_send_byte_2mhz:
         rcall   geos_send_byte_common ; 7
 
         ;; prepare bits 3+1
-        bst     r24, 3              ; 1 - read bit 3
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 1              ; 1 - read bit 1
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 3, IEC_OPIN_CLOCK ; 2 - bit 3 -> clock
+        put_bit r24, 1, IEC_OPIN_DATA ; 2 - bit 1 -> data
 
         ;; delay (2MHz speeder)
 1:      delay_cycles 9*8 - 12
@@ -1303,10 +1325,8 @@ geos_send_byte_tail:
 
         ;; prepare bits 2+0
         mov     r19, r0             ; 1
-        bst     r24, 2              ; 1 - read bit 2
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 0              ; 1 - read bit 0
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 2, IEC_OPIN_CLOCK ; 2 - bit 2 -> clock
+        put_bit r24, 0, IEC_OPIN_DATA ; 2 - bit 0 -> data
 
         ;; delay
         delay_cycles 10*8 - 6
@@ -1317,10 +1337,8 @@ geos_send_byte_tail:
         ;; prepare bits 4+5
         com     r24                 ; 1 - remaining bits are sent with high=1
         mov     r19, r0             ; 1
-        bst     r24, 4              ; 1 - read bit 4
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 5              ; 1 - read bit 5
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 4, IEC_OPIN_CLOCK ; 2 - bit 4 -> clock
+        put_bit r24, 5, IEC_OPIN_DATA ; 2 - bit 5 -> data
 
         ;; delay
         delay_cycles 11*8 - 7
@@ -1330,10 +1348,8 @@ geos_send_byte_tail:
 
         ;; prepare bits 6+7
         mov     r19, r0             ; 1
-        bst     r24, 6              ; 1 - read bit 6
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 7              ; 1 - read bit 7
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 6, IEC_OPIN_CLOCK ; 2 - bit 6 -> clock
+        put_bit r24, 7, IEC_OPIN_DATA ; 2 - bit 7 -> data
 
         ;; delay
         delay_cycles 12*8 - 6
@@ -1410,10 +1426,8 @@ wheels_send_byte_1mhz:
 wheels_nibble:
         ;; prepare bits 3+1 (7+5)
         mov     r19, r0             ; 1
-        bst     r24, 3              ; 1 - read bit 3
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 1              ; 1 - read bit 1
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 3, IEC_OPIN_CLOCK ; 2 - bit 3 -> clock
+        put_bit r24, 1, IEC_OPIN_DATA ; 2 - bit 1 -> data
 
         ;; delay
         delay_cycles 9*8 - 15
@@ -1423,10 +1437,8 @@ wheels_nibble:
 
         ;; prepare bits 2+0 (6+4)
         mov     r19, r0             ; 1
-        bst     r24, 2              ; 1 - read bit 2
-        bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
-        bst     r24, 0              ; 1 - read bit 0
-        bld     r19, IEC_OPIN_DATA  ; 1 - store in data bit
+        put_bit r24, 2, IEC_OPIN_CLOCK ; 2 - bit 2 -> clock
+        put_bit r24, 0, IEC_OPIN_DATA ; 2 - bit 0 -> data
 
         ;; delay
         delay_cycles 14*8 - 6
