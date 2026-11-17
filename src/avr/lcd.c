@@ -191,19 +191,30 @@ void lcd_init(void) {
 
   modesafe_delay_ms(LCD_DELAY_MS_POWERON);
 
-  LCD_PORT_DATA &= 0xF0;
-  LCD_PORT_DATA |= 0x03;       // send init value 0x30 three times
-  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
-  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_SHORT);
-  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_SHORT);
+  /* A reset of the MCU does not reset the display. It may still be in
+   * 4-bit mode, half way through a byte. The sequence is run twice so a
+   * display that is out of step after the first pass is back in step
+   * after the second (WS0010-type OLEDs otherwise show garbage after
+   * the reset button). */
+  for (uint8_t pass = 0; pass < 2; pass++) {
+    LCD_PORT_DATA &= 0xF0;
+    LCD_PORT_DATA |= 0x03;     // send init value 0x30 three times
+    lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
+    lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
+    lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
 
-  LCD_PORT_DATA &= 0xF2;       // select bus width: 4-bit
-  lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
+    LCD_PORT_DATA &= 0xF2;     // select bus width: 4-bit
+    lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
+  }
 
   lcd_write(0x28);             // 4 bit, 2 line, 5x7 dots
-  lcd_write(0x0C);             // Display on, cursor off
-  lcd_write(0x06);             // Automatic increment, no shift
+  lcd_write(0x17);             // WS0010 OLED: internal power on, character
+                               // mode (an LCD just moves its cursor)
+  modesafe_delay_ms(LCD_DELAY_MS_SHORT);
+  lcd_write(0x08);             // Display off while it is cleared
   lcd_clear();
+  lcd_write(0x06);             // Automatic increment, no shift
+  lcd_write(0x0C);             // Display on, cursor off
 
   lcd_stdout = &lcd_stream;
 }
