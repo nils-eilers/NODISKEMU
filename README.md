@@ -1042,6 +1042,21 @@ release binaries. If you want to compile NODISKEMU for a custom hardware
 you may have to edit arch-config.h too to change the port definitions.
 
 
+Onboard LCD and OLED displays
+----------------------------
+
+The same firmware supports HD44780-compatible character LCDs and WS0010
+character OLEDs on the existing 4-bit display connection. No display-type
+configuration is required. The initialization sequence restores the bus
+alignment after a processor reset, including an interrupted byte transfer.
+It waits 500 ms for display power stabilization before sending commands.
+
+The WS0010 power-on/character-mode command is also a valid cursor movement
+on an HD44780; the following display clear restores its address and shift.
+Controller behavior is covered by `testcode/lcd-init/test_init.py`; physical
+display modules still require hardware verification.
+
+
 Copyright
 ---------
 

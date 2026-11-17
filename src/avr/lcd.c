@@ -46,7 +46,7 @@
 #define LCD_DELAY_US_DATA       92
 #define LCD_DELAY_US_E          40
 
-#define LCD_DELAY_MS_POWERON    30
+#define LCD_DELAY_MS_POWERON   500
 #define LCD_DELAY_MS_CLEAR      20
 #define LCD_DELAY_MS_LONG       10
 #define LCD_DELAY_MS_SHORT       2
@@ -83,7 +83,7 @@ static FILE *lcd_stdout;
   else                                  \
     _delay_ms(x*2);
 #else
-#define modesafe_delay_us(x) _delay_us(x)
+#define modesafe_delay_ms(x) _delay_ms(x)
 #endif
 
 
@@ -190,13 +190,14 @@ void lcd_lines_init(void) {
 
 void lcd_init(void) {
   lcd_lines_init();
-  modesafe_delay_ms(50);
+  /* WS0010 specifies 500 ms for power stabilization; HD44780 is faster. */
+  modesafe_delay_ms(LCD_DELAY_MS_POWERON);
 
-  /* A reset of the MCU does not reset the display. It may still be in
-   * 4-bit mode, half way through a byte. The sequence is run twice so a
-   * display that is out of step after the first pass is back in step
-   * after the second (WS0010-type OLEDs otherwise show garbage after
-   * the reset button). */
+  /* A processor reset leaves the display powered and may interrupt a
+   * byte. Establish the HD44780 4-bit interface by instruction, retaining
+   * the repeated startup sequence for modules that miss an early nibble.
+   * The WS0010 synchronizer below then establishes its byte alignment.
+   */
   for (uint8_t pass = 0; pass < 2; pass++) {
     LCD_PORT_DATA &= 0xF0;
     LCD_PORT_DATA |= 0x03;     // send init value 0x30 three times
@@ -208,11 +209,30 @@ void lcd_init(void) {
     lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
   }
 
+  /* WS0010 has a separate nibble synchronizer: five zero nibbles make
+   * the next transfer the LOW half of a command. HD44780 sees two NOPs
+   * and also waits for a low nibble. Complete 0x02 (return home) on both
+   * before sending full bytes. This keeps the same firmware usable with
+   * either controller, without a display-type setting or a readback pin.
+   * See WS0010 vB, "Repeated procedures for an 4-bit bus interface".
+   */
+  LCD_PORT_DATA &= 0xF0;
+  for (uint8_t nibble = 0; nibble < 5; nibble++) {
+    lcd_pulse_e();
+    modesafe_delay_ms(LCD_DELAY_MS_LONG);
+  }
+  LCD_PORT_DATA |= 0x02;
+  lcd_pulse_e();
+  modesafe_delay_ms(LCD_DELAY_MS_LONG);
+
   lcd_set_command_mode();
   lcd_write(0x28);             // 4 bit, 2 line, 5x7 dots
   modesafe_delay_ms(LCD_DELAY_MS_SHORT);
-  lcd_write(0x17);             // WS0010 OLED: internal power on, character
-                               // mode (an LCD just moves its cursor)
+  /* WS0010: character mode and internal power on. HD44780 decodes this
+   * as cursor-right (the low two bits are ignored); lcd_clear() below
+   * restores the address and display shift, so it is safe for LCDs too.
+   */
+  lcd_write(0x17);
   modesafe_delay_ms(LCD_DELAY_MS_SHORT);
   lcd_write(0x08);             // Display off while it is cleared
   modesafe_delay_ms(LCD_DELAY_MS_SHORT);
