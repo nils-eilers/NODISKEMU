@@ -94,8 +94,10 @@ int main(void) {
   /* Reset the display before any card access, even if filesystem setup hangs.
    * A processor reset does not necessarily reset the powered LCD module.
    */
+#ifndef HAVE_EARLY_LCD_INIT
   lcd_init();
   lcd_bootscreen();
+#endif
 #ifdef CONFIG_ONBOARD_DISPLAY
   /* Keep the splash visible before card initialization can replace it. */
   tick_t splash_end = getticks() + MS_TO_TICKS(5000);
@@ -137,10 +139,12 @@ int main(void) {
   late_board_init();
   lcd_draw_screen(SCRN_STATUS);
 
-  for (;;) {
-    if (menu_system_enabled)
-      lcd_refresh();
-    else {
+  for (uint8_t first_pass = 1;; first_pass = 0) {
+    if (menu_system_enabled) {
+      /* The status screen was drawn immediately before the first pass. */
+      if (!first_pass)
+        lcd_refresh();
+    } else {
       lcd_clear();
       lcd_printf("#%d", device_address);
     }

@@ -54,8 +54,12 @@ static void fake_delay_ms(unsigned ms) {
 
 static bool menu_system_enabled;
 static unsigned diagnoses, contrasts, event_reads;
-static void lcd_init(void) {}
-static void lcd_bootscreen(void) {}
+static unsigned lcd_initializations, splash_screens;
+static void lcd_init(void) {lcd_initializations++;}
+static void lcd_bootscreen(void) {
+  assert(lcd_initializations == splash_screens + 1);
+  splash_screens++;
+}
 static void board_diagnose(void) {diagnoses++;}
 static void menu_adjust_contrast(void) {contrasts++;}
 static void lcd_set_brightness(uint8_t value) {assert(value==0xff);}
@@ -64,6 +68,11 @@ static uint8_t get_key_rpt(uint8_t mask) {assert(mask==KEY_ANY); event_reads++; 
 #include "boot_under_test.h"
 
 int main(void) {
+  /* petSD+ starts the display early; cbmSD-mini uses common initialization. */
+  early_petsd();
+  assert(lcd_initializations == 1 && splash_screens == 1);
+  early_mini();
+  assert(lcd_initializations == 1 && splash_screens == 1);
   /* All eight button/jumper combinations have a distinct nominal result. */
   for (unsigned i=0;i<8;i++) {
     assert(analog_buttons_decode(centers[i],ANALOG_BUTTON_INVALID)==masks[i]);

@@ -20,6 +20,14 @@ for board in ('petsd', 'mini'):
         depth += (arch[pos] == '{') - (arch[pos] == '}')
         pos += 1
     boot_functions.append(arch[start:pos].replace('late_board_init(', f'boot_{board}('))
+    early_start = arch.rfind('static inline void early_board_init(void)', 0, start)
+    early_end = arch.index('{', early_start) + 1
+    depth = 1
+    while depth:
+        depth += (arch[early_end] == '{') - (arch[early_end] == '}')
+        early_end += 1
+    boot_functions.append(arch[early_start:early_end].replace(
+        'early_board_init(', f'early_{board}('))
 
 with tempfile.TemporaryDirectory(prefix='analog-buttons-') as tmp:
     tmp = Path(tmp)

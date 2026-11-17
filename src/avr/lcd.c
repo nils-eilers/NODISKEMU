@@ -177,19 +177,20 @@ void lcd_cursor(bool on) {
 }
 
 
-void lcd_init(void) {
-  // LCD ports as output
-  LCD_DDR_E  |= _BV(LCD_PIN_E);
-  LCD_DDR_RS |= _BV(LCD_PIN_RS);
-  LCD_DDR_DATA |= 0x0F;
-
-  // Start with all outputs low
+/* Drive the display lines low before enabling their output drivers. */
+void lcd_lines_init(void) {
   LCD_PORT_E &= ~_BV(LCD_PIN_E);
+  LCD_DDR_E |= _BV(LCD_PIN_E);
   LCD_PORT_RS &= ~_BV(LCD_PIN_RS);
+  LCD_DDR_RS |= _BV(LCD_PIN_RS);
   LCD_PORT_DATA &= 0xF0;
+  LCD_DDR_DATA |= 0x0F;
+}
 
 
-  modesafe_delay_ms(LCD_DELAY_MS_POWERON);
+void lcd_init(void) {
+  lcd_lines_init();
+  modesafe_delay_ms(50);
 
   /* A reset of the MCU does not reset the display. It may still be in
    * 4-bit mode, half way through a byte. The sequence is run twice so a
@@ -207,14 +208,19 @@ void lcd_init(void) {
     lcd_pulse_e(); modesafe_delay_ms(LCD_DELAY_MS_LONG);
   }
 
+  lcd_set_command_mode();
   lcd_write(0x28);             // 4 bit, 2 line, 5x7 dots
+  modesafe_delay_ms(LCD_DELAY_MS_SHORT);
   lcd_write(0x17);             // WS0010 OLED: internal power on, character
                                // mode (an LCD just moves its cursor)
   modesafe_delay_ms(LCD_DELAY_MS_SHORT);
   lcd_write(0x08);             // Display off while it is cleared
+  modesafe_delay_ms(LCD_DELAY_MS_SHORT);
   lcd_clear();
   lcd_write(0x06);             // Automatic increment, no shift
+  modesafe_delay_ms(LCD_DELAY_MS_SHORT);
   lcd_write(0x0C);             // Display on, cursor off
+  modesafe_delay_ms(LCD_DELAY_MS_SHORT);
 
   lcd_stdout = &lcd_stream;
 }
@@ -247,6 +253,9 @@ static int lcd_putchar(char c, FILE *stream) {
 
 void lcd_printf_P(const char *fmt, ...) {
   va_list args;
+  /* Initialization can be skipped by a board or not have run yet. */
+  if (lcd_stdout == NULL)
+    return;
   va_start(args, fmt);
   vfprintf_P(lcd_stdout, fmt, args);
   va_end(args);

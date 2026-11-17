@@ -1097,6 +1097,7 @@ static inline uint8_t device_hw_address(void) {
 
 
 #  ifdef CONFIG_ONBOARD_DISPLAY
+#    define HAVE_EARLY_LCD_INIT
 #    define HAVE_EARLY_BOARD_INIT
 #    define HAVE_LATE_BOARD_INIT
 #include "lcd.h"
@@ -1104,6 +1105,9 @@ static inline uint8_t device_hw_address(void) {
 #include "timer.h"
 
 static inline void early_board_init(void) {
+  /* Show the splash before peripheral initialization can stall. */
+  lcd_init();
+  lcd_bootscreen();
 #ifdef CONFIG_HAVE_IEC
   IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
   IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)

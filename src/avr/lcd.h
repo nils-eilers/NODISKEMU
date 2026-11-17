@@ -40,6 +40,7 @@ extern uint8_t lcd_contrast;
 extern uint8_t lcd_brightness;
 
 void lcd_init(void);
+void lcd_lines_init(void);
 void lcd_clear(void);
 void lcd_home(void);
 void lcd_locate(uint8_t x, uint8_t y);
@@ -58,6 +59,7 @@ uint8_t lcd_set_brightness(uint8_t contrast);
 #else
 
 static inline void lcd_init(void) {}
+static inline void lcd_lines_init(void) {}
 static inline void lcd_clear(void) {}
 static inline void lcd_home(void) {}
 static inline void lcd_locate(uint8_t x, uint8_t y) {}
