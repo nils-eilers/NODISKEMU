@@ -1123,6 +1123,12 @@ Releases have an even minor version number (1.2.0, 1.4.0, ...). An odd
 minor version number marks a pre-release of the next even one: 1.3.0,
 1.3.1, 1.3.2, ... are release candidates for 1.4.0.
 
+Release candidates carry bootloader version 0. The bootloader installs
+them over any other firmware and installs any release over them, so you
+can go back from a release candidate using only an SD card. Delete the
+binary from the card after updating: a release candidate left on the card
+is installed again at the next start if a different firmware is present.
+
 
 Pre-built binaries
 ------------------

@@ -191,7 +191,11 @@ CSTANDARD = -std=gnu99
 CDEFS = -DF_CPU=$(CONFIG_MCU_FREQ)UL
 
 # Calculate bootloader version
+# Odd minor versions are release candidates. Version 0 lets the bootloader
+# install them over any firmware and any release over them.
 ifdef PRERELEASE
+BOOT_VERSION := 0
+else ifneq ($(filter 1 3 5 7 9,$(MINOR)),)
 BOOT_VERSION := 0
 else
 BOOT_VERSION := 0x$(MAJOR)$(MINOR)$(PATCHLEVEL)$(FIX)
