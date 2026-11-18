@@ -161,8 +161,35 @@ void lcd_home(void) {
   lcd_locate(0,0);
 }
 
+#ifdef CONFIG_MULTIDRIVE
+/* The HD44780 shows an arrow instead of a tilde. Character 0 of the  */
+/* CGRAM becomes a tilde, as in short FAT names like ARCHON~1.D64.    */
+/* The splash logo uses the same CGRAM slots, so the glyph is loaded  */
+/* on first use and again after the logo has replaced it.             */
+#define LCD_CHAR_TILDE 0
+
+static const PROGMEM uint8_t lcd_tilde[8] = {
+  0x00, 0x00, 0x08, 0x15, 0x02, 0x00, 0x00, 0x00
+};
+
+static bool lcd_tilde_loaded;
+
+static void lcd_define_tilde(void) {
+  lcd_send_command(0x40 | (LCD_CHAR_TILDE << 3));   // CGRAM address
+  lcd_set_data_mode();
+  for (uint8_t i = 0; i < sizeof(lcd_tilde); i++)
+    lcd_write(pgm_read_byte(lcd_tilde + i));
+  lcd_tilde_loaded = true;
+}
+#endif
+
+
 void lcd_load_custom_chars_P(const uint8_t *glyphs) {
   uint8_t x = lcd_x, y = lcd_y;
+
+#ifdef CONFIG_MULTIDRIVE
+  lcd_tilde_loaded = false;
+#endif
 
   lcd_send_command(0x40); // CGRAM address zero
   lcd_set_data_mode();
@@ -253,10 +280,18 @@ void lcd_putc(char c) {
     lcd_y++;
   }
 
+#ifdef CONFIG_MULTIDRIVE
+  if (c == '~' && !lcd_tilde_loaded)
+    lcd_define_tilde();             // lcd_locate restores DDRAM addressing
+#endif
+
   lcd_locate(lcd_x, lcd_y);
   if ((uint8_t)c < 8 || (uint8_t)c >= ' ')
   {
     lcd_set_data_mode();
+#ifdef CONFIG_MULTIDRIVE
+    if (c == '~') c = LCD_CHAR_TILDE;
+#endif
     lcd_write(c);
     lcd_x++;
   }
