@@ -264,6 +264,7 @@ There are up to three ways to change the device address:
 1. U0 command (see there)
 2. Hardware (jumper or switches)
 3. LCD menu system
+4. PETSD.CFG, see "Multiple drives" below
 
 Hardware jumpers are only read after power-on, a reset or power
 cycle is required to apply any changes.
@@ -335,6 +336,115 @@ using the assigned partition number is of course still
 available. Additionally "$!" will always load the directory of the
 EEPROM file system partition (if available), similar to "$1" to "$9"
 for partitions 1 to 9.
+
+
+Multiple drives
+---------------
+
+With the build option `CONFIG_MULTIDRIVE` (enabled in `config-petSD+`),
+a single device can answer on up to 4 bus addresses at the same time.
+Each address is either a single drive or a dual drive with drive 0 and
+drive 1, like a CBM 4040, 8050 or 8250, so there are up to 8 drives on
+one SD card. Each drive points to a directory or to a disk image.
+
+Without a configuration file nothing changes: the device behaves like a
+single drive at the address stored in the EEPROM.
+
+### PETSD.CFG ###
+
+The drives are configured in the text file `PETSD.CFG` in the root
+directory of the card, one line per drive:
+
+```
+# petSD+ drives
+8:0  = /
+8:1  = /GAMES
+9:0  = /WORK
+10:0 = /CBM8050/DISK1.D80
+10:1 = /CBM8050/DISK2.D80
+```
+
+Rules:
+
+- `address:drive = path`, blanks around `:` and `=` are allowed.
+- Addresses 4 to 30, drive 0 or 1, at most 4 devices.
+- A device needs drive 0, a line for drive 1 makes it a dual drive.
+- The path starts at the root directory of the card and names a
+  directory or a disk image. Upper and lower case do not matter, the
+  maximum length is 112 characters.
+- Names longer than 16 characters must be given as 8.3 short name,
+  e.g. `/COLLEC~1`.
+- Every line that does not match this pattern is a comment, usually
+  starting with `#`. A comment after a path is not possible, it would
+  become part of the path.
+- If a drive is listed twice, the first line counts.
+- The file is read at power-on and after every card change.
+
+If the path of drive 1 does not exist, that drive reports
+`74,DRIVE NOT READY`. If the path of drive 0 does not exist, the whole
+device is missing. If no device is usable, the legacy single drive mode
+with the EEPROM address is used.
+
+### Drive numbers ###
+
+With `PETSD.CFG` active, the number in front of the colon is the drive
+number of the addressed device, not a partition number:
+
+| Command                 | Meaning                                   |
+|-------------------------|-------------------------------------------|
+| `$`                     | directory of drive 0, then drive 1        |
+| `$1`                    | directory of drive 1                      |
+| `NAME` (read)           | search drive 0, then drive 1              |
+| `NAME` (write)          | drive 0                                   |
+| `0:NAME`, `1:NAME`      | drive 0 or drive 1                        |
+| `1:NAME` (single drive) | `74,DRIVE NOT READY`                      |
+
+This matches CBM DOS 2 dual drives, so the BASIC 4 commands work as
+expected, e.g. `DIRECTORY D1,U8`, `DLOAD"NAME",D1,U8` or
+`COPY D0,"OLD" TO D1,"NEW",U8`. The `C` command copies between drive 0
+and drive 1 of the same device. Copying between two different bus
+addresses needs the computer in between.
+
+`CD`, `MD` and `RD` take the drive number right after the command:
+`CD1:GAMES`, `CD1/GAMES/ACTION/`, `CD1//` (root of the card),
+`CD1:_` (left arrow, one level up). Without a number they work on drive 0. Each drive
+keeps its own current directory until the next card change or reset,
+`PETSD.CFG` is not changed by `CD`.
+
+### Changing addresses ###
+
+- `U0>` and `M-W 119` change the address of the addressed device
+  (both drives) until the next card change or reset. An address that is
+  already taken or outside 4..30 is rejected with `30,SYNTAX ERROR`.
+- `XW` stores the settings in the EEPROM as before. With `PETSD.CFG`
+  active, it also writes the new address of the addressed device into
+  the file. Only the address field of the lines of that device changes,
+  everything else stays as it is. The file is written to `PETSD.TMP`
+  first and then renamed.
+
+### LCD menu ###
+
+The main menu entry "Configure drives" replaces "Change device number".
+It lists all drives and allows to add and remove devices and drive 1,
+to change addresses and to choose a directory or disk image with a file
+browser. "Save and exit" writes `PETSD.CFG` line by line, own comments
+and blank lines are kept. Without `PETSD.CFG`, changing only the address
+stores it in the EEPROM as before and no file is created.
+
+With `PETSD.CFG` active, "Browse files" first asks for the drive to
+browse.
+
+### Card change ###
+
+After a card change the configuration of the new card is read. A
+command that is still pending for an address which does not exist on
+the new card is discarded.
+
+### Limitations ###
+
+- Fast loaders (IEC only) are untested with more than one drive.
+- The disk swap list (`XS`, `AUTOSWAP.LST`, swap buttons) is not adapted
+  to multiple drives and closes the open files of all devices.
 
 
 x00 files
@@ -986,6 +1096,9 @@ a different setting than the one active at the time the
 configuration was saved. You can think of this feature as
 changing the meaning of one specific setting of the jumpers
 to a different address if this sounds logical enough to you.
+
+With a PETSD.CFG active, XW also writes the new address of the
+addressed device into that file, see "Multiple drives".
 
 The "hardware overrides software overrides hardware" priority
 was chosen to allow accessing NODISKEMU even when it is soft-
