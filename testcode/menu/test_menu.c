@@ -54,7 +54,7 @@ typedef struct {
 
 static buffer_t buffers[CONFIG_BUFFER_COUNT];
 static union { void *align; uint8_t bytes[CONFIG_BUFFER_COUNT * 256]; } storage;
-static uint8_t active_buffers, current_error, current_part, command_length;
+static uint8_t active_buffers, dirty_buffers, current_error, current_part, command_length;
 static uint8_t command_buffer[120];
 static struct { dir_t current_dir; } partition[1];
 static unsigned files, too_many, too_deep, waits, displayed;
