@@ -443,8 +443,8 @@ the new card is discarded.
 ### Limitations ###
 
 - Fast loaders (IEC only) are untested with more than one drive.
-- The disk swap list (`XS`, `AUTOSWAP.LST`, swap buttons) is not adapted
-  to multiple drives and closes the open files of all devices.
+- The disk swap list (`XS`, `AUTOSWAP.LST`, swap buttons) is currently
+  disabled in the firmware, with or without multiple drives.
 
 
 x00 files
@@ -1114,6 +1114,14 @@ This commands returns the extended version string which
 consists of the version, the processor type set at build time
 and the suffix of the configuration file (usually corresponds
 to the short name of the hardware NODISKEMU was compiled for).
+
+
+Version numbers
+---------------
+
+Releases have an even minor version number (1.2.0, 1.4.0, ...). An odd
+minor version number marks a pre-release of the next even one: 1.3.0,
+1.3.1, 1.3.2, ... are release candidates for 1.4.0.
 
 
 Pre-built binaries
