@@ -238,12 +238,12 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
   uint8_t found = 0;
 
   /* open directory */
-  res = l_opendir(&partition[path->part].fatfs, path->dir.fat, &dh);
+  res = l_opendir(partition[path->part].fatfs, path->dir.fat, &dh);
   if (res != FR_OK)
     return 0;
 
   /* open file */
-  res = f_open(&partition[path->part].fatfs, &fh, filename, FA_WRITE | FA_CREATE_ALWAYS);
+  res = f_open(partition[path->part].fatfs, &fh, filename, FA_WRITE | FA_CREATE_ALWAYS);
   if (res != FR_OK)
     return 0;
 
@@ -306,8 +306,8 @@ static void set_changelist_internal(path_t *path, uint8_t *filename, uint8_t at_
     return;
 
   /* Open a new swaplist */
-  partition[path->part].fatfs.curr_dir = path->dir.fat;
-  res = f_open(&partition[path->part].fatfs, &swaplist, filename, FA_READ | FA_OPEN_EXISTING);
+  partition[path->part].fatfs->curr_dir = path->dir.fat;
+  res = f_open(partition[path->part].fatfs, &swaplist, filename, FA_READ | FA_OPEN_EXISTING);
   if (res != FR_OK) {
     parse_error(res,1);
     return;

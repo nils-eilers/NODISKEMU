@@ -424,7 +424,7 @@ static void save_capbuffer(void) {
   *ptr++ = 'p';
   *ptr   = 0;
 
-  FRESULT res = f_open(&partition[0].fatfs, &datafile, ops_scratch, FA_WRITE | FA_CREATE_ALWAYS);
+  FRESULT res = f_open(partition[0].fatfs, &datafile, ops_scratch, FA_WRITE | FA_CREATE_ALWAYS);
   if (res == FR_OK) {
     UINT byteswritten;
 
@@ -1129,9 +1129,9 @@ static void parse_getpartition(void) {
     *outptr++ = *inptr++;
 
   ptr += 16;
-  *ptr++ = (partition[part].fatfs.fatbase >> 16) & 0xff;
-  *ptr++ = (partition[part].fatfs.fatbase >>  8) & 0xff;
-  *ptr++ = (partition[part].fatfs.fatbase      ) & 0xff;
+  *ptr++ = (partition[part].fatfs->fatbase >> 16) & 0xff;
+  *ptr++ = (partition[part].fatfs->fatbase >>  8) & 0xff;
+  *ptr++ = (partition[part].fatfs->fatbase      ) & 0xff;
   ptr += 5; // reserved bytes
 
   uint32_t size;
@@ -1142,7 +1142,7 @@ static void parse_getpartition(void) {
 
   } else {
     /* return the size of the FAT partition */
-    size = (partition[part].fatfs.max_clust - 1) * partition[part].fatfs.csize;
+    size = (partition[part].fatfs->max_clust - 1) * partition[part].fatfs->csize;
   }
 
   if (size > 0xffffff)
@@ -1193,18 +1193,18 @@ static void handle_memread(void) {
 
   if (address >= 0x8000 && rom_filename[0] != 0) {
     /* Try to use the rom file as data source - look in the current dir first */
-    partition[current_part].fatfs.curr_dir = partition[current_part].current_dir.fat;
-    res = f_open(&partition[current_part].fatfs, &romfile, rom_filename, FA_READ | FA_OPEN_EXISTING);
+    partition[current_part].fatfs->curr_dir = partition[current_part].current_dir.fat;
+    res = f_open(partition[current_part].fatfs, &romfile, rom_filename, FA_READ | FA_OPEN_EXISTING);
 
     if (res != FR_OK) {
       /* Not successful, try root dir */
-      partition[current_part].fatfs.curr_dir = 0;
-      res = f_open(&partition[current_part].fatfs, &romfile, rom_filename, FA_READ | FA_OPEN_EXISTING);
+      partition[current_part].fatfs->curr_dir = 0;
+      res = f_open(partition[current_part].fatfs, &romfile, rom_filename, FA_READ | FA_OPEN_EXISTING);
 
       if (res != FR_OK) {
         /* Not successful, try root of drive 0 */
-        partition[0].fatfs.curr_dir = 0;
-        res = f_open(&partition[0].fatfs, &romfile, rom_filename, FA_READ | FA_OPEN_EXISTING);
+        partition[0].fatfs->curr_dir = 0;
+        res = f_open(partition[0].fatfs, &romfile, rom_filename, FA_READ | FA_OPEN_EXISTING);
 
         if (res != FR_OK)
           /* No file available - use internal table */

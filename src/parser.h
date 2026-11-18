@@ -31,6 +31,14 @@
 #include "dirent.h"
 #include "ff.h"
 
+/* Number of FAT volumes (partitions on the card) that can be mounted */
+#ifndef CONFIG_MAX_VOLUMES
+#  define CONFIG_MAX_VOLUMES CONFIG_MAX_PARTITIONS
+#endif
+
+/* FatFs volume structures, partition[].fatfs points into this array */
+extern FATFS fatvol[CONFIG_MAX_VOLUMES];
+
 extern partition_t partition[CONFIG_MAX_PARTITIONS];
 extern uint8_t current_part;
 extern uint8_t max_part;

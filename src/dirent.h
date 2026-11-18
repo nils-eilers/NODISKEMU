@@ -247,7 +247,8 @@ struct param_s {
 
 /**
  * struct partition_t - per-partition data
- * @fatfs      : FatFs per-drive/partition structure
+ * @fatfs      : pointer to the FatFs volume structure this partition lives on
+ *               (several partitions may share one volume, see fatvol[])
  * @current_dir: current directory on FAT as seen by NODISKEMU
  * @fop        : pointer to the fileops structure for this partition
  * @imagehandle: file handle of a mounted image file on this partition
@@ -257,7 +258,7 @@ struct param_s {
  * This data structure holds per-partition data.
  */
 typedef struct partition_s {
-  FATFS                  fatfs;
+  FATFS                  *fatfs;
   dir_t                  current_dir;
   const struct fileops_s *fop;
   FIL                    imagehandle;

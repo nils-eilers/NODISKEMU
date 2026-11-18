@@ -40,6 +40,7 @@
 #include "ustring.h"
 #include "parser.h"
 
+FATFS fatvol[CONFIG_MAX_VOLUMES];
 partition_t partition[CONFIG_MAX_PARTITIONS];
 uint8_t current_part;
 uint8_t max_part;
