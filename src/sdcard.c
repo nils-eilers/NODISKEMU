@@ -362,14 +362,20 @@ DSTATUS sd_initialize(BYTE drv) {
   if (drv >= MAX_CARDS)
     return STA_NOINIT | STA_NODISK;
 
-#ifdef CONFIG_ONBOARD_DISPLAY
-  lcd_clear();
-  lcd_puts_P(PSTR("Initializing\nSD card..."));
-#endif
-
   /* skip initialisation if the card is not present */
   if (sd_status(drv) & STA_NODISK)
     return sd_status(drv);
+
+#ifdef CONFIG_ONBOARD_DISPLAY
+  /* Mounting probes every partition and initializes the card each time. */
+  /* Only announce it if the card is new or had an error.                */
+  bool show_progress = (disk_state != DISK_OK);
+
+  if (show_progress) {
+    lcd_clear();
+    lcd_puts_P(PSTR("Initializing\nSD card..."));
+  }
+#endif
 
 #ifdef SPI_LATE_INIT
   /* JLB: Should be in sd_init, but some uIEC versions have
@@ -500,7 +506,8 @@ DSTATUS sd_initialize(BYTE drv) {
   disk_state = DISK_OK;
 
 #ifdef CONFIG_ONBOARD_DISPLAY
-  lcd_draw_screen(SCRN_STATUS);
+  if (show_progress)
+    lcd_draw_screen(SCRN_STATUS);
 #endif
 
   return sd_status(drv);
