@@ -56,6 +56,7 @@
 #include "wrapops.h"
 #include "doscmd.h"
 #include "menu.h"
+#include "multidrive.h"
 
 #define CURSOR_RIGHT 0x1d
 
@@ -645,7 +646,9 @@ static void parse_rmdir(void) {
   /* Parse partition number */
   str = command_buffer+2;
   part = parse_partition(&str);
-  if (*str != ':') {
+  if (part >= max_part) {
+    set_error(ERROR_DRIVE_NOT_READY);
+  } else if (*str != ':') {
     set_error(ERROR_SYNTAX_NONAME);
   } else {
     path.part = part;
@@ -942,6 +945,14 @@ static void parse_changepart(void) {
   uint8_t *str;
   uint8_t part;
 
+#ifdef CONFIG_MULTIDRIVE
+  /* partitions are drives in multi-drive mode */
+  if (md_active) {
+    set_error(ERROR_SYNTAX_UNKNOWN);
+    return;
+  }
+#endif
+
   if (command_buffer[1] == 'P') {
     clean_cmdbuffer();
     str  = command_buffer + 2;
@@ -1161,7 +1172,7 @@ static void parse_initialize(void) {
   if (disk_state != DISK_OK)
     set_error_ts(ERROR_READ_NOSYNC,18,0);
   else
-    free_multiple_buffers(FMB_USER_CLEAN);
+    free_multiple_buffers(FMB_DEV_USER_CLEAN);
 }
 
 
@@ -1292,6 +1303,16 @@ static void handle_memwrite(void) {
 
   if (address == 119) {
     /* Change device address, 1541 style */
+#ifdef CONFIG_MULTIDRIVE
+    if (md_active) {
+      /* only the addressed device, until the next restart */
+      if (md_set_address(command_buffer[6] & 0x1f))
+        set_error(ERROR_SYNTAX_UNKNOWN);
+      else
+        lcd_update_device_addr();
+      return;
+    }
+#endif
     device_address = command_buffer[6] & 0x1f;
     display_address(device_address);
     return;
@@ -1414,6 +1435,10 @@ static void parse_new(void) {
 
   name = command_buffer+1;
   part = parse_partition(&name);
+  if (part >= max_part) {
+    set_error(ERROR_DRIVE_NOT_READY);
+    return;
+  }
   name = ustrchr(command_buffer, ':');
   if (name++ == NULL) {
     set_error(ERROR_SYNTAX_NONAME);
@@ -1889,6 +1914,16 @@ static void parse_user(void) {
     if ((command_buffer[2] & 0x1f) == 0x1e &&
         command_buffer[3] >= 4 &&
         command_buffer[3] <= 30) {
+#ifdef CONFIG_MULTIDRIVE
+      if (md_active) {
+        /* only the addressed device, until the next restart */
+        if (md_set_address(command_buffer[3]))
+          set_error(ERROR_SYNTAX_UNKNOWN);
+        else
+          lcd_update_device_addr();
+        break;
+      }
+#endif
       device_address = command_buffer[3];
       display_address(device_address);
       lcd_update_device_addr();
@@ -1939,7 +1974,7 @@ static void parse_user(void) {
   case 10:
     /* Reset - technically hard-reset */
     /* Faked because Ultima 5 sends UJ. */
-    free_multiple_buffers(FMB_USER);
+    free_multiple_buffers(FMB_DEV_USER);
     set_error(ERROR_DOSVERSION);
     break;
 
@@ -1981,7 +2016,7 @@ static void parse_xcommand(void) {
           globalflags |= EXTENSION_HIDING;
       }
     }
-    set_error_ts(ERROR_STATUS,device_address,0);
+    set_error_ts(ERROR_STATUS,MD_CUR_ADDRESS,0);
     break;
 
   case 'D':
@@ -1989,7 +2024,7 @@ static void parse_xcommand(void) {
 #ifdef NEED_DISKMUX
     str = command_buffer+2;
     if(*str == '?') {
-      set_error_ts(ERROR_STATUS,device_address,1);
+      set_error_ts(ERROR_STATUS,MD_CUR_ADDRESS,1);
       break;
     }
     num = parse_number(&str);
@@ -2074,7 +2109,11 @@ static void parse_xcommand(void) {
   case 'W':
     /* Write configuration */
     write_configuration();
-    set_error_ts(ERROR_STATUS,device_address,0);
+    set_error_ts(ERROR_STATUS,MD_CUR_ADDRESS,0);
+#ifdef CONFIG_MULTIDRIVE
+    /* address changes of the addressed device go to PETSD.CFG */
+    md_store_address();
+#endif
     break;
 
   case 'R':
@@ -2108,7 +2147,7 @@ static void parse_xcommand(void) {
       else
         globalflags &= (uint8_t)~POSTMATCH;
 
-      set_error_ts(ERROR_STATUS,device_address,0);
+      set_error_ts(ERROR_STATUS,MD_CUR_ADDRESS,0);
     }
     break;
 
@@ -2141,7 +2180,7 @@ static void parse_xcommand(void) {
       set_error(ERROR_SYNTAX_UNKNOWN);
     else
       /* plain X by itself, show the extended status */
-      set_error_ts(ERROR_STATUS, device_address, 0);
+      set_error_ts(ERROR_STATUS, MD_CUR_ADDRESS, 0);
 
     break;
   }

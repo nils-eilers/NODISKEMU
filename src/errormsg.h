@@ -33,6 +33,8 @@
 #include "progmem.h"
 
 extern uint8_t current_error;
+extern uint8_t current_error_track;   /* track and sector of current_error */
+extern uint8_t current_error_sector;
 extern uint8_t error_buffer[CONFIG_ERROR_BUFFER_SIZE];
 
 

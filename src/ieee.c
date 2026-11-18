@@ -61,6 +61,7 @@
 #include "timer.h"
 #include "menu.h"
 #include "eeprom-conf.h"
+#include "multidrive.h"
 
 // -------------------------------------------------------------------------
 //  Global variables
@@ -741,6 +742,7 @@ void handle_ieee488(void) {
   uint8_t cmd, cmd3, cmd4;              // Received IEEE-488 command byte
   uint8_t Device;                       // device number from cmd byte
   uint8_t sa;                           // secondary address from cmd byte
+  uint8_t dev;                          // index of the addressed device
 
   // If IFC was received during last iteration, reset bus interface now
   if (ieee488_IFCreceived || ieee488_CheckIFC()) ieee488_ProcessIFC();
@@ -801,7 +803,8 @@ void handle_ieee488(void) {
     else if (cmd == IEEE_UNTALK)          // UNTALK
       ieee488_Untalk();
     else if (cmd3 == IEEE_LISTEN) {       // LISTEN
-      if (Device == device_address) {
+      if ((dev = md_find(Device)) != MD_NO_DEVICE) {
+        md_select(dev);
         uart_puts_P(PSTR("LSN\r\n"));
         ieee488_ListenActive = Device;
         // Override talk state because we can't be
@@ -809,7 +812,8 @@ void handle_ieee488(void) {
         ieee488_TalkingDevice = 0;
       }
     } else if (cmd3 == IEEE_TALK) {       // TALK
-      if (Device == device_address) {
+      if ((dev = md_find(Device)) != MD_NO_DEVICE) {
+        md_select(dev);
         uart_puts_P(PSTR("TLK\r\n"));
         ieee488_TalkingDevice = Device;
         // Override listen state because we can't be
@@ -829,7 +833,7 @@ void handle_ieee488(void) {
       if (ieee488_ListenActive) {
         printf("CLO %d\r\n", sa);
         if (sa == 15) {
-          free_multiple_buffers(FMB_USER_CLEAN);
+          free_multiple_buffers(FMB_DEV_USER_CLEAN);
           ieee488_TalkingDevice = 0;
         } else {
           buffer_t *buf;
@@ -869,6 +873,20 @@ void handle_card_changes(void) {
       // Disk state indicated an error, try to recover by initialising
       filesystem_init(PRESERVE_CURRENT_DIRECTORY);
     }
+#ifdef CONFIG_MULTIDRIVE
+    // The addressed device is not on the new card: forget the
+    // pending command and stop listening or talking for it
+    if (md_device_lost &&
+        (ieee488_ListenActive || ieee488_TalkingDevice)) {
+      ieee488_ListenActive = ieee488_TalkingDevice = 0;
+      command_received = open_active = false;
+      command_length = 0;
+    }
+    if (md_layout_changed) {
+      md_layout_changed = 0;
+      lcd_refresh();
+    }
+#endif
   }
 #endif
 }

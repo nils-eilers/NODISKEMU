@@ -39,6 +39,7 @@
 #include "flags.h"
 #include "ustring.h"
 #include "parser.h"
+#include "multidrive.h"
 
 FATFS fatvol[CONFIG_MAX_VOLUMES];
 partition_t partition[CONFIG_MAX_PARTITIONS];
@@ -99,23 +100,47 @@ static uint8_t tolower_pet(uint8_t c) {
  * This function parses the partition number from the file name
  * specified in buf and advances buf to point at the first character
  * that isn't part of the number. Returns a 0-based partition number.
+ *
+ * In multi-drive mode the number is the CBM drive number (0 or 1) of
+ * the current device instead and md_drive_given tells if a number was
+ * present at all. An invalid drive returns a value >= max_part.
  */
 uint8_t parse_partition(uint8_t **buf) {
   uint8_t part=0;
+#ifdef CONFIG_MULTIDRIVE
+  uint8_t digits=0;
+#endif
 
 #ifdef CONFIG_HAVE_EEPROMFS
   /* special case: recognize "!:" as alias for the eefs partition */
   if (eefs_partition != 255 && (*buf)[0] == '!' && (*buf)[1] == ':') {
     (*buf) += 2;
+#ifdef CONFIG_MULTIDRIVE
+    md_drive_given = 1;
+#endif
     return eefs_partition;
   }
 #endif
 
   while (isdigit(**buf) || **buf == ' ' || **buf == '@') {
-    if(isdigit(**buf))
+    if(isdigit(**buf)) {
       part=part*10+(**buf-'0');
+#ifdef CONFIG_MULTIDRIVE
+      digits=1;
+#endif
+    }
     (*buf)++;
   }
+
+#ifdef CONFIG_MULTIDRIVE
+  if (md_active) {
+    md_drive_given = digits;
+    if (!digits)
+      return current_part;
+    return md_drive_slot(part);
+  }
+#endif
+
   if (part == 0)
     return current_part;
   else
@@ -392,6 +417,9 @@ uint8_t parse_path(uint8_t *in, path_t *path, uint8_t **name, uint8_t for_cd) {
     }
   } else {
     /* No :, use current dir/path */
+#ifdef CONFIG_MULTIDRIVE
+    md_drive_given = 0;
+#endif
     path->part = current_part;
     path->dir  = partition[current_part].current_dir;
   }

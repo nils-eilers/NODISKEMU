@@ -45,6 +45,7 @@
 #include "fastloader.h"
 #include "fastloader-ll.h"
 #include "fatops.h"
+#include "multidrive.h"
 #include "flags.h"
 #include "fileops.h"
 #include "filesystem.h"
@@ -92,6 +93,22 @@ uint8_t iec_check_atn(void) {
     } else
       return 0;
 }
+
+#ifdef HAVE_HOTPLUG
+/* disk_state stays DISK_REMOVED while no card is inserted: */
+/* the idle loop handles the removal only once              */
+static uint8_t iec_removal_handled;
+
+/* Redraw the display if a card change changed the bus addresses */
+static void iec_card_changed(void) {
+#ifdef CONFIG_MULTIDRIVE
+  if (md_layout_changed) {
+    md_layout_changed = 0;
+    lcd_refresh();
+  }
+#endif
+}
+#endif
 
 /* IEC ATN handler (if Dreamload is not used) */
 #ifndef CONFIG_LOADER_DREAMLOAD
@@ -162,7 +179,7 @@ static int16_t _iec_getc(void) {
 
         /* If there is a delay before the last bit, the controller uses JiffyDOS */
         if (!(iec_data.iecflags & JIFFY_ACTIVE) && has_timed_out()) {
-          if ((val>>1) < 0x60 && ((val>>1) & 0x1f) == device_address) {
+          if ((val>>1) < 0x60 && md_find((val>>1) & 0x1f) != MD_NO_DEVICE) {
             /* If it's for us, notify controller that we support Jiffy too */
             set_data(0);
             delay_us(101); // nlq says 405us, but the code shows only 101
@@ -578,6 +595,24 @@ void iec_mainloop(void) {
       while (IEC_ATN) {
         handle_lcd();
         handle_buttons();
+#ifdef HAVE_HOTPLUG
+        /* Handle a card change right away to update the display.  */
+        /* The ATN interrupt answers the bus meanwhile. Errors are  */
+        /* still retried when the next command arrives.             */
+        enum diskstates state = disk_state;
+
+        if (state != DISK_REMOVED)
+          iec_removal_handled = 0;
+        if (state == DISK_CHANGED ||
+            (state == DISK_REMOVED && !iec_removal_handled)) {
+          iec_removal_handled = (state == DISK_REMOVED);
+          set_busy_led(1);
+          free_multiple_buffers(FMB_ALL);
+          filesystem_init(0);
+          update_leds();
+          iec_card_changed();
+        }
+#endif
         system_sleep();
       }
 
@@ -632,10 +667,14 @@ void iec_mainloop(void) {
         if (iec_data.device_state == DEVICE_TALK)
           iec_data.device_state = DEVICE_IDLE;
         iec_data.bus_state = BUS_ATNFINISH;
-      } else if (cmd == 0x40+device_address) { /* Talk */
+      } else if ((cmd & 0xe0) == 0x40 &&
+                 md_find(cmd & 0x1f) != MD_NO_DEVICE) { /* Talk */
+        md_select(md_find(cmd & 0x1f));
         iec_data.device_state = DEVICE_TALK;
         iec_data.bus_state = BUS_FORME;
-      } else if (cmd == 0x20+device_address) { /* Listen */
+      } else if ((cmd & 0xe0) == 0x20 &&
+                 md_find(cmd & 0x1f) != MD_NO_DEVICE) { /* Listen */
+        md_select(md_find(cmd & 0x1f));
         iec_data.device_state = DEVICE_LISTEN;
         iec_data.bus_state = BUS_FORME;
       } else if ((cmd & 0x60) == 0x60) {
@@ -657,7 +696,7 @@ void iec_mainloop(void) {
         if ((cmd & 0xf0) == 0xe0) {
           if (cmd == 0xef) {
             /* Close all buffers if sec. 15 is closed */
-            if (free_multiple_buffers(FMB_USER_CLEAN)) {
+            if (free_multiple_buffers(FMB_DEV_USER_CLEAN)) {
               /* The 1571 error generator/handler always jumps to BUS_CLEANUP */
               iec_data.bus_state = BUS_CLEANUP;
               break;
@@ -754,6 +793,7 @@ void iec_mainloop(void) {
 #ifdef HAVE_HOTPLUG
         /* This seems to be a nice point to handle card changes */
         if (disk_state != DISK_OK) {
+          iec_removal_handled = 0;
           set_busy_led(1);
           /* If the disk was changed the buffer contents are useless */
           if (disk_state == DISK_CHANGED || disk_state == DISK_REMOVED) {
@@ -765,10 +805,17 @@ void iec_mainloop(void) {
             filesystem_init(1);
 
           update_leds();
+          iec_card_changed();
+
+          /* The addressed device is not on the new card: forget the command */
+          if (md_device_lost)
+            iec_data.iecflags &= (uint8_t)~COMMAND_RECVD;
         }
 #endif
 
-        if (iec_data.secondary_address == 0x0f) {
+        if (!(iec_data.iecflags & COMMAND_RECVD)) {
+          /* command dropped above */
+        } else if (iec_data.secondary_address == 0x0f) {
           /* Command channel */
           parse_doscommand();
         } else {

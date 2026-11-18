@@ -53,6 +53,7 @@
 #include "utils.h"
 #include "wrapops.h"
 #include "fileops.h"
+#include "multidrive.h"
 
 /* ------------------------------------------------------------------------- */
 /*  global variables                                                         */
@@ -266,6 +267,35 @@ static uint8_t dir_footer(buffer_t *buf) {
   buf->lastused = 31;
   buf->sendeoi  = 1;
 
+#ifdef CONFIG_MULTIDRIVE
+  if (buf->pvt.dir.nextpart != MD_NO_SLOT) {
+    /* Dual drive without drive number: continue with drive 1 like */
+    /* CBM DOS 2 does. The footer line ends at offset 29, the next */
+    /* header (without load address) follows directly.             */
+    path_t   path;
+    uint8_t *hdr = buf->data + 30;
+
+    path.part = buf->pvt.dir.nextpart;
+    path.dir  = partition[path.part].current_dir;
+    buf->pvt.dir.nextpart = MD_NO_SLOT;
+
+    memcpy_P(hdr, dirheader + 2, sizeof(dirheader) - 2);
+    hdr[HEADER_OFFSET_DRIVE - 2] = md_slot_drive(path.part);
+
+    if (dir_label(&path, hdr + HEADER_OFFSET_NAME - 2) ||
+        disk_id(&path, hdr + HEADER_OFFSET_ID - 2) ||
+        opendir(&buf->pvt.dir.dh, &path)) {
+      /* drive 1 not readable, end the listing after drive 0 */
+      buf->data[30] = buf->data[31] = 0;   // restore end of program
+      set_error(ERROR_OK);
+      return 0;
+    }
+
+    buf->lastused = 30 + sizeof(dirheader) - 2 - 1;
+    buf->sendeoi  = 0;
+  }
+#endif
+
   return 0;
 }
 
@@ -478,6 +508,9 @@ static void load_directory(uint8_t secondary) {
   buf->secondary = secondary;
   buf->read      = 1;
   buf->lastused  = 31;
+#ifdef CONFIG_MULTIDRIVE
+  buf->pvt.dir.nextpart = MD_NO_SLOT;
+#endif
 
   if (command_length > 2 && secondary == 0) {
     if(command_buffer[1]=='=') {
@@ -595,6 +628,12 @@ static void load_directory(uint8_t secondary) {
       }
     } else {
       /* Command string is two characters long, parse the drive */
+#ifdef CONFIG_MULTIDRIVE
+      md_drive_given = 1;
+      if (md_active && isdigit(command_buffer[1]))
+        path.part = md_drive_slot(command_buffer[1] - '0');
+      else
+#endif
       if (command_buffer[1] == '0')
         path.part = current_part;
       else if (isdigit(command_buffer[1]))
@@ -606,6 +645,9 @@ static void load_directory(uint8_t secondary) {
       else {
         buf->pvt.dir.matchstr = command_buffer + 1;
         path.part = current_part;
+#ifdef CONFIG_MULTIDRIVE
+        md_drive_given = 0;
+#endif
       }
       if (path.part >= max_part) {
         set_error(ERROR_DRIVE_NOT_READY);
@@ -616,6 +658,9 @@ static void load_directory(uint8_t secondary) {
         return;
     }
   } else {
+#ifdef CONFIG_MULTIDRIVE
+    md_drive_given = 0;
+#endif
     path.part = current_part;
     path.dir  = partition[path.part].current_dir;  // if you do not do this, get_label will fail below.
     if (opendir(&buf->pvt.dir.dh, &path))
@@ -663,6 +708,18 @@ scandone:
 
     /* set partition number */
     buf->data[HEADER_OFFSET_DRIVE] = path.part+1;
+
+#ifdef CONFIG_MULTIDRIVE
+    if (md_active) {
+      /* CBM style: the header line number is the drive number */
+      buf->data[HEADER_OFFSET_DRIVE] = md_slot_drive(path.part);
+
+      /* no drive number on a dual drive: list drive 1 afterwards */
+      if (md_is_dual() && !md_drive_given &&
+          path.part == md_drive_slot(0))
+        buf->pvt.dir.nextpart = md_drive_slot(1);
+    }
+#endif
 
     /* read directory name */
     if (dir_label(&path, buf->data+HEADER_OFFSET_NAME))
@@ -955,6 +1012,9 @@ void file_open(uint8_t secondary) {
   if (parse_path(command_buffer, &path, &fname, 0))
       return;
 
+#ifdef CONFIG_MULTIDRIVE
+ match_again:
+#endif
   /* Filename matching */
   if (opendir(&matchdh, &path))
     return;
@@ -974,6 +1034,19 @@ void file_open(uint8_t secondary) {
     if (mode == OPEN_WRITE || secondary == 1)
       break;
   } while (res == 0);
+
+#ifdef CONFIG_MULTIDRIVE
+  /* Dual drive, no drive number, reading: CBM DOS 2 searches drive 1 */
+  /* too if the file is not on drive 0. Not if a path was given.      */
+  if (res < 0 && md_is_dual() && !md_drive_given &&
+      mode != OPEN_WRITE && secondary != 1 && filetype != TYPE_REL &&
+      path.part == md_drive_slot(0) && !ustrchr(command_buffer, '/')) {
+    path.part = md_drive_slot(1);
+    path.dir  = partition[path.part].current_dir;
+    md_drive_given = 1;    // search drive 1 only once
+    goto match_again;
+  }
+#endif
 
   if(res && filetype == TYPE_REL && !recordlen) {
     set_error(ERROR_SYNTAX_UNABLE);

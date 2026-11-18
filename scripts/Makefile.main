@@ -105,6 +105,10 @@ ifeq ($(CONFIG_HAVE_EEPROMFS),y)
   SRC += eeprom-fs.c eefs-ops.c
 endif
 
+ifeq ($(CONFIG_MULTIDRIVE),y)
+  SRC += multidrive.c
+endif
+
 # Additional hardware support enabled in the config file
 ifdef CONFIG_ADD_SD
   SRC += sdcard.c

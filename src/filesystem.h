@@ -30,6 +30,7 @@
 
 #include "fatops.h"
 #include "eefs-ops.h"
+#include "multidrive.h"
 
 // FIXME: Move d64_invalidate and maybe p00cache_invalidate out of fatops.c?
 
@@ -37,12 +38,14 @@
 /* initialize both fatops and eefs */
 static inline void filesystem_init(uint8_t preserve_dir) {
   fatops_init(preserve_dir);
+  md_init();
   eefsops_init();
 }
 #else
 /* just fatops */
 static inline void filesystem_init(uint8_t preserve_dir) {
   fatops_init(preserve_dir);
+  md_init();
 }
 #endif
 

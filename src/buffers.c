@@ -32,6 +32,7 @@
 #include "ff.h"
 #include "led.h"
 #include "buffers.h"
+#include "multidrive.h"
 
 dh_t    matchdh;
 uint8_t ops_scratch[33];
@@ -97,6 +98,9 @@ static void alloc_specific_buffer(uint8_t bufnum) {
     buffers[bufnum].secondary = BUFFER_SEC_SYSTEM;
     buffers[bufnum].refill    = callback_dummy;
     buffers[bufnum].cleanup   = callback_dummy;
+#ifdef CONFIG_MULTIDRIVE
+    buffers[bufnum].device    = md_cur;
+#endif
   }
 }
 
@@ -243,6 +247,10 @@ uint8_t free_multiple_buffers(uint8_t flags) {
 
   for (i=0;i<CONFIG_BUFFER_COUNT;i++) {
     if (buffers[i].allocated) {
+#ifdef CONFIG_MULTIDRIVE
+      if ((flags & FMB_CUR_DEVICE) && buffers[i].device != md_cur)
+        continue;
+#endif
       if ((flags & FMB_FREE_SYSTEM) || buffers[i].secondary < BUFFER_SEC_SYSTEM) {
         if ((flags & FMB_FREE_STICKY) || !buffers[i].sticky) {
           if (flags & FMB_CLEAN) {
@@ -270,8 +278,16 @@ buffer_t *find_buffer(uint8_t secondary) {
   uint8_t i;
 
   for (i=0;i<CONFIG_BUFFER_COUNT+1;i++) {
-    if (buffers[i].allocated && buffers[i].secondary == secondary)
+    if (buffers[i].allocated && buffers[i].secondary == secondary) {
+#ifdef CONFIG_MULTIDRIVE
+      /* channels of other devices are invisible, system buffers and */
+      /* the error channel buffer are shared                         */
+      if (secondary < BUFFER_SEC_SYSTEM && i != ERRORBUFFER_IDX &&
+          buffers[i].device != md_cur)
+        continue;
+#endif
       return &buffers[i];
+    }
   }
   return NULL;
 }

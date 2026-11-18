@@ -50,6 +50,7 @@
 #include "wrapops.h"
 #include "fatops.h"     // pet2ascn()
 #include "doscmd.h"
+#include "multidrive.h"
 
 
 uint8_t menu_system_enabled = true;
@@ -126,6 +127,21 @@ static inline uint8_t min(uint8_t a, uint8_t b) {
 void lcd_update_device_addr(void) {
   if (lcd_current_screen == SCRN_STATUS) {
     lcd_home();
+#ifdef CONFIG_MULTIDRIVE
+    if (md_active) {
+      /* all addresses in the 16 columns left of the bus name */
+      uint8_t i, col = 0;
+      for (i = 0; i < MD_MAX_DEVICES; i++) {
+        if (md_dev[i].address) {
+          lcd_printf("#%d ", md_dev[i].address);
+          col += md_dev[i].address < 10 ? 3 : 4;
+        }
+      }
+      while (col++ < 16)
+        lcd_putc(' ');
+      return;
+    }
+#endif
     lcd_printf("Device ID: #%d ", device_address);
   }
 }
