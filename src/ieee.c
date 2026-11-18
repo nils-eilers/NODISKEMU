@@ -709,6 +709,10 @@ void ieee488_Unlisten(void) {
   }
   ieee488_ListenActive = command_received = open_active = false;
   command_length = 0;
+
+  // Clean up unused buffers like the IEC code does after every
+  // command, e.g. the one a failed directory open leaves behind
+  free_multiple_buffers(FMB_UNSTICKY);
 }
 
 
