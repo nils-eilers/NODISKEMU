@@ -881,7 +881,7 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
   /* Copy name */
   ustrcpy(dent->pvt.fat.realname, finfo.fname);
 
-  if (!finfo.lfn[0] || ustrlen(finfo.lfn) > CBM_NAME_LENGTH+4) {
+  if (!finfo.lfn[0]) {
     nameptr = finfo.fname;
   } else {
     /* Convert only LFNs to PETSCII, 8.3 are always upper-case */
@@ -940,8 +940,11 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
     } else if (ext == EXT_IS_TYPE && (globalflags & EXTENSION_HIDING)) {
       /* Type extension */
       typechar = *ptr;
-      uint8_t i = ustrlen(nameptr)-4;
-      nameptr[i] = 0;
+      /* A long name may be cut off, its end is unknown - keep it whole */
+      if (nameptr == finfo.fname || !finfo.lfnlong) {
+        uint8_t i = ustrlen(nameptr)-4;
+        nameptr[i] = 0;
+      }
 
     } else { /* ext == EXT_UNKNOWN or EXT_IS_TYPE but hiding disabled */
       /* Unknown extension: PRG */
@@ -971,7 +974,19 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
 
   /* Copy file name into dirent if it fits */
   if (dent->opstype != OPSTYPE_FAT_X00) {
-    if (ustrlen(nameptr) > CBM_NAME_LENGTH) {
+    if (nameptr != finfo.fname &&
+        (finfo.lfnlong || ustrlen(nameptr) > CBM_NAME_LENGTH)) {
+      /* Too long: first 13 characters, '~' and two characters from a CRC */
+      /* of the complete long name. Independent of the other files in the */
+      /* directory, so the name stays the same when files come and go.    */
+      static const char digits[] PROGMEM = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      uint16_t crc = finfo.lfncrc % (36*36);
+      memcpy(dent->name, nameptr, CBM_NAME_LENGTH-3);
+      dent->name[CBM_NAME_LENGTH-3] = '~';
+      dent->name[CBM_NAME_LENGTH-2] = pgm_read_byte(digits + crc / 36);
+      dent->name[CBM_NAME_LENGTH-1] = pgm_read_byte(digits + crc % 36);
+      dent->name[CBM_NAME_LENGTH]   = 0;
+    } else if (ustrlen(nameptr) > CBM_NAME_LENGTH) {
       ustrcpy(dent->name, finfo.fname);
     } else {
       ustrcpy(dent->name, nameptr);

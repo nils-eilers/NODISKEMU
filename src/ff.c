@@ -59,6 +59,7 @@
 #include "ff.h"         /* FatFs declarations */
 #include "diskio.h"     /* Include file for user provided disk functions */
 #include "progmem.h"
+#include "crc.h"
 
 
 /*--------------------------------------------------------------------------
@@ -1977,10 +1978,8 @@ FRESULT f_readdir (
   FATFS *fs = dj->fs;
 #if _USE_LFN != 0
   WORD len=0;
-  BYTE i,pos;
-# ifdef _MAX_LFN_LENGTH
-  BOOL skiplfn = FALSE;
-# endif
+  WORD pos;
+  BYTE i;
 
   if (finfo->lfn) {
     finfo->lfn[0]=0;   /* set first char to null */
@@ -1988,6 +1987,8 @@ FRESULT f_readdir (
     finfo->lfn[1]=0;
 # endif
   }
+  finfo->lfncrc  = 0xffff;
+  finfo->lfnlong = FALSE;
 #endif
 
   res = validate(fs /*, dj->id*/);         /* Check validity of the object */
@@ -2003,36 +2004,35 @@ FRESULT f_readdir (
 #if _USE_LFN != 0
     if (c != 0xE5) {                  /* Is it a valid entry? */
       if(finfo->lfn && ((dir[DIR_Attr] & AM_LFN) == AM_LFN)) {
+        /* Long names longer than the buffer keep their first characters; */
+        /* the CRC covers all of them so callers can build a unique name.  */
         pos=((*dir & 0x1f)-1)*S_LFN_OFFSET;  /* get offset */
-# ifdef _MAX_LFN_LENGTH
-        if (skiplfn || pos >= _MAX_LFN_LENGTH * S_LFN_INCREMENT) {
-          skiplfn = TRUE;
-          goto skippedlfn;
-        }
-# endif
         i=0;
         while(i<13) {
           if(!dir[pgm_read_byte(LFN_pos+i)] && !dir[pgm_read_byte(LFN_pos+i)+1])
             break;
-          if (pos >= _MAX_LFN_LENGTH) {
-            len = 0;
-            i = 0;
-            skiplfn = TRUE;
-            break;
-          }
-          finfo->lfn[pos]=dir[pgm_read_byte(LFN_pos+i)];
-# if _USE_LFN_DBCS != 0
-          finfo->lfn[pos+1]=dir[pgm_read_byte(LFN_pos+i)+1];
+          finfo->lfncrc = crc16_update(finfo->lfncrc, dir[pgm_read_byte(LFN_pos+i)]);
+# ifdef _MAX_LFN_LENGTH
+          if (pos >= _MAX_LFN_LENGTH * S_LFN_INCREMENT) {
+            finfo->lfnlong = TRUE;
+          } else
 # endif
+          {
+            finfo->lfn[pos]=dir[pgm_read_byte(LFN_pos+i)];
+# if _USE_LFN_DBCS != 0
+            finfo->lfn[pos+1]=dir[pgm_read_byte(LFN_pos+i)+1];
+# endif
+          }
           pos+=S_LFN_INCREMENT;
           i++;
         }
         len+=i;
       } else {
-# ifdef _MAX_LFN_LENGTH
-        skiplfn = FALSE;
-# endif
         if (finfo->lfn) {
+# ifdef _MAX_LFN_LENGTH
+          if (len > _MAX_LFN_LENGTH)
+            len = _MAX_LFN_LENGTH;
+# endif
           finfo->lfn[len*S_LFN_INCREMENT]=0;
 # if _USE_LFN_DBCS != 0
           finfo->lfn[len*S_LFN_INCREMENT+1]=0;
@@ -2041,9 +2041,6 @@ FRESULT f_readdir (
         get_fileinfo(finfo, dir);
       }
     }
-# ifdef _MAX_LFN_LENGTH
-  skippedlfn:
-#endif
 #else
     if (c != 0xE5 && ((dir[DIR_Attr] & AM_LFN) != AM_LFN))        /* Is it a valid entry? */
       get_fileinfo(finfo, dir);
