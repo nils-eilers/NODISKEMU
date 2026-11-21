@@ -121,6 +121,7 @@ typedef struct buffer_s {
       uint8_t headersize;  /* offset to start of file data */
     } fat;
     d64fh_t d64;           /* File access on D64  */
+    d64relfh_t d64rel;     /* REL file access on D64 */
     eefs_fh_t eefh;        /* File handle for eepromfs */
     struct {
       uint8_t part;        /* partition number for $=P */
