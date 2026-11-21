@@ -195,6 +195,32 @@ typedef struct d64fh {
 } d64fh_t;
 
 /**
+ * struct d64relfh - REL file handle for disk images
+ * @dh        : d64dh pointing to the directory entry
+ * @part      : partition
+ * @sstrack   : track of the first side sector (or the super side sector)
+ * @sssector  : sector of the first side sector (or the super side sector)
+ * @super     : 1 if the file has a super side sector (1581/8250 style)
+ * @lastbyte  : index of the last used byte in the final data block
+ * @datablocks: number of data blocks in the file
+ * @cachess   : number of the side sector last looked up (0xffff: none)
+ * @cachetrack: its track
+ * @cachesector: its sector
+ */
+typedef struct d64relfh {
+  struct d64dh dh;
+  uint8_t  part;
+  uint8_t  sstrack;
+  uint8_t  sssector;
+  uint8_t  super;
+  uint8_t  lastbyte;
+  uint16_t datablocks;
+  uint16_t cachess;
+  uint8_t  cachetrack;
+  uint8_t  cachesector;
+} d64relfh_t;
+
+/**
  * struct dh_t - union of all directory handles
  * @part: partition number for the handle
  * @fat : fat directory handle
