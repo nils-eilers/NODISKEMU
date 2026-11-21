@@ -714,6 +714,9 @@ void ieee488_Unlisten(void) {
   // Clean up unused buffers like the IEC code does after every
   // command, e.g. the one a failed directory open leaves behind
   free_multiple_buffers(FMB_UNSTICKY);
+
+  // Write changed BAM sectors of disk images to the card
+  d64_bam_commit();
 }
 
 
@@ -843,6 +846,7 @@ void handle_ieee488(void) {
             free_buffer(buf);
           }
         }
+        d64_bam_commit();
       }
     } else if (cmd4 == IEEE_OPEN) {       // OPEN
       while (!ieee488_ATN())              // Wait for ATN high
