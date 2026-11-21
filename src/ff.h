@@ -220,6 +220,8 @@ typedef struct _FILINFO {
     UCHAR fname[8+1+3+1];   /* Name (8.3 format) */
 #if _USE_LFN != 0
     UCHAR* lfn;
+    WORD lfncrc;            /* CRC-16 over the complete long name */
+    BYTE lfnlong;           /* Long name longer than _MAX_LFN_LENGTH, lfn holds its start */
 #endif
 } FILINFO;
 
